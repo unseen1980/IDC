@@ -1,0 +1,189 @@
+Introduction
+
+Data imbalance is a common issue in a variety of NLP tasks such as tagging and machine reading comprehension. Table TABREF3 gives concrete examples: for the Named Entity Recognition (NER) task BIBREF2, BIBREF3, most tokens are backgrounds with tagging class $O$. Specifically, the number of tokens tagging class $O$ is 5 times as many as those with entity labels for the CoNLL03 dataset and 8 times for the OntoNotes5.0 dataset; Data-imbalanced issue is more severe for MRC tasks BIBREF4, BIBREF5, BIBREF6, BIBREF7, BIBREF8 with the value of negative-positive ratio being 50-200.
+
+Data imbalance results in the following two issues: (1) the training-test discrepancy: Without balancing the labels, the learning process tends to converge to a point that strongly biases towards class with the majority label. This actually creates a discrepancy between training and test: at training time, each training instance contributes equally to the objective function while at test time, F1 score concerns more about positive examples; (2) the overwhelming effect of easy-negative examples. As pointed out by meng2019dsreg, significantly large number of negative examples also means that the number of easy-negative example is large. The huge number of easy examples tends to overwhelm the training, making the model not sufficiently learned to distinguish between positive examples and hard-negative examples. The cross-entropy objective (CE for short) or maximum likelihood (MLE) objective, which is widely adopted as the training objective for data-imbalanced NLP tasks BIBREF9, BIBREF10, BIBREF11, BIBREF12, BIBREF13, BIBREF14, BIBREF15, handles neither of the issues.
+
+To handle the first issue, we propose to replace CE or MLE with losses based on the Sørensen–Dice coefficient BIBREF0 or Tversky index BIBREF1. The Sørensen–Dice coefficient, dice loss for short, is the harmonic mean of precision and recall. It attaches equal importance to false positives (FPs) and false negatives (FNs) and is thus more immune to data-imbalanced datasets. Tversky index extends dice loss by using a weight that trades precision and recall, which can be thought as the approximation of the $F_{\beta }$ score, and thus comes with more flexibility. Therefore, We use dice loss or Tversky index to replace CE loss to address the first issue.
+
+Only using dice loss or Tversky index is not enough since they are unable to address the dominating influence of easy-negative examples. This is intrinsically because dice loss is actually a hard version of the F1 score. Taking the binary classification task as an example, at test time, an example will be classified as negative as long as its probability is smaller than 0.5, but training will push the value to 0 as much as possible. This gap isn't a big issue for balanced datasets, but is extremely detrimental if a big proportion of training examples are easy-negative ones: easy-negative examples can easily dominate training since their probabilities can be pushed to 0 fairly easily. Meanwhile, the model can hardly distinguish between hard-negative examples and positive ones. Inspired by the idea of focal loss BIBREF16 in computer vision, we propose a dynamic weight adjusting strategy, which associates each training example with a weight in proportion to $(1-p)$, and this weight dynamically changes as training proceeds. This strategy helps to deemphasize confident examples during training as their $p$ approaches the value of 1, makes the model attentive to hard-negative examples, and thus alleviates the dominating effect of easy-negative examples.
+
+Combing both strategies, we observe significant performance boosts on a wide range of data imbalanced NLP tasks. Notably, we are able to achieve SOTA results on CTB5 (97.92, +1.86), CTB6 (96.57, +1.80) and UD1.4 (96.98, +2.19) for the POS task; SOTA results on CoNLL03 (93.33, +0.29), OntoNotes5.0 (92.07, +0.96)), MSRA 96.72(+0.97) and OntoNotes4.0 (84.47,+2.36) for the NER task; along with competitive results on the tasks of machine reading comprehension and paraphrase identification.
+
+The rest of this paper is organized as follows: related work is presented in Section 2. We describe different training objectives in Section 3. Experimental results are presented in Section 4. We perform ablation studies in Section 5, followed by a brief conclusion in Section 6.
+
+Related Work ::: Data Resample
+
+The idea of weighting training examples has a long history. Importance sampling BIBREF17 assigns weights to different samples and changes the data distribution. Boosting algorithms such as AdaBoost BIBREF18 select harder examples to train subsequent classifiers. Similarly, hard example mining BIBREF19 downsamples the majority class and exploits the most difficult examples. Oversampling BIBREF20, BIBREF21 is used to balance the data distribution. Another line of data resampling is to dynamically control the weights of examples as training proceeds. For example, focal loss BIBREF16 used a soft weighting scheme that emphasizes harder examples during training. In self-paced learning BIBREF22, example weights are obtained through optimizing the weighted training loss which encourages learning easier examples first. At each training step, self-paced learning algorithm optimizes model parameters and example weights jointly. Other works BIBREF23, BIBREF24 adjusted the weights of different training examples based on training loss. Besides, recent work BIBREF25, BIBREF26 proposed to learn a separate network to predict sample weights.
+
+Related Work ::: Data Imbalance Issue in Object Detection
+
+The background-object label imbalance issue is severe and thus well studied in the field of object detection BIBREF27, BIBREF28, BIBREF29, BIBREF30, BIBREF31. The idea of hard negative mining (HNM) BIBREF30 has gained much attention recently. shrivastava2016ohem proposed the online hard example mining (OHEM) algorithm in an iterative manner that makes training progressively more difficult, and pushes the model to learn better. ssd2016liu sorted all of the negative samples based on the confidence loss and picking the training examples with the negative-positive ratio at 3:1. pang2019rcnn proposed a novel method called IoU-balanced sampling and aploss2019chen designed a ranking model to replace the conventional classification task with a average-precision loss to alleviate the class imbalance issue. The efforts made on object detection have greatly inspired us to solve the data imbalance issue in NLP.
+
+Losses ::: Notation
+
+For illustration purposes, we use the binary classification task to demonstrate how different losses work. The mechanism can be easily extended to multi-class classification.
+
+Let $\lbrace x_i\rbrace $ denote a set of instances. Each $x_i$ is associated with a golden label vector $y_i = [y_{i0},y_{i1} ]$, where $y_{i1}\in \lbrace 0,1\rbrace $ and $y_{i0}\in \lbrace 0,1\rbrace $ respectively denote the positive and negative classes, and thus $y_i$ can be either $[0,1]$ or $[0,1]$. Let $p_i = [p_{i0},p_{i1} ]$ denote the probability vector, and $p_{i1}$ and $p_{i0}$ respectively denote the probability that a model assigns the positive and negative label to $x_i$.
+
+Losses ::: Cross Entropy Loss
+
+The vanilla cross entropy (CE) loss is given by:
+
+As can be seen from Eq.DISPLAY_FORM8, each $x_i$ contributes equally to the final objective. Two strategies are normally used to address the the case where we wish that not all $x_i$ are treated equal: associating different classes with different weighting factor $\alpha $ or resampling the datasets. For the former, Eq.DISPLAY_FORM8 is adjusted as follows:
+
+where $\alpha _i\in [0,1]$ may be set by the inverse class frequency or treated as a hyperparameter to set by cross validation. In this work, we use $\lg (\frac{n-n_t}{n_t}+K)$ to calculate the coefficient $\alpha $, where $n_t$ is the number of samples with class $t$ and $n$ is the total number of samples in the training set. $K$ is a hyperparameter to tune. The data resampling strategy constructs a new dataset by sampling training examples from the original dataset based on human-designed criteria, e.g., extract equal training samples from each class. Both strategies are equivalent to changing the data distribution and thus are of the same nature. Empirically, these two methods are not widely used due to the trickiness of selecting $\alpha $ especially for multi-class classification tasks and that inappropriate selection can easily bias towards rare classes BIBREF32.
+
+Losses ::: Dice coefficient and Tversky index
+
+Sørensen–Dice coefficient BIBREF0, BIBREF33, dice coefficient (DSC) for short, is a F1-oriented statistic used to gauge the similarity of two sets. Given two sets $A$ and $B$, the dice coefficient between them is given as follows:
+
+In our case, $A$ is the set that contains of all positive examples predicted by a specific model, and $B$ is the set of all golden positive examples in the dataset. When applied to boolean data with the definition of true positive (TP), false positive (FP), and false negative (FN), it can be then written as follows:
+
+For an individual example $x_i$, its corresponding DSC loss is given as follows:
+
+As can be seen, for a negative example with $y_{i1}=0$, it does not contribute to the objective. For smoothing purposes, it is common to add a $\gamma $ factor to both the nominator and the denominator, making the form to be as follows:
+
+As can be seen, negative examples, with $y_{i1}$ being 0 and DSC being $\frac{\gamma }{ p_{i1}+\gamma }$, also contribute to the training. Additionally, milletari2016v proposed to change the denominator to the square form for faster convergence, which leads to the following dice loss (DL):
+
+Another version of DL is to directly compute set-level dice coefficient instead of the sum of individual dice coefficient. We choose the latter due to ease of optimization.
+
+Tversky index (TI), which can be thought as the approximation of the $F_{\beta }$ score, extends dice coefficient to a more general case. Given two sets $A$ and $B$, tversky index is computed as follows:
+
+Tversky index offers the flexibility in controlling the tradeoff between false-negatives and false-positives. It degenerates to DSC if $\alpha =\beta =0.5$. The Tversky loss (TL) for the training set $\lbrace x_i,y_i\rbrace $ is thus as follows:
+
+Losses ::: Self-adusting Dice Loss
+
+Consider a simple case where the dataset consists of only one example $x_i$, which is classified as positive as long as $p_{i1}$ is larger than 0.5. The computation of $F1$ score is actually as follows:
+
+Comparing Eq.DISPLAY_FORM14 with Eq.DISPLAY_FORM22, we can see that Eq.DISPLAY_FORM14 is actually a soft form of $F1$, using a continuous $p$ rather than the binary $\mathbb {I}( p_{i1}>0.5)$. This gap isn't a big issue for balanced datasets, but is extremely detrimental if a big proportion of training examples are easy-negative ones: easy-negative examples can easily dominate training since their probabilities can be pushed to 0 fairly easily. Meanwhile, the model can hardly distinguish between hard-negative examples and positive ones, which has a huge negative effect on the final F1 performance.
+
+To address this issue, we propose to multiply the soft probability $p$ with a decaying factor $(1-p)$, changing Eq.DISPLAY_FORM22 to the following form:
+
+One can think $(1-p_{i1})$ as a weight associated with each example, which changes as training proceeds. The intuition of changing $p_{i1}$ to $(1-p_{i1}) p_{i1}$ is to push down the weight of easy examples. For easy examples whose probability are approaching 0 or 1, $(1-p_{i1}) p_{i1}$ makes the model attach significantly less focus to them. Figure FIGREF23 gives gives an explanation from the perspective in derivative: the derivative of $\frac{(1-p)p}{1+(1-p)p}$ with respect to $p$ approaches 0 immediately after $p$ approaches 0, which means the model attends less to examples once they are correctly classified.
+
+A close look at Eq.DISPLAY_FORM14 reveals that it actually mimics the idea of focal loss (FL for short) BIBREF16 for object detection in vision. Focal loss was proposed for one-stage object detector to handle foreground-background tradeoff encountered during training. It down-weights the loss assigned to well-classified examples by adding a $(1-p)^{\beta }$ factor, leading the final loss to be $(1-p)^{\beta }\log p$.
+
+In Table TABREF18, we show the losses used in our experiments, which is described in the next section.
+
+Experiments
+
+We evaluate the proposed method on four NLP tasks: part-of-speech tagging, named entity recognition, machine reading comprehension and paraphrase identification. Baselines in our experiments are optimized by using the standard cross-entropy training objective.
+
+Experiments ::: Part-of-Speech Tagging
+
+Part-of-speech tagging (POS) is the task of assigning a label (e.g., noun, verb, adjective) to each word in a given text. In this paper, we choose BERT as the backbone and conduct experiments on three Chinese POS datasets. We report the span-level micro-averaged precision, recall and F1 for evaluation. Hyperparameters are tuned on the corresponding development set of each dataset.
+
+Experiments ::: Part-of-Speech Tagging ::: Datasets
+
+We conduct experiments on the widely used Chinese Treebank 5.0, 6.0 as well as UD1.4.
+
+CTB5 is a Chinese dataset for tagging and parsing, which contains 507,222 words, 824,983 characters and 18,782 sentences extracted from newswire sources.
+
+CTB6 is an extension of CTB5, containing 781,351 words, 1,285,149 characters and 28,295 sentences.
+
+UD is the abbreviation of Universal Dependencies, which is a framework for consistent annotation of grammar (parts of speech, morphological features, and syntactic dependencies) across different human languages. In this work, we use UD1.4 for Chinese POS tagging.
+
+Experiments ::: Part-of-Speech Tagging ::: Baselines
+
+We use the following baselines:
+
+Joint-POS: shao2017character jointly learns Chinese word segmentation and POS.
+
+Lattice-LSTM: lattice2018zhang constructs a word-character lattice.
+
+Bert-Tagger: devlin2018bert treats part-of-speech as a tagging task.
+
+Experiments ::: Part-of-Speech Tagging ::: Results
+
+Table presents the experimental results on the POS task. As can be seen, the proposed DSC loss outperforms the best baseline results by a large margin, i.e., outperforming BERT-tagger by +1.86 in terms of F1 score on CTB5, +1.80 on CTB6 and +2.19 on UD1.4. As far as we are concerned, we are achieving SOTA performances on the three datasets. Weighted cross entropy and focal loss only gain a little performance improvement on CTB5 and CTB6, and the dice loss obtains huge gain on CTB5 but not on CTB6, which indicates the three losses are not consistently robust in resolving the data imbalance issue. The proposed DSC loss performs robustly on all the three datasets.
+
+Experiments ::: Named Entity Recognition
+
+Named entity recognition (NER) refers to the task of detecting the span and semantic category of entities from a chunk of text. Our implementation uses the current state-of-the-art BERT-MRC model proposed by xiaoya2019ner as a backbone. For English datasets, we use BERT$_\text{Large}$ English checkpoints, while for Chinese we use the official Chinese checkpoints. We report span-level micro-averaged precision, recall and F1-score. Hyperparameters are tuned on the development set of each dataset.
+
+Experiments ::: Named Entity Recognition ::: Datasets
+
+For the NER task, we consider both Chinese datasets, i.e., OntoNotes4.0 BIBREF34 and MSRA BIBREF35, and English datasets, i.e., CoNLL2003 BIBREF36 and OntoNotes5.0 BIBREF37.
+
+CoNLL2003 is an English dataset with 4 entity types: Location, Organization, Person and Miscellaneous. We followed data processing protocols in BIBREF14.
+
+English OntoNotes5.0 consists of texts from a wide variety of sources and contains 18 entity types. We use the standard train/dev/test split of CoNLL2012 shared task.
+
+Chinese MSRA performs as a Chinese benchmark dataset containing 3 entity types. Data in MSRA is collected from news domain. Since the development set is not provided in the original MSRA dataset, we randomly split the training set into training and development splits by 9:1. We use the official test set for evaluation.
+
+Chinese OntoNotes4.0 is a Chinese dataset and consists of texts from news domain, which has 18 entity types. In this paper, we take the same data split as wu2019glyce did.
+
+Experiments ::: Named Entity Recognition ::: Baselines
+
+We use the following baselines:
+
+ELMo: a tagging model from peters2018deep.
+
+Lattice-LSTM: lattice2018zhang constructs a word-character lattice, only used in Chinese datasets.
+
+CVT: from kevin2018cross, which uses Cross-View Training(CVT) to improve the representations of a Bi-LSTM encoder.
+
+Bert-Tagger: devlin2018bert treats NER as a tagging task.
+
+Glyce-BERT: wu2019glyce combines glyph information with BERT pretraining.
+
+BERT-MRC: The current SOTA model for both Chinese and English NER datasets proposed by xiaoya2019ner, which formulate NER as machine reading comprehension task.
+
+Experiments ::: Named Entity Recognition ::: Results
+
+Table shows experimental results on NER datasets. For English datasets including CoNLL2003 and OntoNotes5.0, our proposed method outperforms BERT-MRCBIBREF38 by +0.29 and +0.96 respectively. We observe huge performance boosts on Chinese datasets, achieving F1 improvements by +0.97 and +2.36 on MSRA and OntoNotes4.0, respectively. As far as we are concerned, we are setting new SOTA performances on all of the four NER datasets.
+
+Experiments ::: Machine Reading Comprehension
+
+Machine reading comprehension (MRC) BIBREF39, BIBREF40, BIBREF41, BIBREF40, BIBREF42, BIBREF15 has become a central task in natural language understanding. MRC in the SQuAD-style is to predict the answer span in the passage given a question and the passage. In this paper, we choose the SQuAD-style MRC task and report Extract Match (EM) in addition to F1 score on validation set. All hyperparameters are tuned on the development set of each dataset.
+
+Experiments ::: Machine Reading Comprehension ::: Datasets
+
+The following five datasets are used for MRC task: SQuAD v1.1, SQuAD v2.0 BIBREF4, BIBREF6 and Quoref BIBREF8.
+
+SQuAD v1.1 and SQuAD v2.0 are the most widely used QA benchmarks. SQuAD1.1 is a collection of 100K crowdsourced question-answer pairs, and SQuAD2.0 extends SQuAD1.1 allowing no short answer exists in the provided passage.
+
+Quoref is a QA dataset which tests the coreferential reasoning capability of reading comprehension systems, containing 24K questions over 4.7K paragraphs from Wikipedia.
+
+Experiments ::: Machine Reading Comprehension ::: Baselines
+
+We use the following baselines:
+
+QANet: qanet2018 builds a model based on convolutions and self-attention. Convolution to model local interactions and self-attention to model global interactions.
+
+BERT: devlin2018bert treats NER as a tagging task.
+
+XLNet: xlnet2019 proposes a generalized autoregressive pretraining method that enables learning bidirectional contexts.
+
+Experiments ::: Machine Reading Comprehension ::: Results
+
+Table shows the experimental results for MRC tasks. With either BERT or XLNet, our proposed DSC loss obtains significant performance boost on both EM and F1. For SQuADv1.1, our proposed method outperforms XLNet by +1.25 in terms of F1 score and +0.84 in terms of EM and achieves 87.65 on EM and 89.51 on F1 for SQuAD v2.0. Moreover, on QuoRef, the proposed method surpasses XLNet results by +1.46 on EM and +1.41 on F1. Another observation is that, XLNet outperforms BERT by a huge margin, and the proposed DSC loss can obtain further performance improvement by an average score above 1.0 in terms of both EM and F1, which indicates the DSC loss is complementary to the model structures.
+
+Experiments ::: Paraphrase Identification
+
+Paraphrases are textual expressions that have the same semantic meaning using different surface words. Paraphrase identification (PI) is the task of identifying whether two sentences have the same meaning or not. We use BERT BIBREF11 and XLNet BIBREF43 as backbones and report F1 score for comparison. Hyperparameters are tuned on the development set of each dataset.
+
+Experiments ::: Paraphrase Identification ::: Datasets
+
+We conduct experiments on two widely used datasets for PI task: MRPC BIBREF44 and QQP.
+
+MRPC is a corpus of sentence pairs automatically extracted from online news sources, with human annotations of whether the sentence pairs are semantically equivalent. The MRPC dataset has imbalanced classes (68% positive, 32% for negative).
+
+QQP is a collection of question pairs from the community question-answering website Quora. The class distribution in QQP is also unbalanced (37% positive, 63% negative).
+
+Experiments ::: Paraphrase Identification ::: Results
+
+Table shows the results for PI task. We find that replacing the training objective with DSC introduces performance boost for both BERT and XLNet. Using DSC loss improves the F1 score by +0.58 for MRPC and +0.73 for QQP.
+
+Ablation Studies ::: The Effect of Dice Loss on Accuracy-oriented Tasks
+
+We argue that the most commonly used cross-entropy objective is actually accuracy-oriented, whereas the proposed dice loss (DL) performs as a hard version of F1-score. To explore the effect of the dice loss on accuracy-oriented tasks such as text classification, we conduct experiments on the Stanford Sentiment Treebank sentiment classification datasets including SST-2 and SST-5. We fine-tune BERT$_\text{Large}$ with different training objectives. Experiment results for SST are shown in . For SST-5, BERT with CE achieves 55.57 in terms of accuracy, with DL and DSC losses slightly degrade the accuracy performance and achieve 54.63 and 55.19, respectively. For SST-2, BERT with CE achieves 94.9 in terms of accuracy. The same as SST-5, we observe a slight performance drop with DL and DSC, which means that the dice loss actually works well for F1 but not for accuracy.
+
+Ablation Studies ::: The Effect of Hyperparameters in Tversky index
+
+As mentioned in Section SECREF10, Tversky index (TI) offers the flexibility in controlling the tradeoff between false-negatives and false-positives. In this subsection, we explore the effect of hyperparameters (i.e., $\alpha $ and $\beta $) in TI to test how they manipulate the tradeoff. We conduct experiments on the Chinese OntoNotes4.0 NER dataset and English QuoRef MRC dataset to examine the influence of tradeoff between precision and recall. Experiment results are shown in Table . The highest F1 for Chinese OntoNotes4.0 is 84.67 when $\alpha $ is set to 0.6 while for QuoRef, the highest F1 is 68.44 when $\alpha $ is set to 0.4. In addition, we can observe that the performance varies a lot as $\alpha $ changes in distinct datasets, which shows that the hyperparameters $\alpha ,\beta $ play an important role in the proposed method.
+
+Conclusion
+
+In this paper, we alleviate the severe data imbalance issue in NLP tasks. We propose to use dice loss in replacement of the standard cross-entropy loss, which performs as a soft version of F1 score. Using dice loss can help narrow the gap between training objectives and evaluation metrics. Empirically, we show that the proposed training objective leads to significant performance boost for part-of-speech, named entity recognition, machine reading comprehension and paraphrase identification tasks.

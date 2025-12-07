@@ -1,0 +1,59 @@
+Introduction
+
+Named entity recognition (NER) is a challenging problem in Natural Language Processing, and often serves as an important step for many popular applications, such as information extraction and question answering. NER requires phrases referring to entities in text be identified and assigned to particular entity types, thus can be naturally modeled as a sequence labeling task. In recent years, a lot of progress has been made on NER by applying sequential models such as conditional random field (CRF) or neural network models such as long short-term memory (LSTM) (e.g., BIBREF0, BIBREF1, BIBREF2, BIBREF3). Yet this task still remains a challenging one, especially in social media domain such as tweets, partially because of informality and noise of such text and low frequencies of distinctive named entities BIBREF4.
+
+Chinese is a language that consists of sequential Chinese characters without capitalization information and delimitation between words. Rather than words as in English or Romance languages, the equivalence of an English word in Chinese may contain one or several Chinese characters. Thus Chinese word segmentation is needed as a first step before entity mentions can be recognized. The outputs of Chinese word segmentation are often used as features to support named entity recognition. In the neural network based models, the boundary information can be extracted from hidden layers of a Chinese word segmentation model (e.g., BIBREF5, BIBREF6).
+
+Relying on outputs of Chinese word segmentation has its own challenge, because Chinese word segmentation is often influenced by the following four factors. First, models trained from corpora in other languages, even if not language-specific such as in BIBREF3, cannot be directly applied to Chinese text. Some efforts have been made on Chinese word segmentation recently BIBREF7, BIBREF8, BIBREF9, BIBREF10. Second, differences in segmentation criteria exist among labeled corpora. For instance, in the PKU’s People’s Daily corpus, a person's family name and given name is segmented into two tokens, while in the Penn Chinese Treebank corpus they are segmented into one BIBREF11. Third, for entity mentions that are compound words, models may separate them into fragmented words BIBREF12. Many Chinese words are also morphemes, and separated entity mention fragments may be falsely combined with adjacent words. Fourth, current sequential models perform poorly in identifying named entities with long dependency. Yet many named entities expand over a long range, especially organization names and location names.
+
+Errors caused by Chinese word segmentation can generate a cascading failure, which hurt the performance of downstream tasks such as NER. Latest developments in Chinese NER (e.g., BIBREF13, BIBREF14, BIBREF5, BIBREF15, BIBREF16, BIBREF17) have yet shown little focus on this issue. BIBREF12 found that by assembling these single words back together, information groups and sentence structure are better reserved, which could benefit downstream tasks such as NER.
+
+Inspired by BIBREF12, we integrate in this paper a boundary assembling step into the state-of-the-art LSTM model for Chinese word segmentation, and feed the output into a CRF model for NER, resulting in a 2% absolute improvement on the overall F1 score over current state-of-the-art methods.
+
+This paper is organized as follows. In Section SECREF2 we discuss our model, which consists of an LSTM module for Chinese word segmentation, a boundary assembling step for more accurate word segmentation, and a CRF module for NER. We show the experiment results and discuss the model performance in Section SECREF3. We conclude in Section SECREF4.
+
+Model
+
+Our model consists of three modules. A diagram of the model is shown in Figure FIGREF1. Characters in the input text for Chinese word segmentation are converted to vectors that are used to train the LSTM module. Output of the LSTM module are transformed by a biased-linear transformation to get likelihood scores of segmentation labeling, then passed through the boundary assembling module. The updated boundary information is used as feature input into the CRF for Chinese word segmentation (CWS), together with character-vector sequences. In each training epoch, CRF for CWS provides feedback into the LSTM hidden layer and the biased-linear transformation to update the hyper-parameters. Another corpus for NER is then used to train the LSTM again, the hidden vector of which (now contains segmentation information updated by the boundary assembling method) is taken as feature input to CRF for NER. Lexical features extracted from the input text for NER, as well as the word embedding sequence, are also taken by the CRF module as input to generate NER labels. This section provides descriptions for each module.
+
+Model ::: LSTM for Word Segmentation
+
+We choose an LSTM module for the CWS task. Raw input Chinese text is converted from characters to vectors with character-positional input embeddings pre-trained by BIBREF5 over 112,971,734 Weibo messages using word2vec BIBREF18. Detailed parameter settings can be found in BIBREF13. The embeddings contain 52,057 unique characters in a 100-dimension space.
+
+The LSTM module takes these vectors into a single layer that contains 150 nodes, and modifies them into likelihood scores for each segmentation label. A biased-linear transformation is carried out on these likelihood scores, generating predicted labels for segmentation. These labels are then modified by the Boundary Assembling module, which we will discuss in detail in the next section. Because labels are in sequence, and dependency may exist among adjacent labels, a transition probability matrix is introduced. The likelihood score together with the transition score are taken by a CRF module with a maximum-likelihood training objective. Feedbacks based on the loss function of the CRF are then given to the LSTM's hidden layer and the biased-linear transformation's parameters for update.
+
+Model ::: Boundary Assembling Method
+
+In each sentence, Chinese characters are labeled as either Begin, Inside, End, or Singleton (BIES labeling). The likelihood of individual Chinese characters being labeled as each type is calculated by the LSTM module described in the previous section. BIBREF12 found in a Chinese corpus that the word label "End" has a better performance than "Begin". This motivates us to carry out a backward greedy search over each sentence's label sequence to identify word boundaries. If two words segmented in a sentence are identified as nouns, and one word is immediately before the other, we assemble their boundaries, creating a new word candidate for entity recognition. This strategy has the advantage to find named entities with long word length. It also reduces the influence caused by different segmentation criteria.
+
+Model ::: CRF for Named Entity Recognition
+
+A log-bilinear CRF module is used for the NER task, and takes three inputs. The first is the sequential character-positional embeddings mentioned above. The second is the hidden vector from LSTM as dynamic feature inputs. The third is lexical features extracted from the input text. These lexical features are the likelihood of a character being at a specific position of a noun (first character of a noun, second character of a noun, etc.), and is achieved by comparing the character with a pre-defined dictionary trained by BIBREF13.
+
+Experiments ::: Datasets
+
+Datasets used in this study for training, validation, and test are the same as used in Peng et al. peng2016improving for both word segmentation and named entity recognition. Specifically, dataset for word segmentation is taken from the SIGHAN 2005 bakeoff PKU corpus BIBREF21, which includes 123,530 sentences for training and 11,697 sentences for testing. Dataset for named entity recognition is a corpus composed of 1,890 Sina Weibo (a Chinese social media website) messages, with 1,350 messages split into training set, 270 into validation set, and 270 into test set BIBREF5. Both named entity and nominal mention are annotated, each with four entity types: person, organization, location, and geo-political entity. A major cleanup and revision of annotations of this corpus has been performed by He and Sun HeS16. In this study, all results for comparisons are based on this updated corpus.
+
+Experiments ::: Training Settings
+
+The weights and hyper-parameters in the LSTM module are adjusted in each iteration using stochastic gradient descent for two stages in tandem. The first stage is based on the CWS input text, and the second stage on NER input text. Since the corpus for CWS is much larger than the corpus for NER, the former corpus is randomly sub-sampled during each training epoch, with each sample containing 13,500 sentences for training step one, and 1,350 sentences for training step two. Models are trained until the F1 score of NER model converges on the validation dataset, or up to 30 epochs.
+
+Models are trained on a Windows PC with a 2.7 GHz Intel Core i7 CPU. For the best performed model, the average training time for the LSTM module is 1897.6 seconds per iteration. Time for data loading, pre-processing, or model evaluation is not included.
+
+Experiments ::: Results and Discussion
+
+Our best model performance with its Precision, Recall, and F1 scores on named entity and nominal mention are shown in Table TABREF5. This best model performance is achieved with a dropout rate of 0.1, and a learning rate of 0.05. Our results are compared with state-of-the-art models BIBREF15, BIBREF19, BIBREF20 on the same Sina Weibo training and test datasets. Our model shows an absolute improvement of 2% for the overall F1 score.
+
+This significant improvement validates our method of applying boundary assembling to the segmented sentences, which results in more accurate word segmentation and better semantic understanding. Sentences in the PKU corpus are often segmented into the smallest word units. This results in too fragmented information and incorrect lexical units when input into a named entity recognition model, although this may benefit some other natural language process tasks. By applying the boundary assembling method, sense group in a sentence is better preserved. The downstream NER model can then take advantage of this, improving its result.
+
+The PKU corpus used for CWS module consists of mainly news articles, which are quite different from the social media Weibo corpus. Performance of an NLP task often drops when tested on a different domain or a corpus of different characteristics. Our improvement indicates that the boundary assembling method is not sensitive to the specific domain, and is a robust method for cross-domain scenarios.
+
+The identification of two nouns that are next to each other depends on the pre-trained lexical features. If our model is tested over out-of-vocabulary dataset, it may not perform well due to the lack of this lexical information.
+
+Conclusion
+
+In this paper we integrate a boundary assembling step with an LSTM module and a CRF module for Named Entity Recognition in Chinese social media text. With the abundance of social media information, our work is timely and desirable. The improvement in experiment results over existing methods clearly shows the effectiveness of our approach.
+
+Acknowledgments
+
+This research was partially funded by the Engineering Directorate of the National Science Foundation (1820118).

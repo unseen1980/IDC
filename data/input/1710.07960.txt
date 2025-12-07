@@ -1,0 +1,141 @@
+Introduction
+
+The focus of the word sense disambiguation (WSD) task is polysemy, i.e. words having several substantially different meanings. Two common examples are bank (riverside or financial institution) and bass (fish or musical instrument), but usually the meanings of a word are closely related, e.g. class may refer to: (a) a group of students, (b) the period when they meet to study or (c) a room where such meetings occur. Readers deal with this problem by using a word's context and in WSD we aim at doing it automatically.
+
+The most effective solution, called supervised WSD, is to use a large number of sense-annotated occurrences of the target word to build a machine learning model to label test cases. However, this approach suffers from a knowledge acquisition bottleneck. The annotation of a separate training corpus for every target word demands a considerable amount of human labour. Therefore, this approach is unusable in applications that require WSD across a wide vocabulary, such as open-domain question answering BIBREF0 .
+
+The method of monosemous relatives, which is the focus of this work, bypasses the bottleneck by gathering occurences of words related to the target word, but free from ambiguity, and treating them as training cases of the respective senses. Human labour is eliminated at the expense of accuracy, as the context of each relative only approximately matches the context of the target word sense.
+
+Monosemous relatives have been employed multiple times (see Section 2), but results remain unsatisfactory. The aim of my study is to explore the limitations of this technique by implementing and evaluating such a tool for Polish. Firstly, the method is expanded by waiving the requirement of monosemy and proposing several new sources of relatives. These previously unexplored sources are based on wordnet data and help gather many training cases from the corpus. Secondly, a well-known problem of uneven yet unknown distribution of word senses is alleviated by modifying a naïve Bayesian classifier. Thanks to this correction, the classifier is no longer biased towards senses that have more training data. Finally, a very large corpus (600 million documents), gathered from the web by a Polish search engine NEKST, is used to build models based on training corpora of different sizes. Those experiments show what amount of data is sufficient for such a task. The proposed solution is compared to baselines that use wordnet structure only, with no training corpora.
+
+This paper is organised as follows. The next section reviews the previous research in the area, focusing on unsupervised WSD using monosemous relatives. Section 3 outlines the proposed solution by describing the new sources of relatives, the employed corpus, the features extracted from context and the modified Bayesian classifier. Section 4 describes the evaluation data and process, while section 5 quotes the results. Section 6 is devoted to discussing the outcomes and section 7 concludes the paper.
+
+Related work
+
+The problem of WSD has received a lot of attention since the beginning of natural language processing research. WSD is typically expected to improve the results of real-world applications: originally machine translation and recently information retrieval and extraction, especially question answering BIBREF0 . Like many other areas, WSD has greatly benefited from publicly available test sets and competitions. Two notable corpora are: 1) SemCor BIBREF1 , built by labelling a subset of Brown corpus with Princeton WordNet synsets and 2) the public evaluations of Senseval workshops BIBREF2 , BIBREF3 .
+
+There are a variety of approaches to solve the WSD problem, which can be grouped based upon how they use their data – see reviews BIBREF4 , BIBREF5 . In supervised solutions a large sense-tagged corpus is available for training. This approach has been applied to the the test set used in the current study, resulting in an accuracy value of 91.5% BIBREF6 . Although this technique undoubtedly yields the best results, we would need an immense amount of human labour to build a training corpus of sufficient size for disambiguating all words. This does not seem possible, especially in the case of languages, such as Polish, which receive less attention than English.
+
+In the minimally supervised approach BIBREF7 , a small set of initial training examples, obtained by a heuristic or hand-tagging, is used to label new occurrences. They in turn serve as a training set for next iteration, and so on. This bootstrapping procedure requires very little manual tagging but needs to be carefully implemented to avoid loosing accuracy in further steps.
+
+Unsupervised methods use no previously labelled examples. Instead an external knowledge source is employed, e.g. a machine-readable dictionary or wordnet. In the simplest unsupervised solution, called the Lesk algorithm BIBREF8 , meanings of consecutive ambiguous words are selected by finding those senses whose definitions overlap the most.
+
+If lack of definitions make the Lesk algorithm infeasible, we can exploit relations between words. This study focuses on monosemous relatives, i.e. words or collocations, selected using wordnet, being related to a disambiguation target, but free of ambiguity. One can easily find occurrences of such relatives in an unannotated text and treat them as training examples for the target ambiguous word. The method has been successfully applied in an English WSD task BIBREF9 , but still many problems remain. One of them is choice of relatives – in fact, even synonyms differ in meaning and usage contexts; and they are not available for many words. That is why also hypernyms and hyponyms, especially multi-word expressions containing the target word, are taken into account. Some researchers also include siblings (i.e. words with a common hypernym with the target) and antonyms, but their influence is not always beneficiary BIBREF10 . Other interesting sources of monosemous relatives are parts of definition BIBREF11 , named entities BIBREF12 , indirect hyponyms and hypernyms, and finally meronyms and holonyms BIBREF10 .
+
+The majority of classification techniques are built on an assumption that the training data approximately reflects the true distribution of the target classes. However, that is not the case when using monosemous relatives. The number of their occurrences seldom agrees with the probabilities of corresponding word senses. Quite often it actually is the opposite: obvious and frequent meanings have very few relatives and vice versa. Some researchers simply copy the a priori probabilities from test data BIBREF9 , others employ heuristics, but they are easily beaten by statistics taken from a real annotated corpus, even different than test set BIBREF13 .
+
+Preparing a corpus for finding relatives poses a challenge as well. It should contain a lot of text, as many monosemous words are scarce. Some researchers use snippets retrieved from search engines, i.e. AltaVista BIBREF11 or Google BIBREF13 . One can also extend a search query by including the context of the disambiguated word BIBREF14 , but it requires using as many queries as test cases.
+
+Finally, the usage of monosemous relatives has more applications than classical WSD. One can use them to generate topical signatures for concepts BIBREF15 , automatically build large sense-tagged corpora BIBREF16 and evaluate the quality of wordnet-related semantic resources BIBREF17 .
+
+Method
+
+The algorithm works as follows. First, a set of relatives is obtained for each sense of a target word using the Polish wordnet: plWordNet BIBREF18 . Some of the replacements may have multiple senses, however usually one of them covers most cases. Secondly, a set of context features is extracted from occurrences of relatives in the NEKST corpus. Finally, the aggregated feature values corresponding to target word senses are used to build a naïve Bayesian classifier adjusted to a situation of unknown a priori probabilities.
+
+Relatives
+
+In order to obtain training cases from unannotated corpora, we aim to select relatives which are semantically similar to a given sense of a target word. An example of this process, concerning the word język (tongue) in one of its meanings (human or animal organ) is shown in Figure FIGREF4 . This study takes into account only synonyms, hypernyms and hyponyms, as other options (siblings, antonyms, higher-order relatives) have previously given unsatisfactory results BIBREF10 . Instead, another problem deserves more attention: how do we select those occurrences of a polysemous relative that correspond to a target word sense? So far, the problem has been circumvented by including only monosemous relatives (narząd and jęzor in the example), which greatly decreases their availability. Instead, we employ those relatives, whose first meaning is related to the considered sense (artykulator in the example). The intuition is that plWordNet usually mentions the most frequent meaning as the first.
+
+We also exploit plWordNet relations called determiner, which links nominals with adjectives that are frequently used to describe them. For example, consider a word organ (Eng. organ). An adjective natleniony (oxygenated) is a determiner of one of the meanings of organ, i.e. part of body, but not the others, i.e. part of an institution. Therefore, the included relatives consist of a polysemous related word, including the target word itself, and a determiner associated with a meaning (wydolny organ and natleniony organ in the example). This procedure is performed only in the case of relatives that weren't included so far, i.e. with a sense number higher than 1.
+
+Finally, we also make use of a well-known principle called one word per discourse BIBREF19 , which states that a polysemous word is very unlikely to take different meanings in a single document. In this study, the principle is employed in the following way: if in a single document there appear only relatives corresponding to a single target word sense, then all occurrences of the target word in this document are also treated as training examples for this meaning.
+
+One can easily see that these assumptions are false in many cases, which may introduce noise and deteriorate a resulting model. Thus, the presented solutions undergo experimental validation using the following sets of relatives:
+
+Monosemous children – monosemous direct hyponyms.
+
+Monosemous relatives – monosemous synonyms, direct hyponyms and direct hypernyms.
+
+First relatives – words in the first meaning belonging to synsets of synonyms, direct hyponyms or direct hypernyms.
+
+Word determiners – collocations made of two words in any order: the target word and a determiner associated with a given meaning.
+
+All determiners – collocations made of two words in any order: a polysemous relative and a determiner associated with the appropriate meaning.
+
+Other words – occurrences of the target ambiguous word in a document that contains other relatives corresponding to exactly one of the meanings.
+
+Table TABREF23 shows how many relatives have been obtained for each category, as well as the number of occurrences in the corpus of 6 million documents (see next section).
+
+Corpus
+
+As some of the relatives may be very rare, it is important to use a training corpus of significant size. In this case, we used 600 million webpages (594 billion tokens) indexed by a Polish search engine NEKST, developed at the Institute of Computer Science, Polish Academy of Sciences. Training sub-corpora were selected with size varying from 19,000 to 60 million documents. Instead of using snippets returned by a search interface, we use whole textual contents (with morphosyntactic annotation) of each document, taken from NEKST distributed infrastructure.
+
+Unfortunately, a lot of text on web pages is not suitable for training a WSD classifier, for example elements of page structure or parts unrecognised by a tagger. Thus, each sentence has to satisfy the following requirements to qualify for training:
+
+be at least 150-character long.
+
+contain at least five words.
+
+contain at least four different parts of speech (including punctuation).
+
+These criteria help to filter out most of the web content of unsatisfactory quality.
+
+Features
+
+Context features extracted for classification are very similar to those that have proven successful in supervised WSD, including experiments on the same evaluation set BIBREF20 :
+
+words present at certain positions in a neighbourhood of a target word:
+
+lemmas at positions: -2, -1, 1, 2 (denoted by INLINEFORM0 ),
+
+morphosyntactic interpretations (sequences of tags) at positions: -1, 1 (denoted by INLINEFORM0 ) and 0 (denoted by INLINEFORM1 ),
+
+lemmas present in the sentence (denoted by INLINEFORM0 ).
+
+Note that the morphosyntactic interpretations are assigned to single words only, therefore in case of multi-word relatives INLINEFORM0 is not available. Also, a gender tag is removed from INLINEFORM1 .
+
+Classification
+
+After gathering the values of features from occurrences of relatives, a naïve Bayesian classification model is built. However, as many researchers in the field have noticed BIBREF13 , BIBREF9 , BIBREF11 , there is a major drawback of using relatives instead of a target word: the number of occurrences of relatives is usually not proportional to the frequency of the target word sense. To bypass this problem, we modify the Bayesian model in this study. The basic classifier chooses the class that maximises the following probability: INLINEFORM0
+
+In the case of binary features, which represent the occurrence of a certain word in context, we have INLINEFORM0 and: INLINEFORM1
+
+Which could be rewritten as: INLINEFORM0
+
+The expression has been formulated as a product of two factors: INLINEFORM0 , independent from observed features and corresponding to empty word context, and INLINEFORM1 that depends on observed context. To weaken the influence of improper distribution of training cases, we omit INLINEFORM2 , so that when no context features are observed, every word sense is considered equally probable.
+
+Thus, for the given context features INLINEFORM0 , sense INLINEFORM1 is selected when: INLINEFORM2
+
+The table with final results ( TABREF27 ) contains accuracies of both original and modified versions of the classifier.
+
+Evaluation
+
+For experiments and evaluation a sub-corpus of the National Corpus of Polish, NCP BIBREF6 was employed. The manually annotated sub-corpus contains sense labels of 106 different words: 50 nouns, 48 verbs and 8 adjectives. As verbs have much poorer connectivity in plWordNet, they have been ignored within this study.
+
+The senses used for annotation are coarse-grained – with one sense covering a range of related usages. Each word has between two and four senses. To employ the method described in previous section, the NCP senses have been manually mapped to fine-grained plWordNet synsets. As NCP senses have been created independently from wordnet senses, a substantial part of the latter remain uncovered by the former. However, we only found four cases where an NCP sense has no counterpart in wordnet; those words are excluded from the test set.
+
+In total, the test set includes 17,314 occurrences of 54 ambiguous words, having two to four coarse-grained meanings. Table TABREF26 contains a detailed summary.
+
+The algorithm works using plWordNet synsets and its output is mapped to NCP meaning to measure its quality. Accuracy measures what percentage of the programme's guesses agree with manually assigned senses. To assess the general performance of a particular configuration, the accuracy has been averaged over all target words.
+
+To properly judge the results, we need to start with the baselines. Without knowing the distribution of senses, three basic possibilities seem reasonable: we can either 1) select a meaning randomly, 2) base on the sense numbering in NCP or 3) use plWordNet in the same way. To have a better comparison with ontology-based methods, the results also include a word similarity baseline configuration, which selects the sense with the strongest similarity to any of the words in context (sentence). For that purpose the Leacock&Chodorow similarity measure (implemented using all relations between synsets in plWordNet) is employed, as it has been previously used in WSD BIBREF21 and also correlates well with human judgement of similarity BIBREF22 . The baseline results, shown in Table TABREF27 , support the claim of intentional sense ordering in plWordNet.
+
+Results
+
+The goal of the first experiment was to select an optimal feature set for this task. Several models with a common basic configuration, i.e. using all possible relatives and 6 million documents, have been built with different feature sets and evaluated. The results are shown in Table TABREF22 . As we can see, the lexical features give us more predictive power than morphological interpretations. The best solution, incorporated into the basic configuration for further experiments, includes all features except these based on the interpretation of the word in focus.
+
+Secondly, it is necessary to evaluate different types of replacements, outlined in section SECREF2 . Table TABREF23 contains the average number of possible replacements per target word, the number of occurrences in the six-million corpus and the average classification accuracy. As we can see, the number of replacements rises after adding subsequent sources, but the largest increase is caused by including polysemous relatives with determiners. On the other hand, these compound relatives rarely appear in the corpus (13,126 occurences), whereas employing polysemous words in the first sense results in 1,525,739 new training cases and a substantial growth of accuracy. What is more, although the profits from these sources of relatives differ, none of them decreases the accuracy.
+
+The availability of the corpus containing 600 million documents helps to answer the question of sufficient corpus size for such task. Figure FIGREF24 shows mean classification accuracy for models built using different training corpora, which have been created by randomly selecting a subset of the original document set. The considered sizes are between 19,000 and 60,000,000. Additionally, a different type of corpora has been created by using only documents from the Polish Wikipedia (sizes 11,000 – 1,098,000). We see that after a certain point adding in new data does not improve the accuracy. Surprisingly, the subcorpora of Wikipedia yield worse results than those of unlimited origin.
+
+Table TABREF26 shows the accuracy of disambiguation in the configuration outlined above with respect to the target word. The easiest words have meanings corresponding to distinct physical objects, e.g. in Polish piłka (100% accuracy) may mean a ball or a small saw. The hardest cases are those with many abstract and fuzzy meanings, e.g. in Polish klasa has four meanings related to English class: (1) group of similar objects, (2) level of quality, (3) group of pupils or (4) classroom. The meaning (1) could be hard to distinguish from (2) even for a human, whereas (3) and (4) may appear in very similar contexts.
+
+Finally, Table TABREF27 contains the mean accuracy of the basic configuration of the classifier described in this work (with and without modifications to Bayesian model). It is compared to the four previously mentioned baselines.
+
+Discussion
+
+Although many different configurations have been tested in this study, all of them remain below the accuracy level of 80%, approximately equal to average share of dominating senses in this dataset. This is obviously unsatisfactory and demands explanation.
+
+First of all, the new sources of replacements proposed in this work indeed seem to improve the models from 70.86% (only traditional monosemous relatives) to 77.96% (all proposed relatives). The biggest gain is obtained by including the polysemous relatives taking into account only their first meaning. This technique relies on two assumptions: a strong domination of one of the senses and that sense being listed first in plWordNet. While the former is almost always true, if the second assumption is false then the created model are adversely affected. In the case of two target words the senses, the first sense in each case (stopień as a musical concept and forma as a synonym of polynomial) was so peculiar that they were unknown to the author of this study and couldn't be assigned to any of the coarse-grained NCP senses. Clearly, not only the method of unsupervised WSD using relatives, but also other solutions related to polysemy would definitely benefit from a reliable ordering of senses in wordnets, especially as increasingly uncommon senses are added to them with time. It is however not clear how such knowledge could be obtained without solving the WSD task first. What is more, sense distributions obviously change with genre, time, author, etc.
+
+When it comes to feature selection, the most unexpected phenomenon observed in this study is low usefulness of the interpretation-based features. According to Table TABREF22 , adding interpretations of neighbouring words ( INLINEFORM0 ) yields very little improvement, while this type of information regarding replacements ( INLINEFORM1 ) even lowers the accuracy. This result could be attributed to two factors. Firstly, more developed replacement generation results in more occurrences, but also causes their tags to differ from the target word by gender or number. They may even not be available at all (in the case of multi-word replacements). The second reason is a difference in language: while in English a word interpretation is represented as one of several dozen part of speech identifiers, in Slavonic languages, such as Polish, we need to specify the values of several tags for each word, leading to thousands of possible interpretations. Obviously, the features based on these tags are very sparse. Finally, the morphosyntactic annotation was performed automatically, which may lead to errors, especially in the case of noisy web text.
+
+One of the purposes of this study was to check the necessary amount of training data for such a solution by employing a very large collection from the NEKST search engine. The need for large corpora is obvious when using only monosemous relatives – those usually rare words should appear in many contexts. However, according to the results shown in Figure FIGREF24 , the strategy for generating relatives presented in this paper reaches optimum performance for a reasonable amount of texts – 6 million documents is enough. However, one should keep in mind that this statement remains true assuming a constant evaluation environment; expanding a test set (currently containing 17,314 occurrences) may help to see differences between apparently equivalent models and raise the need for bigger corpora.
+
+Conclusions
+
+In this paper the limitations and improvements of unsupervised word sense disambiguation have been investigated. The main problem – insufficient number and quality of replacements has been tackled by adding new rich sources of replacements. The quality of the models has indeed improved, especially thanks to replacements based on sense ordering in plWordNet. To deal with the problem of unknown sense distribution, the Bayesian classifier has been modified, removing the bias towards frequent labels in the training data. Finally, the experiments with very large corpus have shown the sufficient amount of training data for this task, which is only 6 million documents.
+
+Acknowledgements
+
+This study was conducted at Institute of Computer Science, Polish Academy of Sciences, and supported by a research fellowship within "Information technologies: research and their interdisciplinary applications" agreement number POKL.04.01.01-00-051/10-00. The author would like to thank Dariusz Czerski and NEKST team for providing access to the search engine index and helpful discussions and Matthew Shardlow for comments that greatly improved the manuscript.

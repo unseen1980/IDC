@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Outputs
+/out/
+*.npy
+*.jsonl
+
+# Temporary files
+*.tmp
+*.log
+
+# Claude/AI tools
+.claude-flow
+.serena/
+.memory/

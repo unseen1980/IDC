@@ -1,0 +1,51 @@
+Introduction
+
+Pretrained language models like Transformer-XL BIBREF1, ELMo BIBREF2 and BERT BIBREF3 have emerged as universal tools that capture a diverse range of linguistic and factual knowledge.
+
+Recently, BIBREF0 introduced LAMA (LAnguage Model Analysis) to investigate to what extent pretrained language models have the capacity to recall factual knowledge without the use of fine-tuning. The training objective of pretrained language models is to predict masked tokens in a sequence. With this “fill-in-the-blank” scheme, question answering tasks can be reformulated as cloze statements. For example, “Who developed the theory of relativity?” is reformulated as “The theory of relativity was developed by [MASK].”. This setup allows for unsupervised open domain question answering. BIBREF0 find that, on this task, pretrained language models outperform supervised baselines using traditional knowledge bases with access to oracle knowledge.
+
+This work analyzes the understanding of pretrained language models of factual and commonsense knowledge stored in negated statements. To this end, we introduce the negated LAMA dataset. We construct it by simply inserting negation elements (e.g., “not”) in LAMA cloze statement (e.g., “The theory of relativity was not developed by [MASK].”). In our experiments, we query the pretrained language models with both original LAMA and negated LAMA statements and compare their predictions in terms of rank correlation and overlap of top predictions. We find that the predicted filler words often have high overlap. Thus, negating a cloze statement does not change the predictions in many cases – but of course it should as our example “birds can fly” vs. “birds cannot fly” shows. We identify and analyze a subset of cloze statements where predictions are different. We find that BERT handles negation best among pretrained language models, but it still fails badly on most negated statements.
+
+Data
+
+A cloze statement is generated from a subject-relation-object triple from a knowledge base and from a templatic statement for the relation that contains variables X and Y for subject and object (e.g, “X was born in Y”). We then substitute the subject for X and MASK for Y. The triples are chosen such that Y is always a single-token answer.
+
+LAMA covers different sources: The Google-RE set covers the three relations “place of birth”, “date of birth” and “place of death”. T-REx BIBREF4 consists of a subset of Wikidata triples covering 41 relations. ConceptNet BIBREF5 combines 16 commonsense relationships between words and/or phrases. The underlying Open Mind Common Sense corpus provides matching statements to query the language model. SQuAD BIBREF6 is a standard question answering dataset. LAMA contains a subset of 305 context-insensitive questions and provides manually reformulated cloze-style statements to query the model.
+
+We created negated versions of Google-RE, T-REx and SQuAD by manually inserting a negation element in each template or statement. We did the same for a subset of ConceptNet that is easy to negate. We selected this subset by filtering for sentence length and extracting common queries.
+
+Models
+
+We use the source code provided by BIBREF0 and BIBREF7 and evaluate using Transformer-XL large (Txl), ELMo original (Eb), ELMo 5.5B (E5B), BERT-base (Bb) and BERT-large (Bl).
+
+Results
+
+Table TABREF1 compares the predictions of original LAMA and negated LAMA. As true answers of the negated statements are highly ambiguous, our measures are spearman rank correlation and overlap in rank 1 predictions between the original and negated dataset. Table TABREF4 gives examples of BERT-large predictions.
+
+We observe rank correlations of more than 0.85 in most cases and a high overlap in first ranked predictions like: “Birds can fly.” and “Birds cannot fly.”. BERT has slightly better results than the other models.
+
+Our interpretation of the results is that BERT mostly did not learn the meaning of negation. The impressive results in QA suggest that pretrained language models are able to memorize aspects of specific facts; but, apparently, they ignore negation markers in many cases and rely on the co-occurrence of the subject with the original relation only. One reason for the poor performance we observe probably is that negated statements occur much less in training corpora than positive statements.
+
+A key problem is that the LAMA setup does not allow to refrain from giving an answer. Generally, prediction probabilities drop in the negated statements, which would suggest the existence of a threshold to filter answers. But a closer look at the probabilities of correct and incorrect predictions shows that they fall into the same range. No common threshold can be found.
+
+Given that negation has little effect on most queries, it is interesting to look at the small number of queries where pretrained language models make correct predictions, i.e., they solve the cloze task as a human subject would do. We give two examples of such patterns. The pattern “X did not die in Y” always results in the generic top ranked predictions: “battle”, “office”, “prison” whereas the original pattern is likely to rank cities first. This seems appropriate since a statement of the form, say, “X did not die in New York” is rare in text corpora, but statements characterizing the situation in which the death occurred (“he did not die in prison”) sound more natural. For the template “X was born in Y”, cities are predicted. In contrast, for “X was not born in Y”, countries are predicted. Both times it refers to a more specific statement, more likely to occur in the training corpus. People would refer more often to a person being born in a city and not born in a country, giving you in both cases more precise information.
+
+Related Work
+
+Pretrained embeddings have pushed baselines on a variety of question answering datasets BIBREF8, BIBREF9. Generally, the pretrained models are fine-tuned to the specific task BIBREF10, BIBREF3 but recent work has applied the models without the fine-tuning step BIBREF11, BIBREF0.
+
+There is a wide range of literature analyzing linguistic knowledge stored in pretrained embeddings BIBREF12, BIBREF13, BIBREF14, BIBREF15, BIBREF16, BIBREF17, BIBREF18, BIBREF19.
+
+Concerning negation the following papers are of interest: BIBREF20 analyze the grammatical knowledge captured by BERT. In a case study, they test for correct licensing environments for negative polarity items. They study a set of classifiers distinguishing between grammatically correct and incorrect sentences. We take a different approach by focusing on factual knowledge stored in negated statements. Grammatically correct statements can still be factually false (e.g., “General relativity, Newton develop”).
+
+BIBREF21 investigate the understanding of function words – among them negation particles – using an entailment- and classification-based approach. They analyze the ability of different model architectures and training objectives to capture knowledge of single sentences. The models are fine-tuned to the task of interest. We on the other hand question to what extend factual knowledge present in negated statements is indirectly acquired during pretraining.
+
+BIBREF22 defines three psycholinguistic diagnostics for language models and applies them in a case study to BERT. Negation is examined using a dataset of 72 simple sentences querying for category membership. A supplementary dataset of 16 sentences queries again for the "to be" relation only but including more natural sentence structure. Our work covers 51,329 negated statements covering a wide range of topics and relations. In the SQuAD based dataset we cover more natural language in terms of context and relation. In contrast to BIBREF22, we do not see a reliable preference of the true completions to false in the more natural negated statements.
+
+BIBREF23 test for comprehension of minimally modified statements in an adversarial setup while trying to keep the overall semantics the same. We try to maximize the change in semantics and invert meaning.
+
+Conclusion
+
+We show that pretrained language models have problems handling negation. Output predictions for the original LAMA query and the negated statement are highly correlated.
+
+Even though this elegant approach of querying a language model without fine-tuning allows for truly open domain question answering, promoting an answer no matter what is not always the better solution. Refraining from giving an answer can be more appropriate, making knowledge graphs currently a more reliable choice for question answering.

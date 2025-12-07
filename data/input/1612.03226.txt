@@ -1,0 +1,63 @@
+Introduction
+
+State-of-the-art automatic speech recognition (ASR) systems BIBREF0 have large model capacities and require significant quantities of training data to generalize. Labeling thousands of hours of audio, however, is expensive and time-consuming. A natural question to ask is how to achieve better generalization with fewer training examples. Active learning studies this problem by identifying and labeling only the most informative data, potentially reducing sample complexity. How much active learning can help in large-scale, end-to-end ASR systems, however, is still an open question.
+
+The speech recognition community has generally identified the informativeness of samples by calculating confidence scores. In particular, an utterance is considered informative if the most likely prediction has small probability BIBREF1 , or if the predictions are distributed very uniformly over the labels BIBREF2 . Though confidence-based measures work well in practice, less attention has been focused on gradient-based methods like Expected Gradient Length (EGL) BIBREF3 , where the informativeness is measured by the norm of the gradient incurred by the instance. EGL has previously been justified as intuitively measuring the expected change in a model's parameters BIBREF3 .We formalize this intuition from the perspective of asymptotic variance reduction, and experimentally, we show EGL to be superior to confidence-based methods on speech recognition tasks. Additionally, we observe that the ranking of samples scored by EGL is not correlated with that of confidence scoring, suggesting EGL identifies aspects of an instance that confidence scores cannot capture.
+
+In BIBREF3 , EGL was applied to active learning on sequence labeling tasks, but our work is the first we know of to apply EGL to speech recognition in particular. Gradient-based methods have also found applications outside active learning. For example, BIBREF4 suggests that in stochastic gradient descent, sampling training instances with probabilities proportional to their gradient lengths can speed up convergence. From the perspective of variance reduction, this importance sampling problem shares many similarities to problems found in active learning.
+
+Problem Formulation
+
+Denote INLINEFORM0 as an utterance and INLINEFORM1 the corresponding label (transcription). A speech recognition system models the conditional distribution INLINEFORM2 , where INLINEFORM3 are the parameters in the model, and INLINEFORM4 is typically implemented by a Recurrent Neural Network (RNN). A training set is a collection of INLINEFORM5 pairs, denoted as INLINEFORM6 . The parameters of the model are estimated by minimizing the negative log-likelihood on the training set: DISPLAYFORM0
+
+Active learning seeks to augment the training set with a new set of utterances and labels INLINEFORM0 in order to achieve good generalization on a held-out test dataset. In many applications, there is an unlabeled pool INLINEFORM1 which is costly to label in its entirety. INLINEFORM2 is queried for the “most informative” instance(s) INLINEFORM3 , for which the label(s) INLINEFORM4 are then obtained. We discuss several such query strategies below.
+
+Confidence Scores
+
+Confidence scoring has been used extensively as a proxy for the informativeness of training samples. Specifically, an INLINEFORM0 is considered informative if the predictions are uniformly distributed over all the labels BIBREF2 , or if the best prediction of its label is with low probability BIBREF1 . By taking the instances which “confuse” the model, these methods may effectively explore under-sampled regions of the input space.
+
+Expected Gradient Length
+
+Intuitively, an instance can be considered informative if it results in large changes in model parameters. A natural measure of the change is gradient length, INLINEFORM0 . Motivated by this intuition, Expected Gradient Length (EGL) BIBREF3 picks the instances expected to have the largest gradient length. Since labels are unknown on INLINEFORM1 , EGL computes the expectation of the gradient norm over all possible labelings. BIBREF3 interprets EGL as “expected model change”. In the following section, we formalize the intuition for EGL and show that it follows naturally from reducing the variance of an estimator.
+
+Variance in the Asymptote
+
+Assume the joint distribution of INLINEFORM0 has the following form, DISPLAYFORM0
+
+where INLINEFORM0 is the true parameter, and INLINEFORM1 is independent of INLINEFORM2 . By selecting a subset of the training data, we are essentially choosing another distribution INLINEFORM3 so that the INLINEFORM4 pairs are drawn from INLINEFORM5
+
+Statistical signal processing theory BIBREF5 states the following asymptotic distribution of INLINEFORM0 , DISPLAYFORM0
+
+where INLINEFORM0 is the Fisher Information Matrix with respect to INLINEFORM1 . Using first order approximation at INLINEFORM2 , we have asymptotically, DISPLAYFORM0
+
+Eq. ( EQREF7 ) indicates that to reduce INLINEFORM0 on test data, we need to minimize the expected variance INLINEFORM1 over the test set. This is called Fisher Information Ratio criteria in BIBREF6 , which itself is hard to optimize. An easier surrogate is to maximize INLINEFORM2 . Substituting Eq. ( EQREF5 ) into INLINEFORM3 , we have INLINEFORM4
+
+which is equivalent to INLINEFORM0
+
+A practical issue is that we do not know INLINEFORM0 in advance. We could instead substitute an estimate INLINEFORM1 from a pre-trained model, where it is reasonable to assume the INLINEFORM2 to be close to the true INLINEFORM3 . The batch selection then works by taking the samples that have largest gradient norms, DISPLAYFORM0
+
+For RNNs, the gradients for each potential label can be obtained by back-propagation. Another practical issue is that EGL marginalizes over all possible labelings, but in speech recognition, the number of labelings scales exponentially in the number of timesteps. Therefore, we only marginalize over the INLINEFORM0 most probable labelings. They are obtained by beam search decoding, as in BIBREF7 . The EGL method in BIBREF3 is almost the same as Eq. ( EQREF8 ), except the gradient's norm is not squared in BIBREF3 .
+
+Here we have provided a more formal characterization of EGL to complement its intuitive interpretation as “expected model change” in BIBREF3 . For notational convenience, we denote Eq. ( EQREF8 ) as EGL in subsequent sections.
+
+Experiments
+
+We empirically validate EGL on speech recognition tasks. In our experiments, the RNN takes in spectrograms of utterances, passing them through two 2D-convolutional layers, followed by seven bi-directional recurrent layers and a fully-connected layer with softmax activation. All recurrent layers are batch normalized. At each timestep, the softmax activations give a probability distribution over the characters. CTC loss BIBREF8 is then computed from the timestep-wise probabilities.
+
+A base model, INLINEFORM0 , is trained on 190 hours ( INLINEFORM1 100K instances) of transcribed speech data. Then, it selects a subset of a 1,700-hour ( INLINEFORM2 1.1M instances) unlabeled dataset. We query labels for the selected subset and incorporate them into training. Learning rates are tuned on a small validation set of 2048 instances. The trained model is then tested on a 156-hour ( INLINEFORM3 100K instances) test set and we report CTC loss, Character Error Rate (CER) and Word Error Rate (WER).
+
+The confidence score methods BIBREF1 , BIBREF2 can be easily extended to our setup. Specifically, from the probabilities over the characters, we can compute an entropy per timestep and then average them. This method is denoted as entropy. We could also take the most likely prediction and calculate its CTC loss, normalized by number of timesteps. This method is denoted as pCTC (predicted CTC) in the following sections.
+
+We implement EGL by marginalizing over the most likely 100 labels, and compare it with: 1) a random selection baseline, 2) entropy, and 3) pCTC. Using the same base model, each method queries a variable percentage of the unlabeled dataset. The queries are then included into training set, and the model continues training until convergence. Fig. FIGREF9 reports the metrics (Exact values are reported in Table TABREF12 in the Appendix) on the test set as the query percentage varies. All the active learning methods outperform the random baseline. Moreover, EGL shows a steeper, more rapid reduction in error than all other approaches. Specifically, when querying 20% of the unlabeled dataset, EGL has 11.58% lower CER and 11.09% lower WER relative to random. The performance of EGL at querying 20% is on par with random at 40%, suggesting that using EGL can lead to an approximate 50% decrease in data labeling.
+
+Similarity between Query Methods
+
+It is useful to understand how the three active learning methods differ in measuring the informativeness of an instance. To compare any two methods, we take rankings of informativeness given by these two methods, and plot them in a 2-D ranking-vs-ranking coordinate system. A plot close to the diagonal implies that these two methods evaluate informativeness in a very similar way.
+
+Fig. FIGREF11 shows the ranking-vs-ranking plots between pCTC and entropy, EGL and entropy. We observe that pCTC rankings and entropy rankings (Fig. FIGREF11 ) are very correlated. This is likely because they are both related to model uncertainty. In contrast, EGL gives very different rankings from entropy (Fig. FIGREF11 ). This suggests EGL is able to identify aspects of an instance that uncertainty-based measurements cannot capture.
+
+We further investigate the samples for which EGL and entropy yield vastly different estimates of informativeness, e.g., the elements in the red circle in Fig. FIGREF11 . These particular samples consist of short utterances containing silence (with background noise) or filler words. Further investigation is required to understand whether these samples are noisy outliers or whether they are in fact important for training end-to-end speech recognition systems.
+
+Conclusion and Future Work
+
+We formally explained EGL from a variance reduction perspective and experimentally tested its performance on end-to-end speech recognition systems. Initial experiments show a notable gain over random selection, and that it outperforms confidence score methods used in the ASR community. We also show EGL measures sample informativeness in a very different way from confidence scores, giving rise to open research questions. All the experiments reported here query all samples in a single batch. It is also worth considering the effects of querying samples in a sequential manner. In the future, we will further validate the approach with sequential queries and seek to make the informativeness measure robust to outliers.

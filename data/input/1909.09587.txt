@@ -1,0 +1,91 @@
+Introduction
+
+Reading Comprehension (RC) has become a central task in natural language processing, with great practical value in various industries. In recent years, many large-scale RC datasets in English BIBREF0, BIBREF1, BIBREF2, BIBREF3, BIBREF4, BIBREF5, BIBREF6 have nourished the development of numerous powerful and diverse RC models BIBREF7, BIBREF8, BIBREF9, BIBREF10, BIBREF11. The state-of-the-art model BIBREF12 on SQuAD, one of the most widely used RC benchmarks, even surpasses human-level performance. Nonetheless, RC on languages other than English has been limited due to the absence of sufficient training data. Although some efforts have been made to create RC datasets for Chinese BIBREF13, BIBREF14 and Korean BIBREF15, it is not feasible to collect RC datasets for every language since annotation efforts to collect a new RC dataset are often far from trivial. Therefore, the setup of transfer learning, especially zero-shot learning, is of extraordinary importance.
+
+Existing methods BIBREF16 of cross-lingual transfer learning on RC datasets often count on machine translation (MT) to translate data from source language into target language, or vice versa. These methods may not require a well-annotated RC dataset for the target language, whereas a high-quality MT model is needed as a trade-off, which might not be available when it comes to low-resource languages.
+
+In this paper, we leverage pre-trained multilingual language representation, for example, BERT learned from multilingual un-annotated sentences (multi-BERT), in cross-lingual zero-shot RC. We fine-tune multi-BERT on the training set in source language, then test the model in target language, with a number of combinations of source-target language pair to explore the cross-lingual ability of multi-BERT. Surprisingly, we find that the models have the ability to transfer between low lexical similarity language pair, such as English and Chinese. Recent studies BIBREF17, BIBREF12, BIBREF18 show that cross-lingual language models have the ability to enable preliminary zero-shot transfer on simple natural language understanding tasks, but zero-shot transfer of RC has not been studied. To our knowledge, this is the first work systematically exploring the cross-lingual transferring ability of multi-BERT on RC tasks.
+
+Zero-shot Transfer with Multi-BERT
+
+Multi-BERT has showcased its ability to enable cross-lingual zero-shot learning on the natural language understanding tasks including XNLI BIBREF19, NER, POS, Dependency Parsing, and so on. We now seek to know if a pre-trained multi-BERT has ability to solve RC tasks in the zero-shot setting.
+
+Zero-shot Transfer with Multi-BERT ::: Experimental Setup and Data
+
+We have training and testing sets in three different languages: English, Chinese and Korean. The English dataset is SQuAD BIBREF2. The Chinese dataset is DRCD BIBREF14, a Chinese RC dataset with 30,000+ examples in the training set and 10,000+ examples in the development set. The Korean dataset is KorQuAD BIBREF15, a Korean RC dataset with 60,000+ examples in the training set and 10,000+ examples in the development set, created in exactly the same procedure as SQuAD. We always use the development sets of SQuAD, DRCD and KorQuAD for testing since the testing sets of the corpora have not been released yet.
+
+Next, to construct a diverse cross-lingual RC dataset with compromised quality, we translated the English and Chinese datasets into more languages, with Google Translate. An obvious issue with this method is that some examples might no longer have a recoverable span. To solve the problem, we use fuzzy matching to find the most possible answer, which calculates minimal edit distance between translated answer and all possible spans. If the minimal edit distance is larger than min(10, lengths of translated answer - 1), we drop the examples during training, and treat them as noise when testing. In this way, we can recover more than 95% of examples. The following generated datasets are recovered with same setting.
+
+The pre-trained multi-BERT is the official released one. This multi-lingual version of BERT were pre-trained on corpus in 104 languages. Data in different languages were simply mixed in batches while pre-training, without additional effort to align between languages. When fine-tuning, we simply adopted the official training script of BERT, with default hyperparameters, to fine-tune each model until training loss converged.
+
+Zero-shot Transfer with Multi-BERT ::: Experimental Results
+
+Table TABREF6 shows the result of different models trained on either Chinese or English and tested on Chinese. In row (f), multi-BERT is fine-tuned on English but tested on Chinese, which achieves competitive performance compared with QANet trained on Chinese. We also find that multi-BERT trained on English has relatively lower EM compared with the model with comparable F1 scores. This shows that the model learned with zero-shot can roughly identify the answer spans in context but less accurate. In row (c), we fine-tuned a BERT model pre-trained on English monolingual corpus (English BERT) on Chinese RC training data directly by appending fastText-initialized Chinese word embeddings to the original word embeddings of English-BERT. Its F1 score is even lower than that of zero-shot transferring multi-BERT (rows (c) v.s. (e)). The result implies multi-BERT does acquire better cross-lingual capability through pre-training on multilingual corpus. Table TABREF8 shows the results of multi-BERT fine-tuned on different languages and then tested on English , Chinese and Korean. The top half of the table shows the results of training data without translation. It is not surprising that when the training and testing sets are in the same language, the best results are achieved, and multi-BERT shows transfer capability when training and testing sets are in different languages, especially between Chinese and Korean.
+
+In the lower half of Table TABREF8, the results are obtained by the translated training data. First, we found that when testing on English and Chinese, translation always degrades the performance (En v.s. En-XX, Zh v.s. Zh-XX). Even though we translate the training data into the same language as testing data, using the untranslated data still yield better results. For example, when testing on English, the F1 score of the model training on Chinese (Zh) is 53.8, while the F1 score is only 44.1 for the model training on Zh-En. This shows that translation degrades the quality of data. There are some exceptions when testing on Korean. Translating the English training data into Chinese, Japanese and Korean still improve the performance on Korean. We also found that when translated into the same language, the English training data is always better than the Chinese data (En-XX v.s. Zh-XX), with only one exception (En-Fr v.s. Zh-Fr when testing on KorQuAD). This may be because we have less Chinese training data than English. These results show that the quality and the size of dataset are much more important than whether the training and testing are in the same language or not.
+
+Zero-shot Transfer with Multi-BERT ::: Discussion ::: The Effect of Machine Translation
+
+Table TABREF8 shows that fine-tuning on un-translated target language data achieves much better performance than data translated into the target language. Because the above statement is true across all the languages, it is a strong evidence that translation degrades the performance.We notice that the translated corpus and untranslated corpus are not the same. This may be another factor that influences the results. Conducting an experiment between un-translated and back-translated data may deal with this problem.
+
+Zero-shot Transfer with Multi-BERT ::: Discussion ::: The Effect of Other Factors
+
+Here we discuss the case that the training data are translated. We consider each result is affected by at least three factors: (1) training corpus, (2) data size, (3) whether the source corpus is translated into the target language. To study the effect of data-size, we conducted an extra experiment where we down-sampled the size of English data to be the same as Chinese corpus, and used the down-sampled corpus to train. Then We carried out one-way ANOVA test and found out the significance of the three factors are ranked as below: (1) > (2) >> (3). The analysis supports that the characteristics of training data is more important than translated into target language or not. Therefore, although translation degrades the performance, whether translating the corpus into the target language is not critical.
+
+What Does Zero-shot Transfer Model Learn? ::: Unseen Language Dataset
+
+It has been shown that extractive QA tasks like SQuAD may be tackled by some language independent strategies, for example, matching words in questions and context BIBREF20. Is zero-shot learning feasible because the model simply learns this kind of language independent strategies on one language and apply to the other?
+
+To verify whether multi-BERT largely counts on a language independent strategy, we test the model on the languages unseen during pre-training. To make sure the languages have never been seen before, we artificially make unseen languages by permuting the whole vocabulary of existing languages. That is, all the words in the sentences of a specific language are replaced by other words in the same language to form the sentences in the created unseen language. It is assumed that if multi-BERT used to find answers by language independent strategy, then multi-BERT should also do well on unseen languages. Table TABREF14 shows that the performance of multi-BERT drops drastically on the dataset. It implies that multi-BERT might not totally rely on pattern matching when finding answers.
+
+What Does Zero-shot Transfer Model Learn? ::: Embedding in Multi-BERT
+
+PCA projection of hidden representations of the last layer of multi-BERT before and after fine-tuning are shown in Fig. FIGREF15. The red points represent Chinese tokens, and the blue points are for English. The results show that tokens from different languages might be embedded into the same space with close spatial distribution. Even though during the fine-tuning only the English data is used, the embedding of the Chinese token changed accordingly. We also quantitatively evaluate the similarities between the embedding of the languages. The results can be found in the Appendix.
+
+What Does Zero-shot Transfer Model Learn? ::: Code-switching Dataset
+
+We observe linguistic-agnostic representations in the last subsection. If tokens are represented in a language-agnostic way, the model may be able to handle code-switching data. Because there is no code-switching data for RC, we create artificial code-switching datasets by replacing some of the words in contexts or questions with their synonyms in another language. The synonyms are found by word-by-word translation with given dictionaries. We use the bilingual dictionaries collected and released in facebookresearch/MUSE GitHub repository. We substitute the words if and only if the words are in the bilingual dictionaries.
+
+Table TABREF14 shows that on all the code-switching datasets, the EM/F1 score drops, indicating that the semantics of representations are not totally disentangled from language. However, the examples of the answers of the model (Table TABREF21) show that multi-BERT could find the correct answer spans although some keywords in the spans have been translated into another language.
+
+What Does Zero-shot Transfer Model Learn? ::: Typology-manipulated Dataset
+
+There are various types of typology in languages. For example, in English the typology order is subject-verb-object (SVO) order, but in Japanese and Korean the order is subject-object-verb (SOV). We construct a typology-manipulated dataset to examine if the typology order of the training data influences the transfer learning results. If the model only learns the semantic mapping between different languages, changing English typology order from SVO to SOV should improve the transfer ability from English to Japanese. The method used to generate datasets is the same as BIBREF21.
+
+The source code is from a GitHub repository named Shaul1321/rnn_typology, which labels given sentences to CoNLL format with StanfordCoreNLP and then re-arranges them greedily.
+
+Table TABREF23 shows that when we change the English typology order to SOV or OSV order, the performance on Korean is improved and worsen on English and Chinese, but very slightly. The results show that the typology manipulation on the training set has little influence. It is possible that multi-BERT normalizes the typology order of different languages to some extent.
+
+Conclusion
+
+In this paper, we systematically explore zero-shot cross-lingual transfer learning on RC with multi-BERT. The experimental results on English, Chinese and Korean corpora show that even when the languages for training and testing are different, reasonable performance can be obtained. Furthermore, we created several artificial data to study the cross-lingual ability of multi-BERT in the presence of typology variation and code-switching. We showed that only token-level pattern matching is not sufficient for multi-BERT to answer questions and typology variation and code-switching only caused minor effects on testing performance.
+
+Supplemental Material ::: Internal Representation of multi-BERT
+
+The architecture of multi-BERT is a Transformer encoder BIBREF25. While fine-tuning on SQuAD-like dataset, the bottom layers of multi-BERT are initialized from Google-pretrained parameters, with an added output layer initialized from random parameters. Tokens representations from the last layer of bottom-part of multi-BERT are inputs to the output layer and then the output layer outputs a distribution over all tokens that indicates the probability of a token being the START/END of an answer span.
+
+Supplemental Material ::: Internal Representation of multi-BERT ::: Cosine Similarity
+
+As all translated versions of SQuAD/DRCD are parallel to each other. Given a source-target language pair, we calculate cosine similarity of the mean pooling of tokens representation within corresponding answer-span as a measure of how much they look like in terms of the internal representation of multi-BERT. The results are shown in Fig. FIGREF26.
+
+Supplemental Material ::: Internal Representation of multi-BERT ::: SVCCA
+
+Singular Vector Canonical Correlation Analysis (SVCCA) is a general method to compare the correlation of two sets of vector representations. SVCCA has been proposed to compare learned representations across language models BIBREF24. Here we adopt SVCCA to measure the linear similarity of two sets of representations in the same multi-BERT from different translated datasets, which are parallel to each other. The results are shown in Fig FIGREF28.
+
+Supplemental Material ::: Improve Transfering
+
+In the paper, we show that internal representations of multi-BERT are linear-mappable to some extent between different languages. This implies that multi-BERT model might encode semantic and syntactic information in language-agnostic ways and explains how zero-shot transfer learning could be done.
+
+To take a step further, while transfering model from source dataset to target dataset, we align representations in two proposed way, to improve performance on target dataset.
+
+Supplemental Material ::: Improve Transfering ::: Linear Mapping Method
+
+Algorithms proposed in BIBREF23, BIBREF22, BIBREF26 to unsupervisedly learn linear mapping between two sets of embeddings are used here to align representations of source (training data) to those of target. We obtain the mapping generated by embeddings from one specific layer of pre-trained multi-BERT then we apply this mapping to transform the internal representations of multi-BERT while fine-tuning on training data.
+
+Supplemental Material ::: Improve Transfering ::: Adversarial Method
+
+In Adversarial Method, we add an additional transform layer to transform representations and a discrimination layer to discriminate between transformed representations from source language (training set) and target language (development set). And the GAN loss is applied in the total loss of fine-tuning.
+
+Supplemental Material ::: Improve Transfering ::: Discussion
+
+As table TABREF33 shows, there are no improvements among above methods. Some linear mapping methods even causes devastating effect on EM/F1 scores.

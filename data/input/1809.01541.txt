@@ -1,0 +1,107 @@
+Introduction
+
+This paper describes our approach and results for Task 2 of the CoNLL–SIGMORPHON 2018 shared task on universal morphological reinflection BIBREF0 . The task is to generate an inflected word form given its lemma and the context in which it occurs.
+
+Morphological (re)inflection from context is of particular relevance to the field of computational linguistics: it is compelling to estimate how well a machine-learned system can capture the morphosyntactic properties of a word given its context, and map those properties to the correct surface form for a given lemma.
+
+There are two tracks of Task 2 of CoNLL–SIGMORPHON 2018: in Track 1 the context is given in terms of word forms, lemmas and morphosyntactic descriptions (MSD); in Track 2 only word forms are available. See Table TABREF1 for an example. Task 2 is additionally split in three settings based on data size: high, medium and low, with high-resource datasets consisting of up to 70K instances per language, and low-resource datasets consisting of only about 1K instances.
+
+The baseline provided by the shared task organisers is a seq2seq model with attention (similar to the winning system for reinflection in CoNLL–SIGMORPHON 2016, BIBREF1 ), which receives information about context through an embedding of the two words immediately adjacent to the target form. We use this baseline implementation as a starting point and achieve the best overall accuracy of 49.87 on Task 2 by introducing three augmentations to the provided baseline system: (1) We use an LSTM to encode the entire available context; (2) We employ a multi-task learning approach with the auxiliary objective of MSD prediction; and (3) We train the auxiliary component in a multilingual fashion, over sets of two to three languages.
+
+In analysing the performance of our system, we found that encoding the full context improves performance considerably for all languages: 11.15 percentage points on average, although it also highly increases the variance in results. Multi-task learning, paired with multilingual training and subsequent monolingual finetuning, scored highest for five out of seven languages, improving accuracy by another 9.86% on average.
+
+System Description
+
+Our system is a modification of the provided CoNLL–SIGMORPHON 2018 baseline system, so we begin this section with a reiteration of the baseline system architecture, followed by a description of the three augmentations we introduce.
+
+Baseline
+
+The CoNLL–SIGMORPHON 2018 baseline is described as follows:
+
+The system is an encoder-decoder on character sequences. It takes a lemma as input and generates a word form. The process is conditioned on the context of the lemma [...] The baseline treats the lemma, word form and MSD of the previous and following word as context in track 1. In track 2, the baseline only considers the word forms of the previous and next word. [...] The baseline system concatenates embeddings for context word forms, lemmas and MSDs into a context vector. The baseline then computes character embeddings for each character in the input lemma. Each of these is concatenated with a copy of the context vector. The resulting sequence of vectors is encoded using an LSTM encoder. Subsequently, an LSTM decoder generates the characters in the output word form using encoder states and an attention mechanism.
+
+To that we add a few details regarding model size and training schedule:
+
+the number of LSTM layers is one;
+
+embedding size, LSTM layer size and attention layer size is 100;
+
+models are trained for 20 epochs;
+
+on every epoch, training data is subsampled at a rate of 0.3;
+
+LSTM dropout is applied at a rate 0.3;
+
+context word forms are randomly dropped at a rate of 0.1;
+
+the Adam optimiser is used, with a default learning rate of 0.001; and
+
+trained models are evaluated on the development data (the data for the shared task comes already split in train and dev sets).
+
+Our system
+
+Here we compare and contrast our system to the baseline system. A diagram of our system is shown in Figure FIGREF4 .
+
+The idea behind this modification is to provide the encoder with access to all morpho-syntactic cues present in the sentence. In contrast to the baseline, which only encodes the immediately adjacent context of a target word, we encode the entire context. All context word forms, lemmas, and MSD tags (in Track 1) are embedded in their respective high-dimensional spaces as before, and their embeddings are concatenated. However, we now reduce the entire past context to a fixed-size vector by encoding it with a forward LSTM, and we similarly represent the future context by encoding it with a backwards LSTM.
+
+We introduce an auxiliary objective that is meant to increase the morpho-syntactic awareness of the encoder and to regularise the learning process—the task is to predict the MSD tag of the target form. MSD tag predictions are conditioned on the context encoding, as described in UID15 . Tags are generated with an LSTM one component at a time, e.g. the tag PRO;NOM;SG;1 is predicted as a sequence of four components, INLINEFORM0 PRO, NOM, SG, 1 INLINEFORM1 .
+
+For every training instance, we backpropagate the sum of the main loss and the auxiliary loss without any weighting.
+
+As MSD tags are only available in Track 1, this augmentation only applies to this track.
+
+The parameters of the entire MSD (auxiliary-task) decoder are shared across languages.
+
+Since a grouping of the languages based on language family would have left several languages in single-member groups (e.g. Russian is the sole representative of the Slavic family), we experiment with random groupings of two to three languages. Multilingual training is performed by randomly alternating between languages for every new minibatch. We do not pass any information to the auxiliary decoder as to the source language of the signal it is receiving, as we assume abstract morpho-syntactic features are shared across languages.
+
+After 20 epochs of multilingual training, we perform 5 epochs of monolingual finetuning for each language. For this phase, we reduce the learning rate to a tenth of the original learning rate, i.e. 0.0001, to ensure that the models are indeed being finetuned rather than retrained.
+
+We keep all hyperparameters the same as in the baseline. Training data is split 90:10 for training and validation. We train our models for 50 epochs, adding early stopping with a tolerance of five epochs of no improvement in the validation loss. We do not subsample from the training data.
+
+We train models for 50 different random combinations of two to three languages in Track 1, and 50 monolingual models for each language in Track 2. Instead of picking the single model that performs best on the development set and thus risking to select a model that highly overfits that data, we use an ensemble of the five best models, and make the final prediction for a given target form with a majority vote over the five predictions.
+
+Results and Discussion
+
+Test results are listed in Table TABREF17 . Our system outperforms the baseline for all settings and languages in Track 1 and for almost all in Track 2—only in the high resource setting is our system not definitively superior to the baseline.
+
+Interestingly, our results in the low resource setting are often higher for Track 2 than for Track 1, even though contextual information is less explicit in the Track 2 data and the multilingual multi-tasking approach does not apply to this track. We interpret this finding as an indicator that a simpler model with fewer parameters works better in a setting of limited training data. Nevertheless, we focus on the low resource setting in the analysis below due to time limitations. As our Track 1 results are still substantially higher than the baseline results, we consider this analysis valid and insightful.
+
+Ablation Study
+
+We analyse the incremental effect of the different features in our system, focusing on the low-resource setting in Track 1 and using development data.
+
+Encoding the entire context with an LSTM highly increases the variance of the observed results. So we trained fifty models for each language and each architecture. Figure FIGREF23 visualises the means and standard deviations over the trained models. In addition, we visualise the average accuracy for the five best models for each language and architecture, as these are the models we use in the final ensemble prediction. Below we refer to these numbers only.
+
+The results indicate that encoding the full context with an LSTM highly enhances the performance of the model, by 11.15% on average. This observation explains the high results we obtain also for Track 2.
+
+Adding the auxiliary objective of MSD prediction has a variable effect: for four languages (de, en, es, and sv) the effect is positive, while for the rest it is negative. We consider this to be an issue of insufficient data for the training of the auxiliary component in the low resource setting we are working with.
+
+We indeed see results improving drastically with the introduction of multilingual training, with multilingual results being 7.96% higher than monolingual ones on average.
+
+We studied the five best models for each language as emerging from the multilingual training (listed in Table TABREF27 ) and found no strong linguistic patterns. The en–sv pairing seems to yield good models for these languages, which could be explained in terms of their common language family and similar morphology. The other natural pairings, however, fr–es, and de–sv, are not so frequent among the best models for these pairs of languages.
+
+Finally, monolingual finetuning improves accuracy across the board, as one would expect, by 2.72% on average.
+
+The final observation to be made based on this breakdown of results is that the multi-tasking approach paired with multilingual training and subsequent monolingual finetuning outperforms the other architectures for five out of seven languages: de, en, fr, ru and sv. For the other two languages in the dataset, es and fi, the difference between this approach and the approach that emerged as best for them is less than 1%. The overall improvement of the multilingual multi-tasking approach over the baseline is 18.30%.
+
+Error analysis
+
+Here we study the errors produced by our system on the English test set to better understand the remaining shortcomings of the approach. A small portion of the wrong predictions point to an incorrect interpretation of the morpho-syntactic conditioning of the context, e.g. the system predicted plan instead of plans in the context Our _ include raising private capital. The majority of wrong predictions, however, are nonsensical, like bomb for job, fify for fixing, and gnderrate for understand. This observation suggests that generally the system did not learn to copy the characters of lemma into inflected form, which is all it needs to do in a large number of cases. This issue could be alleviated with simple data augmentation techniques that encourage autoencoding BIBREF2 .
+
+MSD prediction
+
+Figure FIGREF32 summarises the average MSD-prediction accuracy for the multi-tasking experiments discussed above. Accuracy here is generally higher than on the main task, with the multilingual finetuned setup for Spanish and the monolingual setup for French scoring best: 66.59% and 65.35%, respectively. This observation illustrates the added difficulty of generating the correct surface form even when the morphosyntactic description has been identified correctly.
+
+We observe some correlation between these numbers and accuracy on the main task: for de, en, ru and sv, the brown, pink and blue bars here pattern in the same way as the corresponding INLINEFORM0 's in Figure FIGREF23 . One notable exception to this pattern is fr where inflection gains a lot from multilingual training, while MSD prediction suffers greatly. Notice that the magnitude of change is not always the same, however, even when the general direction matches: for ru, for example, multilingual training benefits inflection much more than in benefits MSD prediction, even though the MSD decoder is the only component that is actually shared between languages. This observation illustrates the two-fold effect of multi-task training: an auxiliary task can either inform the main task through the parameters the two tasks share, or it can help the main task learning through its regularising effect.
+
+Related Work
+
+Our system is inspired by previous work on multi-task learning and multi-lingual learning, mainly building on two intuitions: (1) jointly learning related tasks tends to be beneficial BIBREF3 , BIBREF4 , BIBREF5 , BIBREF6 , BIBREF7 ; and (2) jointly learning related languages in an MTL-inspired framework tends to be beneficial BIBREF8 , BIBREF9 , BIBREF10 . In the context of computational morphology, multi-lingual approaches have previously been employed for morphological reinflection BIBREF2 and for paradigm completion BIBREF11 . In both of these cases, however, the available datasets covered more languages, 40 and 21, respectively, which allowed for linguistically-motivated language groupings and for parameter sharing directly on the level of characters. BIBREF10 explore parameter sharing between related languages for dependency parsing, and find that sharing is more beneficial in the case of closely related languages.
+
+Conclusions
+
+In this paper we described our system for the CoNLL–SIGMORPHON 2018 shared task on Universal Morphological Reinflection, Task 2, which achieved the best performance out of all systems submitted, an overall accuracy of 49.87. We showed in an ablation study that this is due to three core innovations, which extend a character-based encoder-decoder model: (1) a wide context window, encoding the entire available context; (2) multi-task learning with the auxiliary task of MSD prediction, which acts as a regulariser; (3) a multilingual approach, exploiting information across languages. In future work we aim to gain better understanding of the increase in variance of the results introduced by each of our modifications and the reasons for the varying effect of multi-task learning for different languages.
+
+Acknowledgements
+
+We gratefully acknowledge the support of the NVIDIA Corporation with the donation of the Titan Xp GPU used for this research.

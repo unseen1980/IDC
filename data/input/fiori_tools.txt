@@ -1,0 +1,2381 @@
+﻿9/5/25, 7:12 PM 
+SAP Fiori Tools User Guide 
+Generated on: 2025-09-05 19:12:16 GMT+0000 
+SAP Fiori Tools | Current 
+Public 
+Original content: https://help.sap.com/docs/SAP_FIORI_tools/17d50220bcd848aa854c9c182d65b699?locale=en US&state=PRODUCTION&version=Latest 
+Warning 
+This document has been generated from SAP Help Portal and is an incomplete version of the official SAP product documentation. The information included in custom documentation may not reflect the arrangement of topics in SAP Help Portal, and may be missing important aspects and/or correlations to other topics. For this reason, it is not for production use. 
+For more information, please visit https://help.sap.com/docs/disclaimer. 
+This is custom documentation. For more information, please visit SAP Help Portal. 1
+9/5/25, 7:12 PM 
+Developing SAP Fiori Applications with SAP Fiori Tools To develop an application that connects to SAP data sources, you can use one of the following options: 
+SAP Fiori elements creates standard applications based on several basic floorplans for common business scenarios. These floorplans provide UI code, including some logic, so that the data from the back end goes exactly where it’s supposed to, and the UI behavior is based on the metadata you provide. You can customize the floorplans using XML annotations. 
+freestyle SAPUI5 gives you complete flexibility about your application's look and performance. You can select floorplans and specify the layout, flow, menu structure, colors, fonts, interactions, patterns, and more. For each screen, you have to write the JavaScript UI code, which may be time-consuming. 
+What Is SAP Fiori Elements? 
+SAP Fiori elements is one of the options available to develop SAP Fiori apps based on SAPUI5. SAP Fiori elements provide designs for UI patterns and predefined templates for common application use cases. Using standard templates as the starting point for creating applications increases developer efficiency, enforces UX consistency across apps, and ensure that applications created using SAP Fiori elements include features expected in a typical enterprise. 
+Application developers can use SAP Fiori elements to create SAP Fiori apps based on an OData service and annotations that do not need JavaScript UI coding to create a front end of their app. This means that no application-specific view instances are required. The SAP Fiori elements runtime interprets the metadata and annotations of the underlying OData service and uses the corresponding views for the SAP Fiori apps at startup. SAP Fiori apps are created with SAPUI5 and follow the SAP Fiori design guidelines to ensure consistency and high quality. For more information, see SAP Fiori Design Guidelines. 
+For more information about SAP Fiori apps, see http://www.sap.com/fiori   . 
+For more information about SAP Fiori, see SAP Fiori Overview. 
+For more information about SAP Fiori elements, see Developing Apps with SAP Fiori elements. 
+Project Structure and Artifacts of SAP Fiori elements 
+The SAP Fiori elements framework interprets OData metadata and annotations to render the application UI. While the metadata describe your data model or what is on your screen, the annotations describe your data semantics or the visualization. 
+For example, any entity type property that has the Communication.IsEmailAddress annotation term set to true is interpreted by the SAP Fiori elements framework as an e-mail address and displayed in an application UI as a clickable link that leads to the e-mail client. 
+Annotations can be associated to entities, relationships, and properties of a service. 
+You can also use annotations to perform the following actions: 
+Describe the relationships between properties, such as between an amount and the related currency. SAP Fiori elements display these properties side by side in an application UI. 
+Group properties together so that they are displayed next to each other in a form. 
+Describe the actions available on a given object, whether you can edit it, delete it, apply some filters, and more. All of this is interpreted by the SAP Fiori elements framework and shown in the application accordingly. 
+This is custom documentation. For more information, please visit SAP Help Portal. 2
+9/5/25, 7:12 PM 
+Annotations can be defined together with the metadata or in dedicated annotation files, both in the back end along with the service, and in the frontend, in the local annotation files. 
+For an annotation to be considered by the SAP Fiori elements framework during runtime, it must reside in an annotation source registered in an application descriptor file manifest.json of the application. 
+Additionally, in the web app manifest, the description of your application basic metadata can be found, such as its name and version, as well as its content, such as application pages, navigation, service details used, and more. 
+The same descriptor file manifest.json that is a runtime source for your annotations can be used for the following operations: 
+Adding navigation from pages, such as a drill down from a List Report to an Object Page. For more information, see Define Application Structure. 
+Defining the settings of tables, columns, or other UI elements. In addition, registering custom extensions like custom columns, pages or sections. 
+For flex changes in the individual pages, such as enabling export, you can use the Page Editor. 
+What Is Freestyle SAPUI5? 
+Freestyle SAPUI5 is another option available to develop SAP Fiori apps. Choose the type of template required, along with the relevant OData service to start your application development process. By using the freestyle SAPUI5 templates, you can be flexible in creating a custom application based on an OData service and JavaScript UI coding. freestyle SAPUI5 incorporates our latest recommendations and can be used as a starting point for developing custom apps according to the SAP Fiori design. For more information, see SAP Fiori Design Guidelines. 
+For more information about SAP Fiori apps, see http://www.sap.com/fiori   . 
+For more information about SAPUI5, see Get Started with UI5. 
+Project Structure and Artifacts of Freestyle SAPUI5 
+With the freestyle SAPUI5 framework, you can optimize your SAP Fiori-based development by using OData and SAPUI5 tooling to render the application UI. The SAPUI5 controls are convenient and intuitive to use for your app development. Additionally, they ensure adherence to the design guidelines. 
+The freestyle SAPUI5 templates create at least three basic files for your application: 
+manifest.json 
+app.view.xml 
+component.js 
+With each of these files, you can control certain aspects of your application. For more information, see Basic Files for your App   . 
+ Note 
+The freestyle SAPUI5 templates are deprecated, and it’s recommended to use the custom page SAP Fiori template based on the flexible programming model as an alternative. For more information, see Flexible Programming Model   . 
+What Is the Difference between SAP Fiori Elements and Freestyle SAPUI5? This is custom documentation. For more information, please visit SAP Help Portal. 3
+9/5/25, 7:12 PM 
+The following table lists the differences between freestyle SAPUI5 and SAP Fiori elements. 
+  
+Creating an SAP Fiori Application with SAP Fiori Tools 
+SAP Fiori tools provides many capabilities to increase the efficiency of developing SAP Fiori applications using either SAP Fiori elements or the freestyle SAPUI5 approach. SAP Fiori tools, together with SAP Fiori elements, reduce development time, maintenance costs, and leverage the advantages of a metadata-driven UI. SAP Fiori tools includes the following: 
+Application Wizard for the initial creation of an application. 
+Service modeler for viewing the data model. 
+XML and form-based editor for maintaining of annotations - SAP Fiori elements only. 
+Application page structure and ability to configure the SAPUI5 flexibility settings - SAP Fiori elements only. Guided development for implementing features - SAP Fiori elements only. 
+For more information about how to use SAP Fiori tools, see Getting Started with SAP Fiori Tools. 
+Generating an Application with Joule's SAP Fiori Tools Generative AI 
+Joule, SAP's innovative AI copilot, enables you to generate data models, services, sample data for your project with simple language descriptions, as well as an SAP Fiori UI. Joule can help you create an SAP Fiori elements app simply by pasting your business requirements document. For more information, see Generating an Application with Joule's SAP Fiori Tools Generative AI. 
+Getting Started with SAP Fiori Tools 
+SAP Fiori tools simplifies the development of SAP Fiori elements applications by providing extensions for your SAP Business Application Studio and VS Code development environment. 
+The SAP Fiori tools extensions help you create applications, visualize navigation, automatically generate code, and more. Used in combination with SAP Fiori elements, these extensions can increase your development productivity, ensure the consistency of experience between applications, and help you build a scalable experience. SAP Fiori tools includes the following extensions: 
+This is custom documentation. For more information, please visit SAP Help Portal. 4
+9/5/25, 7:12 PM 
+Application Wizard. A wizard-style approach to generate the provided SAP Fiori elements and freestyle SAPUI5 templates. 
+SAP Fiori Tools – Application Modeler. Access to a visualization of the application pages, navigation, and service entities. You can add new navigation and pages, delete pages, and navigate to corresponding editing tools. The following features are part of this extension: 
+Page Editor 
+Page Map 
+Guided Development. Access to How-To guides and tutorials that explain how to implement certain functionality in an SAP Fiori elements application. You can follow the steps required to implement a feature and then use the guided development approach to make the required changes in your project. 
+Service Modeler. Visualization of the OData service metadata files. You can use it to browse complex services easily, including entities, properties, and associations. 
+Maintaining Annotations with Language Server. Access to resources that help to define annotations in the code editor, thus improving application development by reducing effort and maintaining code consistency. The following subset of features is part of this extension: 
+Code completion 
+Micro-snippets 
+Diagnostics 
+Internationalization support 
+SAP Fiori tools Environment Check. A tool which is designed to run checks against your environment and/or destinations configured in SAP Business Technology Platform (SAP BTP). 
+This image is interactive. Hover over each area for a description. Click highlighted areas for more information.   Please note that image maps are not interactive in PDF outputs. 
+For more information, see Report Issues and Security. 
+Supported Deployment Landscapes: 
+SAP S/4HANA 
+This is custom documentation. For more information, please visit SAP Help Portal. 5
+9/5/25, 7:12 PM 
+SAP S/4HANA Cloud 
+SAP BTP (ABAP and Cloud Foundry Environments) 
+For supported data sources, see: Data Source 
+ Note 
+If there are any issues, create an incident in the SAP Support Portal for the CA-UX-IDE component. 
+SAP Fiori tools is available in two integrated development environments (IDEs). 
+SAP Business Application Studio 
+Visual Studio Code 
+ Caution 
+SAP Fiori tools supports the development of SAP Fiori elements and freestyle SAPUI5 applications with a minimum SAPUI5 version of 1.65 or higher. 
+Installation 
+This section contains installation instructions on the following integrated development environments: 
+SAP Business Application Studio 
+Visual Studio Code 
+SAP Business Application Studio 
+SAP Business Application Studio is a hosted environment which does not require installation. To create your workspace, perform the steps defined in the Set Up SAP Business Application Studio for Development   tutorial. We recommend that after this tutorial, you proceed with Set Up and Generate a New SAP Fiori App Project   . 
+Installing Extensions and Dev Space in SAP Business Application Studio 
+SAP Fiori tools are preinstalled and loaded when the dev space is created in SAP Business Application Studio for the following dev space types: 
+SAP Fiori Dev Space 
+Full Stack Cloud Application Dev Space - This dev space is intended for services and applications that use SAP Cloud Application Programming Model (CAP). 
+In SAP Business Application Studio, an SAP Fiori tools Dev Space does not include the CDS OData Language Server extension. For more information, see SAP CDS Language Support in the Visual Studio Code section. 
+In SAP Business Application Studio, an SAP Fiori tools Dev Space already includes UI5 Language Assistant because it is a mandatory extension that is installed automatically. For more information, see UI5 Language Assistant Support   . 
+Related Information 
+Set Up SAP Business Application Studio for Development   
+This is custom documentation. For more information, please visit SAP Help Portal. 6
+9/5/25, 7:12 PM 
+Set Up SAP Business Application Studio - Getting Started 
+Visual Studio Code 
+This chapter describes how you can install and start working with Visual Studio Code (VS Code) and provides links to important step-by-step procedures. 
+System Requirements 
+Ensure that the minimum system requirements for installing VS Code are met. For more information, see Requirements for Visual Studio Code   . 
+You must have Node.js installed. Ensure that you’re using a Long Term Supported (LTS) version of Node.js. Furthermore, the version of Node.js you install must also have the corresponding version of npm installed. See Node.js releases   for details on the versions of Node.js marked as LTS, and their associated npm versions. 
+ Tip 
+To check the version of Node.js installed, type node -v in the terminal. Tto check the version of npm installed, type npm -v in the terminal. Ensure that the npm version and Node.js version are compatible. 
+You can download Node.js here: https://nodejs.org/en/download/   . 
+ Note 
+For macOS, several options are available to install a LTS version of Node.js, such as Homebrew and Node Version Manager (NVM). 
+The SAP Fiori application generator requires the MTA tool   Node.js package (version 1.0 or higher) to be installed globally. At the command line, enter the following command to install MTA: 
+npm install -g mta 
+Cloud Foundry CLI Tools 
+To access Cloud Foundry services from SAP Business Technology Platform, download and install the latest version of Cloud Foundry Command Line Interface (CF CLI) by following the installation instructions   . 
+Prerequisites 
+Ensure that you have the following scope set in your npm configuration. Execute the following command: npm config get @sap:registry 
+One of the following values should be returned: 
+https://registry.npmjs.org 
+undefined 
+This is custom documentation. For more information, please visit SAP Help Portal. 7
+9/5/25, 7:12 PM 
+If it is set incorrectly to @sap, open the .npmrc file in your home directory and remove this entry. 
+Set up Visual Studio Code 
+To set up VS Code, you need to perform the following steps: 
+1. Download VS Code from the Visual Studio Code website . 
+ Note 
+To learn how to get started with VS Code, see https://code.visualstudio.com/docs/setup/setup-overview . 
+2. You must have a working knowledge of VS Code. 
+Using VS Code requires a working knowledge of this integrated development environment. Use the following resources to learn more about VS Code: 
+Visual Studio Code Basic Layout . 
+Visual Studio Code Introductory Videos . 
+3. Check if Node.js is already installed. You can check this by executing the following in the VS Code terminal. If you don't receive a version number, see above on how to install Node.js. 
+node -v 
+Install Extensions 
+1. Navigate to VS Code Extensions . 
+For more information, see Install Visual Studio Code extensions . 
+2. Search for SAP Fiori tools and select SAP Fiori tools - Extension Pack. 
+Alternatively, you can navigate to SAP Fiori tools - Extension Pack and click Install. 
+3. Click Install. 
+4. Then, SAP Fiori tools will install the latest release of the following extensions: 
+Application Wizard 
+SAP Fiori Tools – Application Modeler 
+SAP Fiori tools - Guided Development 
+SAP Fiori tools - Service Modeler 
+SAP Fiori tools - XMLAnnotation Language Server 
+XML Toolkit 
+You can also install each extension separately. 
+ Note 
+SAP CDS Language Support is an optional extension that can be installed for annotation LSP in CAP CDS. For more information, see CDS Editor . 
+This is custom documentation. For more information, please visit SAP Help Portal. 8
+9/5/25, 7:12 PM 
+SAP CDS Language Support 
+For applications based on CAP, you can install the SAP CDS Language Support extension. To do so, perform the following steps: 
+1. Open the SAP CDS Language Support extension in Visual Studio marketplace. 
+2. Click Install to open the SAP CDS Language Support extension in VS Code. 
+3. In VS Code, click Install to enable the extension. 
+For more information, see Add CDS Editor and CDS Editor . 
+UI5 Language Assistant Support 
+UI5 Language Assistant Support is an open source extension that can be optionally installed to perform control ID checks when flexEnabled property is set to true in the manifest.json file for either SAP Fiori elements or freestyle SAPUI5 projects. It also provides additional support for relevant filters to suggestions and text for ease of use. 
+To install the UI5 Language Assistant Support extension, perform the following steps: 
+1. Open the UI5 Language Assistant extension in Visual Studio marketplace. 
+2. Click Install to open the UI5 Language Assistant extension in VS Code. 
+3. In VS Code, click Install to enable the extension. 
+Supported Authentication Types 
+The following table lists supported authentication types for SAP Fiori tools running in VS Code: 
+Authentication Type 
+	SAP On Premise 
+	SAP BTP, ABAP Environment 
+	SAP BTP, Cloud Foundry 
+	SAP S/4HANA Cloud
+	OAuth 2.0 (Client Credentials) 
+	No 
+	Yes 
+	No 
+	No
+	Basic Authentication 
+	Yes 
+	No 
+	Yes 
+	No
+	Reentrance Ticket 
+	No 
+	Yes 
+	No 
+	Yes
+	
+
+
+
+We recommend using SAP Business Application Studio because of its extensive support of different authentication types. For more information, see: 0002577263 . 
+If applicable, disable SAML for selected OData services. Below is the list of OData services: 
+OData Services 
+	Path
+	OData V2 catalog 
+	/sap/opu/odata/IWFND/CATALOGSERVICE;v=2
+	OData V4 catalog (dev) 
+	/sap/opu/odata4/iwfnd/config/default/iwfnd/catalog/0001
+	OData V4 catalog (prod) 
+	/sap/opu/odata4/iwfnd/config/default/iwfnd/catalog/0002
+	ATO Catalog 
+	/sap/bc/adt/ato/settings
+	SAPUI5 repository service (for deploy & undeploy) 
+	/sap/opu/odata/UI5/ABAP_REPOSITORY_SRV
+	
+
+
+
+This is custom documentation. For more information, please visit SAP Help Portal. 9
+9/5/25, 7:12 PM 
+Capabilities Overview 
+ Note 
+To view information on the features available in your application, open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Open Application Info command. For more information, see Application Information. 
+The following table lists the SAP Fiori tools features provided in each template and data source. 
+Project-Relevant Commands in Application Information Page 
+Feature 
+	Command 
+	Description 
+	SAP Fiori Elements
+	Freestyle SAPUI5
+	UI5 
+Library
+	Add Deploy 
+Config
+	sap.ux.appGenerator.launchDeployConfig 
+	Add deploy 
+configuration.
+	
+
+	
+
+	
+
+	Add Fiori 
+Launchpad 
+Config
+	sap.ux.appGenerator.launchFlpConfig 
+	Add the SAP 
+Fiori launchpad configuration to the application.
+	
+
+	
+
+	
+
+	Add Local 
+Annotation File
+	sap.ux.adp.addAnnotationFile 
+	Add a local 
+annotation file to the 
+adaptation 
+project.
+	
+
+	
+
+	
+
+	Add 
+Mockserver 
+Config
+	npx --yes @sap-ux/create@latest add 
+mockserver-config
+	Add 
+configuration for mockserver 
+middleware.
+	
+
+	
+
+	
+
+	Add SAPUI5 
+Components
+	sap.ux.adp.addSAPUI5ComponentUsages 
+	Add SAPUI5 
+component 
+usages to the 
+adaptation 
+project.
+	
+
+	
+
+	
+
+	Add Variants 
+Config
+	sap.ux.applicationModeler.addVariantsConfig 
+	Add 
+Configuration 
+for Variants 
+Creation.
+	
+
+	
+
+	
+
+	Build 
+Application
+	npm run build 
+	Build the 
+application. The results are 
+stored in the 
+dist folder.
+	
+
+	
+
+	
+
+	Change 
+Inbound
+	sap.ux.adp.changeInbound 
+	Add an inbound change to the 
+adaptation 
+project.
+	
+
+	
+
+	
+
+	
+
+
+
+V 
+
+
+
+
+
+This is custom documentation. For more information, please visit SAP Help Portal. 10
+9/5/25, 7:12 PM 
+Feature 
+	Command 
+	Description 
+	SAP Fiori Elements
+	Freestyle SAPUI5
+	UI5 
+Library
+	Change 
+minUI5Version
+	sap.ux.applicationModeler.changeMinUI5Version 
+	Change the 
+minimum 
+version of 
+SAPUI5 that this application 
+requires.
+	
+
+	
+
+	
+
+	Check Node 
+Modules
+	npm outdated 
+	Execute 
+command that checks all node module 
+dependencies 
+for newer 
+versions.
+	
+
+	
+
+	
+
+	Check Service 
+	sap.ux.serviceModeler.openFile 
+	Check service 
+with annotation. You can copy 
+annotations to local annotation file.
+	
+
+	
+
+	
+
+	Convert 
+Preview Config
+	sap.ux.applicationModeler.convertPreview 
+	Convert the 
+configuration to preview the 
+application with virtual 
+endpoints.
+	
+
+	
+
+	
+
+	Create Archive 
+	sap.ux.environmentcheck.archiveProject 
+	Zip the project excluding the 
+node_modules folder for 
+sharing which 
+can be useful in support cases.
+	
+
+	
+
+	
+
+	Deploy 
+	sap.ux.appGenerator.launchDeploy 
+	Deploy 
+according to the configuration by default stored in the ui5- 
+deploy.yaml.
+	
+
+	
+
+	
+
+	Maintain 
+Mockdata
+	sap.ux.dataEditor.open 
+	Start editor for maintaining 
+mock data.
+	
+
+	
+
+	
+
+	Manage 
+Service Models
+	sap.ux.serviceModeler.openServiceMgr 
+	You can sync 
+metadata.xml with the back 
+end.
+	
+
+	
+
+	
+
+	
+
+
+
+V 
+
+
+
+
+
+
+
+
+Manage XML 
+sap.ux.serviceModeler.openAnnotationFileMgr You can choose 
+Annotations 
+or create local 
+This is custom documentation. For more information, please visit SAP Help Portal. 11
+9/5/25, 7:12 PM 
+Feature 
+	Command 
+	Description 
+	SAP Fiori Elements
+	Freestyle SAPUI5
+	UI5 
+Library
+	
+
+	
+
+	XML annotation files.
+	
+
+	
+
+	
+
+	Open 
+Adaptation 
+Editor
+	sap.ux.adp.openAdaptationEditor 
+	Open the 
+Adaptation 
+Editor to create adaptations.
+	
+
+	
+
+	
+
+	Open Data 
+Editor
+	sap.ux.dataEditor.open 
+	Open the Data Editor to 
+maintain mock data.
+	
+
+	
+
+	
+
+	Open 
+Deployment 
+Wizard
+	sap.ux.adp.openDeploymentWizard 
+	Open the 
+Deployment 
+Wizard to deploy the adaptation project.
+	
+
+	
+
+	
+
+	Open 
+Documentation
+	sap.ux.applicationModeler.showDocu 
+	Open the 
+documentation of available 
+manifest and 
+SAPUI5 
+flexibility 
+properties.
+	
+
+	
+
+	
+
+	Open Guided 
+Development
+	sap.ux.help.openGuidedDevelopmentFromExplorer 
+	Guided 
+Development 
+helps solve 
+common tasks.
+	
+
+	
+
+	
+
+	Open Page 
+Map
+	sap.ux.pageMap.showMap 
+	Open the page map that shows application 
+pages and 
+navigation 
+paths.
+	
+
+	
+
+	
+
+	Preview 
+Application
+	sap.ux.pageEditor.previewExternal 
+	Choose from 
+start scripts to run the 
+application 
+preview.
+	
+
+	
+
+	
+
+	Replace OData Service
+	sap.ux.adp.replaceODataService 
+	Replace the 
+OData service of the adaptation project.
+	
+
+	
+
+	
+
+	
+
+
+
+V 
+
+
+
+
+
+Run UI5 Linter sap.ux.applicationModeler.runUI5Linter Run a static code analysis to 
+validate 
+compliance with 
+SAPUI5 best 
+practices. For 
+This is custom documentation. For more information, please visit SAP Help Portal. 12
+9/5/25, 7:12 PM 
+Feature 
+	Command 
+	Description 
+	SAP Fiori Elements
+	Freestyle SAPUI5
+	UI5 
+Library
+	
+
+	
+
+	more 
+information, see UI5 linter .
+	
+
+	
+
+	
+
+	Run Variants 
+Management
+	npm run start-variants-management 
+	Run the 
+configuration for variants 
+creation.
+	
+
+	
+
+	
+
+	Show 
+Documentation
+	sap.ux.applicationModeler.showDocu 
+	Show 
+documentation of available 
+manifest and 
+UI5 flexibility 
+properties.
+	
+
+	
+
+	
+
+	Test 
+Deployment
+	npm run deploy-test 
+	Start 
+deployment in test mode.
+	
+
+	
+
+	
+
+	Undeploy 
+	npm run undeploy 
+	Remove a 
+deployed 
+artifact from 
+back end or 
+cloud.
+	
+
+	
+
+	
+
+	Validate 
+Project
+	sap.ux.applicationModeler.validate 
+	Validate the 
+project and 
+generate a 
+report.
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+V 
+
+
+
+
+
+Scripting Languages 
+SAP Fiori apps are based on the SAPUI5 framework. SAP Fiori tools supports the development of SAP Fiori apps with JavaScript or TypeScript. For more information, see UI5 and TypeScript . 
+Usability 
+The following support keyboard navigation and high contrast theming: 
+Guided Development extension 
+Page Map 
+Page Editor 
+Application Info 
+Keyboard navigation provides a streamlined experience enabling users to use the application without a mouse. Use the arrow keys to navigate within sections, the Tab key to navigate to new sections and controls, Shift + Tab to navigate back to sections and controls, and Enter to make selections. 
+This is custom documentation. For more information, please visit SAP Help Portal. 13
+9/5/25, 7:12 PM 
+A high contrast theme provides better readability and accessibility. You can switch to a high contrast theme using Preferences Color Themes in VS Code or SAP Business Application Studio. 
+Command Palette 
+Command 
+	Description
+	Fiori: Add Configuration for Variants Creation 
+	Adds configuration for variants creation.
+	Fiori: Add Deployment Configuration 
+	Adds deployment configuration to the application.
+	Fiori: Add Reference to SAP Fiori Apps Reusable Libraries 
+	Helps to reuse a library or component in your SAP Fiori apps by adding a reference to another project. For more information, see Reuse Library Support.
+	Fiori: Add SAP System 
+	Creates and saves a new SAP system (ABAP On-Premises or ABAP Environment with a service key) in VS Code. For more information, see Managing System Connection.
+	Fiori: Add SAP Fiori Launchpad Configuration 
+	Adds the necessary configuration to the application so it can run on SAP Fiori launchpad after deployment.
+	Fiori: Add SAP Fiori Launchpad Embedded Configuration 
+	Creates and saves the configuration needed to preview an app within the target environment without the redeployment. For more information, see Preview an Application on External SAP Fiori Launchpad.
+	Fiori: Archive Project 
+	Archives a project.
+	Fiori: Change Telemetry Settings 
+	Allows the user to choose whether telemetry data is sent to SAP for SAP Fiori tools usage. For more information, see Telemetry.
+	Fiori: Change the Minimum SAPUI5 Version 
+	Changes the minimum version of SAPUI5 that the application requires.
+	Fiori: Delete Application from CAP Project 
+	Deletes an application from a multi-application CAP project. For more information, see Deleting an Application in CAP Project.
+	Fiori: Deploy Application 
+	Deploys the application according to the configuration by default stored in ui5-deploy.yaml
+	Fiori: Enable App-to-App Navigation Preview 
+	Creates and saves the configuration needed to preview the navigation between apps in the same workspace. For more information, see App-to-App Navigation Preview.
+	Fiori: Import SAP System 
+	Imports and saves a new SAP system (ABAP On-Premise) in VS Code. For more information, see Managing System Connection.
+	Fiori: Migrate Project for use in SAP Fiori Tools 
+	Moves your SAP Fiori projects from other services, such as SAP Web IDE, to VS Code or SAP Business Application Studio. For more information, see Migration.
+	Fiori: Open Annotation File Manager 
+	Launches the annotation file manager.
+	Fiori: Open Application Generator 
+	Launches SAP Fiori application generator to create an SAP Fiori application. For more information, see Generating an Application.
+	Fiori: Open Application Info 
+	Opens the Application Information page. For more information, see Application Information.
+	
+
+
+
+This is custom documentation. For more information, please visit SAP Help Portal. 14
+9/5/25, 7:12 PM 
+Command 
+	Description
+	Fiori: Open CFApplication Router Generator 
+	Generates an app router configuration in the MTA deployment scenario. For more information, see Generating an MTA Deployment File.
+	Fiori: Open Data Editor 
+	Launches the Data Editor.
+	Fiori: Open Environment Check 
+	Checks and creates reports on the development environment.
+	Fiori: Open Guided Development 
+	Launches guided development, an extension that implements and updates features and functionality in your project by generating and inserting code snippets based your parameter selections. For more information, see Use Feature Guides.
+	Fiori: Open Guided Development to the Side 
+	Launches guided development (see above) to the side of the VS Code window.
+	Fiori: Open Reusable Library Generator 
+	Launches the reusable library generator.
+	Fiori: Open Run Configurations 
+	Opens the run configuration editor to configure preview options for a project. For more information, see Use Run Control.
+	Fiori: Open Service Manager 
+	Launches the Service Manager.
+	Fiori: Open Service Modeler 
+	Launches the service modeler, an extension to visualize the OData service model and annotations. For more information, see Viewing Service Metadata.
+	Fiori: Open Service Modeler to the Side 
+	Launches the service modeler (see above) to the side of the VS Code window.
+	Fiori: Preview Application 
+	Allows you to choose a start script to run the application preview.
+	Fiori: Refresh Application Modeler View 
+	Refreshes the application modeler view.
+	Fiori: Restart XMLAnnotation Language Server 
+	Restarts the XML annotation language server if it failed.
+	Fiori: Run UI5 Linter 
+	Run a static code analysis to validate compliance with SAPUI5 best practices. For more information, see UI5 linter .
+	Fiori: Show Output Channel 
+	Opens the Output channel for the application modeler.
+	Fiori: Show Page Editor 
+	Opens the Page Editor that shows an outline view of the configurable elements on a selected page. For more information, see Configure Page Elements.
+	Fiori: Show Page Map 
+	Opens the Page Map that shows application pages and navigation paths. For more information, see Define Application Structure.
+	Fiori: Show Release Notes 
+	Shows the SAP Fiori tools release notes.
+	Fiori: Show SAP System Details 
+	Opens the detail view for a saved SAP system in VS Code.
+	Fiori tools AI: Show Fiori Tools Joule 
+	Launches Joule, the SAP Fiori tools AI assistant in SAP Business Application Studio, provided you have a subscription to SAP Build Code.
+	Fiori: Validate Project 
+	Validates a project.
+	
+
+
+
+This is custom documentation. For more information, please visit SAP Help Portal. 15
+9/5/25, 7:12 PM 
+Migration 
+SAP Fiori tools provides a migration utility to help move your SAP Fiori projects from other services, such as SAP Web IDE, to Visual Studio Code (VS Code) or SAP Business Application Studio. Note that SAP Web IDE can still be used if you have a productive SAP Business Technology Platform (SAP BTP) global account and have activated SAP Web IDE there. However, it is no longer possible to access SAP Web IDE using an SAP BTP free tier account. 
+Some of the key points for migration: 
+Imported and cloned projects are auto-detected for migration. 
+SAP Fiori elements, freestyle SAPUI5, SAPUI5 Adaptation Projects, and SAPUI5 Extensibility are supported. You can migrate multiple projects at once. 
+Migration doesn't update the deployment configuration. Please run npm run deploy-config after migration to configure the migrated application for deployment. 
+A project must have the main data source specified in the manifest.appdescr_variant file. 
+For more information about extensibility, please see Extending an SAP Fiori Application. 
+ Note 
+As of Adaptation Project tooling 1.1.60, adaptation projects provide an Adaptation Editor in SAP Business Application Studio. To support this editor, existing SAPUI5 adaptation projects that have already been migrated to support SAP Fiori tools can be migrated again. Once migrated, the new Adaptation Editor will be available for use. 
+Prerequisites 
+Ensure that you've installed the latest SAP Fiori tools extensions. For more information, see Getting Started with SAP Fiori Tools. 
+Ensure that your SAP Fiori project is running as expected in SAP Web IDE and belongs to the supported project types: SAP Fiori elements V2 
+SAP Fiori elements V4 
+freestyle SAPUI5 
+Extension project 
+Recommendations 
+In SAP Business Application Studio, a destination of the target system needs to be defined that reflects the system used in the original application. For more information, see SAP Business Application Studio Help Portal. 
+ Note 
+If the target system isn’t defined, previewing an application with live data won’t work. 
+In VS Code, you need to know the target system hostname and/or client. 
+We recommend that the migrated project is under a version control system. 
+Migration Steps 
+This is custom documentation. For more information, please visit SAP Help Portal. 16
+9/5/25, 7:12 PM 
+1. Clone your project from git by using the command line or import your project to the workspace as follows: Click File Open Workspace and create a workspace in the projects folder. 
+Export the project from SAP Web IDE to your computer. 
+Unzip the project on your computer. 
+Drag the project to the workspace of VS Code or SAP Business Application Studio. 
+2. Click Start Migration from the pop-up window. 
+A new Migration view opens listing all the projects from your workspace. For each project listed, the type of the project is also displayed. If the tool finds no suitable project for migration in your workspace, a message is shown. 
+ Tip 
+You can also open the Migration view anytime by opening the Command Palette ( CMD/CTRL + Shift + P ) and executing the Fiori: Migrate Project for use in Fiori tools command. 
+3. Select the project that you want to migrate from the list of projects by selecting the corresponding checkbox. You can choose to manually add a project from the filesystem by clicking Add Project. If the supplied folder has an application that can be migrated, it's added to your list of projects. At any point, you can click the Refresh button to reload the projects from your workspace again. 
+4. For each listed project, if applicable, fill in the respective columns based on the information provided below: 
+Name 
+	Description
+	Application 
+Identifier
+	The identifier of the project from the manifest.json or pom.xml.
+	Project Path 
+	The file path to the location of the project.
+	SAP System 
+	A dropdown detailing the SAP system that should be used in migration. The dropdown lists all the saved systems in VS Code or all the destinations available in SAP Business Application Studio. In SAP Business Application Studio, an entry is preselected if the destination name found in neo-app.json exactly matches a destination available to the user in their subaccount. Selecting an SAP System from the dropdown sets the hostname and client automatically.
+	Destination 
+	A free-text field that by default contains the system name from the project being migrated. It should default to the destination from the source project neo-app.json. Destination is only used by SAP Fiori tools in SAP Business Application Studio and not in VS Code. To make a project compatible, please provide a Destination and Hostname 
+that is accessible to both. Use a destination for the front-end server that has SAPUI5 libraries installed rather than connecting to the back-end OData server directly.
+	Hostname 
+	An input box detailing the back-end hostname to be used in migration. It should be a valid URL or blank. This hostname is only used by SAP Fiori tools in VS Code.
+	SAP Client 
+	An optional numeric field detailing the SAP client to be used in migration. Should be provided in case the client isn’t the system default.
+	SAPUI5 
+Version
+	A dropdown detailing the version of SAPUI5 to be used when previewing the migrated application locally. Defaults to the version from neo-app.json if defined, otherwise uses the minUI5Version in the manifest.json file. 
+ Note 
+For SAPUI5 Extensibility Projects, currently the minimum version required is 1.71.0.
+	
+
+
+
+This is custom documentation. For more information, please visit SAP Help Portal. 17
+9/5/25, 7:12 PM 
+5. Click Start Migration. 
+At this point, your selected projects are migrated and required packages are installed. 
+ Note 
+After the successful migration of your SAP Fiori elements project, you can view the Application Information for the respective project. To do so, click View Info under the Action column of the migration results view. The Application Information tab is displayed automatically if only a single SAP Fiori elements project is migrated. 
+To migrate more projects, press the Back button from the results view. 
+For more information, see Application Information. 
+Files Updated During Migration 
+The migration process modifies several files in your existing project. The following table lists the files that will be updated during migration: 
+Name 
+	Description
+	.gitignore 
+	A new file to be added with the build artifacts and libraries to be ignored.
+	package-lock.json 
+	A file deleted and re-created during migration to reflect updated libraries.
+	package.json 
+	Removes SAPUI5 SAP Web IDE specific libraries. 
+Updates the npm scripts with SAP Fiori tooling targets and dependencies. 
+Presence of sapux:true and ui5-tooling library identifies the project as one that supports SAP Fiori tools.
+	ui5-local.yaml 
+	A new file that supports offline development, downloads ui5 libraries locally, and runs against mock data.
+	ui5.yaml 
+	Removes the SAP Web IDE builder tasks. SAP Fiori 
+deployment tasks are added later when you add the 
+deployment configuration to your project. 
+Reminds of file changes, supports the proxy middleware and live reload functionality.
+	index.html 
+	A new file supporting a stand-alone preview of your application without SAP Fiori launchpad. Now, you can start your app with or without SAP Fiori launchpad.
+	manifest.json 
+	It’s populated by SAP Fiori tools.
+	changes_loader.js 
+	A new static file that supports live reload of the application.
+	changes_preview.js 
+	A new static file that supports .changes file from adaptation updates.
+	
+
+
+
+flpSandbox.html This file is updated by migration to support the preview and changes loader. The following differences to the old file version can 
+be defined: 
+This is custom documentation. For more information, please visit SAP Help Portal. 18
+9/5/25, 7:12 PM 
+Name 
+	Description
+	
+
+	The migration tool changes the paths to the ui5 libraries so that they’re proxied through the back end and allows the update of the ui5 version at runtime. 
+Updated to recommended config.
+	locate-reuse-libs.js 
+	A new static file that finds any custom reuse libraries referenced in your manifest file and queries them with the back-end server to see if the libraries are installed. If so, it registers them at runtime so that they’re available.
+	flpSandboxMockServer.html 
+	Applies the same changes as the flpSandbox.html file but with the mock server support.
+	
+
+
+
+ Note 
+If the source project doesn’t contain a webapp folder, then one is created during migration and the relevant HTML and JavaScript files are moved to this location. 
+Verification 
+1. Review the file changes in the Source Control view. Check for any project-specific changes that may be overwritten and consider reapplying as appropriate. 
+2. To ensure your SAP Fiori tools application works as expected, launch any of the SAP Fiori tools commands, such as Page Map, Fiori: Open Application Generator, or Fiori: Open Guided Development. 
+ Note 
+Some SAP Fiori apps might be missing files like metadata.xml before migration, which can impact some of the SAP Fiori tools features. To avoid this, after migration, make sure that you sync the OData service using Service Manager. For more information, see Managing Service and Annotations Files. 
+Related Information 
+Blog: Migrate SAP Fiori projects from SAP Web IDE to SAP Business Application Studio 
+Importing an Application 
+You can manually import an existing SAP Fiori application from the SAPUI5 ABAP repository to SAP Business Application Studio or Visual Studio Code (VS Code). 
+Preparation Steps 
+Before importing an application, in your workspace in either SAP Business Application Studio or VS Code, create new folders with the following names: 
+Name 
+	Description
+	restore-from-exported 
+	This folder contains the restored app.
+	
+
+
+
+This is custom documentation. For more information, please visit SAP Help Portal. 19
+9/5/25, 7:12 PM 
+Name 
+	Description
+	restore-from-exported/webapp 
+	This folder will contain the content of the downloaded zip/tgz.
+	
+
+
+
+Import Steps 
+ Note 
+The BSP application code is normally minified before deployment, and so the resulting code that is downloaded is also the minified version. We recommend that you only use this import procedure if the application code is not already available under source control. 
+The -dbg.js file, such as (Component-dbg.js), contains the original un-minified code. You can copy its contents into the corresponding .js file, for example, Component-dbg.js Component.js for more human readable code. 
+Remove -dbg.js, -preload.js and .js.map before running UI5 CLI build, otherwise they are recreated in the dist folder. 
+To import SAP Fiori apps from the SAPUI5 ABAP repository, perform the following steps: 
+1. Login to your SAPUI5 ABAP back-end system and navigate to the transaction SE80. 
+2. Run the report /UI5/UI5_REPOSITORY_LOAD. 
+3. Provide the name of the SAPUI5 application and click Download. 
+4. Choose an empty folder for the download target. 
+5. From the resulting view, download the files as a .zip file using the button Click here to Download at the end of the page. 6. Extract the .zip file into the folder restore-from-exported/webapp. 
+Verify that the manifest.json is located at restore-from-exported/webapp/manifest.json. 
+7. Create a package.json in the folder restore-from-exported. The name value should match the application name in manifest.json. 
+{ 
+ "name": "sap.fe.demo.awesomeapp", 
+} 
+You can see the original application name and namespace in the manifest.json file. For example: 
+{ 
+ "sap.app": { 
+ "id": "sap.fe.demo.awesomeapp", 
+ .. 
+} 
+8. In SAP Business Application Studio or VS Code workspace, start the migration command Fiori: Migrate Project for use in Fiori tools if not already prompted to do so. 
+9. The project should be found in restore-from-exported and listed for migration. 
+10. Choose the appropriate options and migrate the project. 
+11. The project is now compatible with SAP Fiori tools. 
+This is custom documentation. For more information, please visit SAP Help Portal. 20
+9/5/25, 7:12 PM 
+ABAP Development Tools Integration 
+You can launch the SAP Fiori Generator directly when working with ABAP Development Tools (ADT) in Eclipse. You can either launch the Application Generator from SAP Fiori tools in SAP Business Application Studio in your browser, or directly launch Visual Studio Code (VS Code) locally if that is your preferred integrated development environment (IDE). 
+First, you configure the integration between ADT and SAP Fiori tools. This is a one-time setup within ADT for each system you want to integrate. Proceed as follows: 
+1. Choose the system you want to integrate, right-click it and select Properties. Then click ABAP Development IDE Configuration . 
+2. Select the Configure the target IDE checkbox and choose to launch either SAP Business Application Studio or VS Code. 
+After the configuration, a new button is displayed alongside the service details in ADT. Create Fiori Project allows you to launch your IDE environment and automatically start the SAP Fiori Generator with these system details. 
+When you launch the SAP Fiori Generator, the data source selection step is skipped since you’ve already selected your data source in ADT, and the main entity for your template is pre-selected with the entity you chose in ADT. 
+Alternatively, if you have used the Quick Fiori Application generator in ADT to already deploy an application with the selected service, then you can click Create Fiori Project to launch SAP Fiori tools and download the deployed application into your workspace. After it is downloaded, the application is updated to support the capabilities of SAP Fiori tools. 
+Finally, executing the Fiori: Download ADT Deployed App from SAPUI5 ABAP Repository command in your IDE environment allows you to directly download an application that was deployed from ADT, without needing to launch ADT. Choose your desired system from the dropdown and you are presented with a list of SAP Fiori applications that were deployed from ADT. 
+ Note 
+For the integration with VS Code, please ensure you have saved your ABAP system with the same system URL that is used by ADT. To check, click SAP Fiori ( ) on the activity toolbar from the left side, then click SAP Systems. If the saved system cannot be matched after launching from ADT, you can choose any of the existing systems you have already saved. If you already 
+have any SAP Fiori projects in your workspace that use the same system and main entity, you'll get the option to choose an existing matching SAP Fiori project or to create a new one with the SAP Fiori Generator. 
+Telemetry 
+You can enable and disable the collection of analytics for SAP Fiori tools. If enabled, non-personally identifiable information is used to help understand how you use the product to improve SAP Fiori tools. 
+To enable or disable telemetry: 
+Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Change Telemetry Settings command. 
+Report Issues and Security 
+See the SAP Fiori tools FAQs to get up-to-date information. 
+Check the SAP Fiori tools Community. 
+This is custom documentation. For more information, please visit SAP Help Portal. 21
+9/5/25, 7:12 PM 
+If you can't find an answer in SAP Community or need additional assistance, create an incident in SAP Support Portal under component: CA-UX-IDE. See Contact SAP Support. 
+Security 
+The following best practices are suggested when using SAP Fiori tools: 
+Follow the software development security guidance provided by your organization. 
+Avoid using OData services hosted on a production system for developing an SAP Fiori application. 
+Don't use the same user credentials to access development and production systems for the OData service. Use a trusted NPM registry. 
+Follow the security guidelines for the required software you are using. 
+Ensure that you use a source control system and are regularly committing code to it. 
+Ensure that you verify the content of your PATH variable. Commands like node or cds, which are usually part of the PATH variable and which can be executed from any directory in the terminal, need to point to a trusted origin. 
+For more information about security, see Security. 
+Related Information 
+SAP Fiori tools FAQ 
+SAP Fiori tools Community 
+Contact SAP Support 
+Project Functions 
+The following project functions are available when using SAP Fiori tools: 
+Information Panel 
+Application Information 
+Reuse Library Support 
+Data Editor 
+Deleting an Application in CAP Project 
+Environment Check 
+Managing System Connection 
+Managing Service and Annotations Files 
+Project Validation 
+Viewing Service Metadata 
+UI Service Generation 
+Application Information 
+When your SAP Fiori elements project is generated, an Application Information page will launch automatically. The page consists of four sections: 
+Project Detail provides information about the project, such as project type, SAPUI5 version, back end, and pages that are part of the application. Click the  (Page) icon to launch Configure Page Elements. 
+This is custom documentation. For more information, please visit SAP Help Portal. 22
+9/5/25, 7:12 PM 
+Status provides a summary of the project dependencies with links to fix any issues. 
+What you can do provides quick links to the SAP Fiori tools commands that are relevant to the project. 
+What you can learn links to various help topics including how to contact support. 
+You can relaunch the Application Information page at any time by executing the Fiori: Open Application Info command. In addition, you can also run Project Validation at any time after generating your project. 
+Application SAPUI5 Version 
+Minimum SAPUI5 Version 
+The minimum SAPUI5 version declares the version which is required at runtime to support the features used in application development. It is set using the minUI5Version property in the manifest.json file. For more information, see Descriptor for Applications, Components, and Libraries (manifest.json) 
+ Sample Code 
+JSON 
+{ 
+ "sap.ui5": { 
+ "dependencies": { 
+ "minUI5Version": "1.120.4" 
+ } 
+ } 
+} 
+If the target system does not have the required minimum SAPUI5 version, a warning message appears when deploying your application. For more information, see Deploying an Application. The minimum SAPUI5 version is set during generation when selecting a version for the project and can also be changed using the Fiori: Change Minimum SAPUI5 Version command. 
+It is also used to determine which version of the @sap/ux-specification module is installed to provide the matching feature set in Application Modeler and Guided Development. Changing the minimum SAPUI5 version with the Fiori: Change Minimum SAPUI5 Version command will update the @sap/ux-specification module if needed. 
+SAPUI5 Preview Version 
+The application's minimum SAPUI5 version is used by default for previewing an application in the development environment. You can use a different version by creating a run configuration. For more information, see Previewing an Application. 
+The SAPUI5 preview version is fetched by default from https://ui5.sap.com. If the requested version is not found, the next higher available version is used. You can set different source paths and different default SAPUI5 preview versions by configuring @sap/ux-ui5-tooling. For more information, see @sap/ux-ui5-tooling . 
+SAPUI5 Deployed Version 
+The SAPUI5 version used for a deployed application depends on the target platform and whether an application is running standalone or embedded in the SAP Fiori launchpad. 
+ABAP Environment 
+SAP Fiori launchpad 
+This is custom documentation. For more information, please visit SAP Help Portal. 23
+9/5/25, 7:12 PM 
+SAP Fiori applications deployed to an ABAP environment and embedded in SAP Fiori launchpad will use the SAPUI5 version deployed in the backend. Therefore, you should use the same SAPUI5 version in your project. 
+Standalone 
+If the application is running standalone using a deployed index.html, then the version depends on the configuration in the index.html file. Applications generated with the SAP Fiori Generator contain an index.html file with a relative path to the host: 
+ Sample Code 
+HTML 
+<script id="sap-ui-bootstrap" src="resources/sap-ui-core.js"> 
+These applications will also use the SAPUI5 version installed in the backend system. Their path can be modified to load resources directly from https://ui5.sap.com or a specific SAPUI5 version: 
+ Sample Code 
+HTML 
+<script id="sap-ui-bootstrap" src="https://ui5.sap.com/1.114.12/resources/sap-ui-core.js"> 
+Cloud Foundry Environment 
+SAP Build Work Zone Service 
+SAP Fiori applications deployed to Cloud Foundry run in an iFrame using the SAPUI5 version of the backend. For more information, see SAP Build Work Zone. 
+Standalone 
+If the application is running standalone, the Fiori: Add Deployment Configuration command adds a route to a destination for SAPUI5 resources to the xs-app.json: 
+ Sample Code 
+JSON 
+{ 
+ "routes": [ 
+ { 
+ "source": "^/resources/(.*)$", 
+ "target": "/resources/$1", 
+ "authenticationType": "none", 
+ "destination": "ui5" 
+ } 
+ ] 
+} 
+Also, an instance based destination pointing to https://ui5.sap.com is added to the mta.yaml: 
+This is custom documentation. For more information, please visit SAP Help Portal. 24
+9/5/25, 7:12 PM 
+ Sample Code 
+YAML 
+instance: 
+ destinations: 
+ - Authentication: NoAuthentication 
+ Name: ui5 
+ ProxyType: Internet 
+ Type: HTTP 
+ URL: https://ui5.sap.com 
+By default, the application uses the latest SAPUI5 version. This can be changed in the mta.yaml or by configuring the generated destination service using SAP Business Technology Platform (SAP BTP). You can also replace the instance based destination with an account level destination. For more information, see Configure Application Routing (xs-app.json). 
+Data Editor 
+Previewing the application using npm run start-mock generates mock data on the fly. If you want to generate mock data and store it in the .json file format, you can right-click on your project and launch Open Data Editor. Once generated, mock data is stored in the .json format under the /webapp/localService/mockdata file. 
+ Note 
+You need to configure mock server prior to using npm run start-mock. See Installing MockServer. 
+For templates like the Overview Page where there are multiple services, you will see a drop-down list to select the metadata file you want to use. If your application is running, you can stop the mock server by pressing Ctrl + C . 
+
+Data Editor reads the metadata.xml file that is defined in the manifest.json under the dataSource and generates mock data based on the property type. 
+Data can be edited by either double-clicking in the cell of the Data Editor or by editing the Entity.json file. This is custom documentation. For more information, please visit SAP Help Portal. 25
+9/5/25, 7:12 PM 
+If the mock server isn’t running, you can: 
+Make changes in the Data Editor, automatically reflected in the .json file. 
+If changes are made in the .json file, click the Refresh button to update the canvas. 
+If the mock server is running: 
+Add the watch: true parameter to the ui5-mock.yaml to update the canvas. 
+This is custom documentation. For more information, please visit SAP Help Portal. 26
+9/5/25, 7:12 PM 
+Editing Mock Data 
+Editing Data - edit data by double-clicking in the editable cell. Primary keys and foreign keys aren’t editable. 
+Add Row - add a row by clicking the Add Row button. Additional rows will be added automatically to all the entities that are associated with a foreign key. 
+Delete Row - delete a row by selecting a row and clicking the Delete Row button. Rows will be automatically deleted on all the entities that are associated with a foreign key. 
+Searching Mock Data 
+To search for mock data, perform the following steps: 
+1. Click on the Search input field in the header bar of the Data Editor. 
+2. Enter search criteria in the search input field. 
+3. Select the mock data that matches the search criteria in the drop-down table. The data you selected is highlighted in the Data Editor table. 
+Show and Hide Properties 
+To show properties in the Data Editor table, perform the following steps: 
+This is custom documentation. For more information, please visit SAP Help Portal. 27
+9/5/25, 7:12 PM 
+1. Click on Show Properties in the header bar of the Data Editor to open the popup. 
+2. Check the properties you want to display in the Data Editor table. 
+3. Click Save. 
+To hide properties in the Data Editor table, perform the following steps: 
+1. Click on Show Properties in the header bar of the Data Editor to open the popup. 
+2. Deselect the property that you don't want to display in the Data Editor table. 
+3. Click Save. 
+ Note 
+Certain property groups are hidden by default and can be shown using Show Properties. You can also search for a particular property using the search input field in the popup. 
+Deleting an Application in CAP Project 
+You can safely delete an SAP Fiori application created inside CAP projects with the SAP Fiori elements or freestyle SAPUI5 generators. The deletion process will delete the folder containing the application along with all changes in global files, such as references to already invalid annotations in a subfolder. 
+ Tip 
+For more information about CAP projects, see https://cap.cloud.sap/docs/about/ . 
+Perform the following steps: 
+1. Open the Command Palette in Visual Studio Code ( CMD / CTRL + Shift + P ) and execute the Fiori: Delete Application from CAP project command. 
+2. Select the application you want to delete from the dropdown list of applications available. A dialog box Do you really want to delete application <application_name>? with the following options appears: 
+Yes 
+No 
+Cancel 
+3. Click Yes to delete the application and revert all changes in global files. 
+Environment Check 
+Destination Checks: SAP Business Application Studio 
+SAP Fiori tools environment check creates a report that you can use to troubleshoot common destination-related issues. To use SAP Fiori tools environment check, perform the following steps: 
+1. Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Open Environment Check command. 2. Click Create destination. 
+3. Select a destination from the dropdown. 
+This is custom documentation. For more information, please visit SAP Help Portal. 28
+9/5/25, 7:12 PM 
+4. If prompted, enter your credentials. 
+5. To view the results, click View the results. 
+6. To view the results and save them to a .zip file that you can send to SAP Product Support, click View and Save results. The SAP Fiori tools environment check report has the following sections: 
+Environment provides the Dev Space type, Node version, and other information about the environment. 
+Destination Details provides destination parameters and other information about the destination. 
+All Destination Details lists all the destinations and their properties available to the user in the current subaccount. Messages provides raw log messages of the chosen destination which can be useful for SAP Product Support. 
+Gather Environment Information: SAP Business Application Studio and Visual Studio Code 
+SAP Fiori tools environment check can also check and create reports on the development environment in SAP Business Application Studio or Visual Studio Code (VS Code). This report provides the SAP Fiori application generator version, a list of npm packages, and other information about your development environment. 
+To gather environment information, perform the following steps: 
+1. Open the Command Palette in Visual Studio Code ( CMD / CTRL + Shift + P ) and execute the Fiori: Open Environment Checkcommand. 
+2. Click Gather environment information. 
+3. To view the results, click View and Copy results. The environment check details will be copied to your clipboard for easy access. 
+4. To view the results and save them to a .zip file that you can send to SAP Product Support, click View and Save results. 
+Information Panel 
+Version 1.11.4 of SAP Fiori tools introduces an information panel that gives you access to the release notes, useful links to learn about SAP Fiori elements developments, links to tutorials, and information about how to get support as a customer. 
+Perform the following steps to access the information panel: 
+1. On the activity toolbar from the left side, click SAP Fiori ( ). 
+2. Expand the information panel. 
+Managing System Connection 
+SAP Fiori tools running in Visual Studio Code (VS Code) allows you to save the connection information for a remote system. This functionality provides faster authentication when creating an application, generating a deployment configuration, and deploying an application. The credentials are saved in the operating system secured storage, such as Credential Manager in Windows and Keychain in Mac. 
+This is custom documentation. For more information, please visit SAP Help Portal. 29
+9/5/25, 7:12 PM 
+View SAP System Details 
+To view the details of an existing SAP system, perform the following steps: 
+1. On the activity toolbar from the left side, click SAP Fiori ( ). 
+2. Expand the SAP Systems view. 
+You can see the list of saved systems along with the usernames used for authentication. 
+3. To see the stored system details in a new view, click a specific system entry or right-click and select Show SAP System Details. 
+ Note 
+You can create an SAP Fiori application with your selected SAP system by clicking on the Create SAP Fiori application link. This will open the SAP Fiori application generator and pre-select your SAP system as the data source. 
+Test SAP System Connection 
+To test the connection of an existing SAP system, perform the following steps: 
+1. Open the details of a saved system. For more information, see View Saved Systems Details. 
+2. Click Test Connection. 
+As a result, you’ll see if the system connection was successful and whether it supports OData V2 and/or OData V4 services. 
+ Note 
+We recommend that you test a saved system connection to ensure the service catalog of a selected system works as expected. 
+Edit SAP System Connection 
+To edit the connection details for an existing SAP system, perform the following steps: 
+1. Right-click the saved system name you wish to edit and click the Show SAP System Details button. 
+2. For ABAP On Premise, update any of the following fields: 
+System Name 
+URL 
+Client 
+Username 
+Password 
+3. For ABAP Environment on SAP Business Technology Platform, update the following fields: 
+System Name: editable 
+Authentication Type: non-editable 
+4. For authentication type Service Key, update the following fields: 
+URL: non-editable (determined) 
+This is custom documentation. For more information, please visit SAP Help Portal. 30
+9/5/25, 7:12 PM 
+Client: non-editable (determined) 
+Service Key: editable 
+5. For authentication type Reentrance Ticket, update the following fields: 
+URL: editable 
+6. Click on Test Connection. 
+7. Click Save. 
+Delete SAP System Connection 
+To delete the connection to a SAP system, perform the following steps: 
+1. On the activity toolbar from the left side, click SAP Fiori ( ). 
+2. Expand the SAP Systems view. 
+3. Select the saved system you wish to delete. 
+4. Click the  (Delete) icon next to the system name. 
+5. Click Yes in the confirmation dialogue box. 
+Create New SAP System 
+To create a new ABAP On Premise system, perform the following steps: 
+1. Click the  (Add) icon with the tooltip Add SAP System on the right side of the system panel. 
+2. Enter valid values for the ABAP On Premise system that you have access to: 
+System Name: your choice 
+URL: system URL 
+Client: usually 3 digits, leave empty if not required 
+Username: your username 
+Password: your password 
+3. Click Test Connection and verify that the following message is shown: This SAP system connected successfully. 4. Click Save and verify the following: 
+that the message System information saved is displayed 
+that the saved system is shown in the systems panel in the format <name of added system> [username] To create a new ABAP Environment on SAP Business Technology Platform (SAP BTP), perform the following steps: 
+1. Click the  (Add) icon icon with the tooltip Add SAP System on the right side of the system panel. 
+2. Under System Type, select ABAP Environment on SAP Business Technology Platform. 
+3. Under Authentication Type, select either Service Key or Reentrance Ticket. 
+Service Key 
+This is custom documentation. For more information, please visit SAP Help Portal. 31
+9/5/25, 7:12 PM 
+a. For authenticating with a Service Key, enter valid values for the ABAP Environment on SAP BTP system that you have access to: 
+System Name: your choice 
+Service Key: copy and paste the service key of your chosen SAP BTP system 
+b. Click Test Connection. 
+that the URL value has been filled in by the system 
+that the message This SAP system connected successfully is displayed 
+c. Click Save and verify the following: 
+that the message System information saved is displayed 
+that the added system is shown under the systems panel in the format <name of added system> (BTP) Reentrance Ticket 
+ Note 
+Authenticating with reentrance tickets requires SAP S/4HANA Cloud 2408 or higher. 
+a. For authenticating with a Reentrance Ticket, enter the following valid values: 
+System Name: your choice 
+URL: the required ABAP system URL 
+b. Click Test Connection. 
+As a result, you’ll see if the system connection was successful and whether it supports OData V2 and/or OData V4 services. If the connection fails, you'll be asked to check the Output Tab for more details. 
+c. After successful connection, click Save and verify the following: 
+that the message System information saved is displayed 
+that the added system is shown under the systems panel in the format <name of added system> (S4HC) 
+Export/Import an Existing ABAP On Premise SAP System 
+To export an existing ABAP On Premise system, perform the following steps: 
+1. Right-click a saved system name and click Show SAP System Details. 
+2. Click Export System. A copy of the saved system will be downloaded in JSON format. Please note that no sensitive credential information is included in the exported JSON file. 
+To import an ABAP On Premise system, perform the following steps: 
+1. On the activity toolbar from the left side, click SAP Fiori ( ) . 
+2. Alongside the SAP Systems title bar, click Import SAP System ( ). 
+3. Navigate to the JSON file that you would like to import. 
+This is custom documentation. For more information, please visit SAP Help Portal. 32
+9/5/25, 7:12 PM 
+4. Upon successful import, provide your credentials for that system and click Test Connection. 
+5. Once the connection is successfully tested, click Save to finish importing the system. 
+ Note 
+If you already have a saved local SAP system with the same name, you’ll be asked to confirm before overwriting. 
+ Note 
+You can only import and export saved SAP systems between development environments that are using VS Code. You cannot import or export systems between VS Code and SAP Business Application Studio. 
+Managing Service and Annotations Files 
+Manage Service Files 
+How to add services to a project 
+ Note 
+The ability to add services is only supported for the SAP Fiori elements Overview Page and freestyle SAPUI5 projects. 
+1. Right-click the application project manifest.json. 
+2. In the context menu, select Service Manager. 
+3. Click Add Service. 
+4. Choose Connection Type: 
+a. Destination (SAP Business Application Studio) - Select the server destination from the dropdown. Enter your username and password if needed. 
+b. SAP System (Visual Studio Code) - Select the server SAP System from the dropdown. Enter your username and password if needed. 
+c. Hostname - Enter the server hostname, SAP Client, and username and password if needed. 
+5. To specify the OData service URL: 
+a. Enter Service URL manually. 
+b. Fetch Services from the server catalog and select from the dropdown list. 
+6. Click Add. 
+A new service appears in a service list. A servicemetadata.xml is now added to a local service folder of the project along with the service back-end annotations (if they’re available). 
+How to Refresh a Service from the Server 
+1. Right-click the SAP Fiori elements application project manifest.json. 
+2. In the context menu, select Service Manager. 
+3. Click the  (Pencil) icon opposite the service. 
+This is custom documentation. For more information, please visit SAP Help Portal. 33
+9/5/25, 7:12 PM 
+4. Choose Connection Type: 
+a. Destination (SAP Business Application Studio) - Select the server destination from the dropdown. Enter your username and password if needed. 
+b. SAP System (Visual Studio Code) - Select the server SAP System from the dropdown. Enter your username and password if needed. 
+c. Hostname - Enter the server hostname, SAP Client, and username and password if needed. 
+5. Click 
+Refresh - Refresh the local copy of service metadata and annotation files. 
+Refresh & Save - Refresh the local copy of service metadata and annotation files and save connection to UI5 YAML files. 
+How to Delete a Service: 
+1. Right-click the SAP Fiori elements application project manifest.json. 
+2. In the context menu, select Service Manager. 
+3. Click the  (Delete) icon. 
+The metadata.xml, related annotation XML files and mockdata is deleted from the project. Also, the ui5*.yaml files will remove any back-end routing and mockserver entries specific to the service being deleted. 
+For more information about mockserver, see Use Mock Data. 
+Manage OData Annotations Files 
+The OData services can have multiple local annotation files associated with a service. The Annotation File Manager can be used to manage local annotation files associated with a service. 
+ Note 
+Managing annotations is limited to the OData service and not applicable to CAP CDS. 
+How to open the Annotation File Manager 
+1. Right-click the manifest.json file in the SAP Fiori elements application project. 
+2. In the context menu, select Annotation File Manager. 
+3. Select the target service from the drop-down list. 
+Alternatively, you can click Annotation Hierarchy in the Annotation List View for a particular projection or property of service. How to add annotation files in the Annotation File Manager: 
+1. Right-click the manifest.json file in the SAP Fiori elements application project. 
+2. In the context menu, select Annotation File Manager. 
+3. Select the target service from the drop-down list. 
+4. Click Create Local Annotation File. 
+5. Fill in the criteria required for creating an annotation file. 
+This is custom documentation. For more information, please visit SAP Help Portal. 34
+9/5/25, 7:12 PM 
+6. Click Create. 
+The newly created annotation file appears in the Annotation File Manager for that service, and also in the Annotation List View for the target projection. 
+How to change the hierarchy of local annotation file 
+ Note 
+The highest-ranked annotation file in the Annotation File Manager table is at the bottom resembling precedence rules in the manifest.json. 
+1. In the Annotation File Hierarchy, use the up/down arrows to change the hierarchy. 
+How to activate and deactivate local annotation files: 
+1. Right-click the manifest.json file and select Open Annotation File Manager. 
+2. Select or clear the checkbox in the active column of the Annotation File Manager table to activate or deactivate the annotation. 
+ Note 
+When a file is deactivated, it’s no longer considered a part of the annotation file hierarchy. 
+How to delete an annotation file: 
+1. Select the active checkbox. 
+2. Click the  (Delete) icon next to the annotation file. 
+Project Validation 
+When the project is generated, you can validate it by opening the Command Palette ( CMD/CTRL + Shift + P ) and executing the Fiori: Validate Project command. Use a quick pick selection to select a project for validation from the multiple projects in the workspace. 
+The validation comprises of the following steps: 
+project 
+The project step checks that files such as package.json, manifest.json, and ui5.yaml exist and their mandatory fields are filled. 
+annotation 
+This is custom documentation. For more information, please visit SAP Help Portal. 35
+9/5/25, 7:12 PM 
+The annotation step validates the project annotation files using the same modules as the XML annotation language server extension. 
+specification 
+The specification step validates manifest.json and files in the changes folder. The @sap/ux-specification module is used to import the project and provide invalid configuration error messages. 
+eslint 
+The eslint step checks if eslint is installed as a dependency. If it is, the project validation runs the eslint check based on the project's configuration and the rules defined in the eslint-plugin-fiori-custom . You can enable eslint support for a new project by selecting the appropriate options in the Advanced Options of the SAP Fiori application generator, as described in the Additional Configuration section. 
+After all validation steps are executed, a report is generated and displayed as a Markdown (.md) file and in the Problems tab of Visual Studio Code (VS Code) or SAP Business Application Studio. 
+Reuse Library Support 
+A library to be used in your project has to reside in your workspace, in either SAP Business Application Studio or Visual Studio Code (VS Code). With SAP Fiori tools, you can reuse a library or component in your SAP Fiori apps by adding a reference to another project. 
+Creating a Reusable Library 
+To create a new reusable library that can be referenced in your SAP Fiori application, do the following steps: 
+1. Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Open Reusable Library Generator command. 
+2. Provide your library module name and namespace, and choose a minimum version of SAPUI5. 
+3. From the Library Folder Path drop-down list, choose the directory for the new reusable library. The library folder generated consists of the namespace and module name. 
+4. You can optionally choose to generate your library with OData service. 
+Adding Reference to Reuse a Library 
+Prerequisites 
+1. A reuse library project is cloned or imported into your workspace. 
+2. An SAP Fiori project is already in your workspace. 
+Steps 
+To add a reference for reusing an SAP Fiori library, perform the following steps: 
+1. Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Add Reference to SAP Fiori Reusable Libraries command. 
+2. From the Project Folder Path drop-down list, select the SAP Fiori project that exists in your current workspace. 3. Select Reusable Library Source as a workspace. 
+This is custom documentation. For more information, please visit SAP Help Portal. 36
+9/5/25, 7:12 PM 
+4. Select reusable libraries or components from the list. 
+5. Click Finish. 
+When you click Finish, the following files get updated with a reference to the selected reuse library: 
+ui5.yaml 
+ui5-local.yaml 
+manifest.json 
+Deploying a Reuse Library Project Using SAP Fiori Tools 
+Deploying a Reuse Library Project using SAP Fiori tools. 
+1. Add a Reuse Library project to your workspace. 
+2. In the resulting migration pop-up window, click on Start Migration. 
+3. From the list, select the project that you would like to migrate. 
+4. Now, click on Start Migration. 
+5. Once the dependencies are installed, you're ready to use SAP Fiori tools to deploy to an ABAP environment. 6. To generate the deployment configuration, see Generate Deployment Configuration ABAP. 
+7. To deploy the project to ABAP environment, see Deployment to ABAP. 
+Viewing Service Metadata 
+The SAP Fiori tools - Service Modeler extension supports the visualization of the OData V2/V4 Service Model based on the .xml/.edmx files and CAP CDS services. 
+You can perform the following operations with the service modeler: 
+Easily browse complex services and view the entity sets, entities, and properties of a service. 
+View annotations associated with the entity and properties 
+Manage services required for SAP Fiori elements applications, such as adding new services to a project or syncing services that already exist to ensure they are up to date. 
+Manage local annotation files associated to the different OData services of a SAP Fiori elements project. 
+Launch the Service Modeler 
+You can launch the Service Modeler in several ways: 
+Use the Command Palette 
+Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the SAP Fiori tools: Service Modeler: Open Service Modeler command. 
+Select the SAP Fiori elements project from your workspace. 
+ Note 
+If the project contains multiple services, you need to specify the service that you want to visualize. 
+This is custom documentation. For more information, please visit SAP Help Portal. 37
+9/5/25, 7:12 PM 
+Use the Folder Context Menu 
+If you already have an SAP Fiori elements project in your current workspace, you can right-click any folder within your project and Override Annotations. 
+From the Text Editor 
+If your metadata.xml file is open in the text editor, click the  (Annotations) icon. 
+Use the Service Modeler for a Service 
+Visualize a Service 
+The Service Modeler displays the entities and properties of a service in a list format. You can expand the entity node to view all the associated properties for that entity. You can expand the sections for Complex Types and Entity Containers to see the associated properties and entity sets. The namespace is hidden from the metadata by default. You can click the  (Settings) icon to toggle it on. 
+Properties that are the primary key of the entity or projection are identified by a  (Key) icon. 
+Entities or properties that have annotations associated with them are identified by an  (Annotations) icon. You can filter them to only view the metadata targets that have annotations. 
+You can select a specific node to see the related annotations in the side panel. The annotation panel lists the annotation files and the associated annotations for the entities and the properties in the main list. 
+Search for Entities, Properties, or Annotations 
+The search functionality is available in the Service Modeler toolbar. 
+When you enter a phrase in the search input field, results matching the input term are filtered on the screen. If the search matches an entity name, then all the child properties are also displayed and the associated data is filtered in the annotation side panel. 
+If the search term matches an annotation term, all the associated data is filtered in the list. 
+This is custom documentation. For more information, please visit SAP Help Portal. 38
+9/5/25, 7:12 PM 
+
+UI Service Generation 
+Use the UI Service Generator to create a UI service for your SAP Fiori project. 
+Procedure 
+1. Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Generate UI Service command. 2. Select the following depending on your integrated development environment (IDE): 
+Visual Studio Code: Select a saved SAP system. 
+SAP Business Application Studio: Select a destination. 
+3. Select Business Object Interface or ABAP Core Data Service. 
+4. Select an object from the dropdown. 
+5. Click Next. 
+6. Select a Package. 
+7. Select a Transport Request. 
+8. (Optional) Select the Yes radio button for Draft Enabled. Note: The Draft Enabled prompt is only available if the selected business object supports drafts. 
+9. (Optional) Select the Yes radio button for Do you want to create an SAP Fiori application with the newly generated service? 
+10. Click Finish. 
+Results 
+The UI service is generated. This can take some time. 
+If you have chosen to create an SAP Fiori application with the newly generated service, the SAP Fiori Generator will automatically launch and the service will be used in the generated SAP Fiori application. 
+Generating an Application 
+To create an application in Visual Studio Code (VS Code) or SAP Business Application Studio, perform the following steps: This is custom documentation. For more information, please visit SAP Help Portal. 39
+9/5/25, 7:12 PM 
+1. Open the Command Palette in Visual Studio Code ( CMD / CTRL + Shift + P ) and execute the Fiori: Open Application Generator command or Start from template in SAP Business Application Studio. 
+ Note 
+In SAP Business Application Studio, use one of the following dev spaces, depending on your development needs: SAP Fiori 
+Full-Stack Application Using Productivity Tools 
+Full Stack Cloud Application 
+2. The Template Wizard appears. 
+ Note 
+SAP Fiori application generator increases development productivity and ensures consistency across your SAP apps by using standard page types to build applications. This generator follows SAP Fiori elements or freestyle SAPUI5 approach to build an SAPUI5 application. 
+3. On the Template Selection page, select one of the following options from the Template Type dropdown list: SAP Fiori (default value) 
+Deprecated templates (includes SAPUI5 templates that have been deprecated) 
+4. Click Next. 
+Based on your selection, the next page appears. 
+ Note 
+After the SAP Fiori project is generated, the Application Information page opens. You can relaunch the Application Information page at any time by opening the Command Palette ( CMD / CTRL + Shift + P ) and executing the Fiori: Open Application Info command. 
+For MTA deployment, see Generating an MTA Deployment File. 
+Generating an Application with SAP Business Application Studio Service Center In the SAP Business Application Studio Service Center, you can explore services from various service providers. 
+The Service Center displays the services from subaccount destinations and SAP Business Accelerator Hub. The exposed services can be used as a data source for creating an SAP Fiori application. 
+For more information, see Service Center. 
+Project 
+Once a project is generated, you can see its structure: 
+webapp - Root folder for SAPUI5 based web applications. 
+.npmrc - Lists any npm registry configuration updates required for the generated project. 
+.gitignore - Specifies files or folder patterns that should be excluded from source control, such as node_modules. This is custom documentation. For more information, please visit SAP Help Portal. 40
+9/5/25, 7:12 PM 
+package-lock.json - Ensures that the project node dependencies are fixed to the correct versions and helps improve the speed of installing npm packages. 
+package.json - The main configuration file for node-based projects. 
+README.md - The readme file providing details on the options chosen to generate the application. 
+ui5-local.yaml - Supports local development of an application in preview mode. 
+ui5.yaml - Ensures that the application generated locally can connect to the supplied data source and supports dynamically updating the SAPUI5 version. 
+node_modules - Contains node modules required to install and run the current project locally (npm install creates and updates the folder). This folder doesn’t need to be version-controlled. 
+ Note 
+The generated project structure differs if you select the Use a Local CAP Node.js Project option during generation. In this case, the preview and deployment functionality are provided by the local CAP project. As a result, thepackage.json file is shorter and some files aren’t generated, such as ui5.yaml and.npmrc. Additionally, instead of a local annotation.xml, an annotation.cds file is generated so that annotations are defined in CAP CDS syntax instead of OData EDMX. 
+For more information about npm, see @sap/generator-fiori-elements and @sap/ux-ui5-tooling . 
+ Note 
+The SAP Fiori application generator now consumes open source libraries for writing the SAP Fiori elements and freestyle SAPUI5 applications. Please see Fiori elements writer and Fiori freestyle writer documentation for more information on these libraries. 
+ Note 
+In SAP Fiori application generator, when some of the most common errors are shown during project generations, the generator gives an option to end user to launch Guided Answers Extension by SAP and troubleshoot the error based on the solution provided by SAP experts. 
+SAP Fiori Elements 
+In SAP Fiori elements, perform the following steps: 
+1. Select a Floorplan for your application and click Next. The following options are available: 
+List Report Object Page 
+Worklist 
+Analytical List Page 
+Overview Page 
+2. Select a Data Source and click Next. 
+Connect to an SAP System 
+Connect to an OData Service with a customized URL 
+Connect to an OData service 
+This is custom documentation. For more information, please visit SAP Help Portal. 41
+9/5/25, 7:12 PM 
+Upload a Metadata Document 
+Connect to SAP Business Accelerator Hub 
+Use a Local CAP Project 
+ Note 
+If a username and password are required, enter your credentials and click the Login icon (person with an arrow). 
+3. Select Associated floorplan properties, such as the Main entity and Navigation entity. 
+4. On the Project Attributes wizard page, configure the main project attributes. 
+ Note 
+Some fields are already prefilled with default text, which can be modified if needed. Mandatory fields are marked with an asterisk (*). 
+Module name (required): Must be alpha-numeric and cannot contain spaces. The generated Node.js application uses the module name as its package name. It is used as the folder name of the generated application. 
+ Note 
+Module names can only contain URL-friendly characters. 
+Application title: The title that is displayed in the launchpad tile and header of the generated application. 
+Application namespace: The SAPUI5 project namespace to be used. Must start with a letter and contain letters, digits, and periods only. 
+Description: The description of the application. 
+Project folder path (required): The parent folder in which the new application is generated. The new application is generated in a new folder with the module name. If a folder with the same name already exists, the user must choose a new module name. 
+ Note 
+You cannot select a project folder path that already contains an SAP Fiori application. If you want to create an application as part of a CAP project, you must select Local CAP Project as the Data Source in Step 2. 
+Minimum SAPUI5 version: From the dropdown list, select the minimum SAPUI5 version that the application will require. 
+The dropdown will show the list of available versions of SAPUI5, with the current default version being 
+preselected. The dropdown will list SAPUI5 versions grouped by maintenance status as listed here . 
+If the source system during generation is an ABAP on Premise system, then the default version selected in the dropdown will be equal to the version of SAPUI5 version on that ABAP system where possible. 
+ Note 
+For an application generated with the OData V4 data source, the list of SAPUI5 versions supported is limited to the most recent versions. 
+This is custom documentation. For more information, please visit SAP Help Portal. 42
+9/5/25, 7:12 PM 
+Adding Deployment Configuration to an Existing MTA Deployment File. 
+If a project is generated inside an app router configuration project that has an MTA file, then it will use the deployment configuration by default. In this case, you can still select No and skip the deployment configuration step. 
+Add deployment configuration. The default value is No. 
+Provide values to the prompts and click Finish. 
+Add FLP configuration. The default value is No. 
+Provide values to the prompts and click Finish. 
+Configure virtual endpoints for local preview. The default value is Yes. 
+With this option, virtual endpoints for local preview are used and these files do not need to be created during generation. 
+Configure advanced options. The default value is No. 
+5. Click Finish to generate the application. 
+Supported Floorplans 
+This is a list of supported floorplans that give you the ability to create SAP Fiori elements applications based on them. 
+List Report Object Page 
+With the list report object page, users can view and work with a large set of items. This floorplan offers powerful features for finding and acting on relevant items. It’s often used as an entry point for navigating to the item details, which are shown on the object page. 
+For more information, see List Report or Object Page . 
+Worklist 
+The worklist displays a collection of items that the user needs to process. Working through the list usually involves reviewing details of the items and taking action. In most cases, the user has to either complete a work item or delegate it. 
+The focus of the worklist floorplan is on processing items. This differs from the list report floorplan, which focuses on finding and acting on relevant items from a large dataset. 
+You can use any List Report and Object Page option to configure Worklist. 
+For more information about Fiori Design Guidelines, see Worklist Floorplan . 
+ Note 
+For worklist floorplans using an OData V4 data source, only SAPUI5 versions 1.99 and above are supported. 
+For information on what is supported in worklist for OData V2, see Floorplan Properties. 
+Analytical List Page 
+The analytical list page offers a unique way to analyze data step by step from different perspectives to investigate the root cause of any deviations, spikes, and abnormalities through drilldown, and to act on transactional content. All this can be done seamlessly within one page. The purpose of the analytical list page is to identify problem areas within datasets or significant single instances using data visualization and business intelligence. 
+This is custom documentation. For more information, please visit SAP Help Portal. 43
+9/5/25, 7:12 PM 
+Visualization helps users to recognize facts and situations, and to reduce the number of interaction steps needed to gain insights or to identify significant single instances. Chart visualization enables users to spot relevant data more quickly. 
+The main target group are users who work on transactional content. They benefit from fully transparent business object data and direct access to business actions. In addition, they have access to analytical views and functions without having to switch between systems. These include KPIs, a visual filter where filter values are enriched by measures and visualizations, and a combined table or chart view with drill-in capabilities (hybrid view). Users can interact with the chart to look deep into the data. The visualization enables them to identify spikes, deviations, and abnormalities more quickly, and to take appropriate action right away. 
+For more information, see Analytical List Page . 
+ Note 
+For analytical list page floorplans using an Odata V4 data source, only SAPUI5 versions 1.90 and above are supported. 
+Overview Page 
+The overview page is a data-driven SAP Fiori application type and floorplan that provides all the information the user needs on a single page, based on the user specific domain or role. It allows the user to focus on the most important tasks, and view, filter, and react to the information quickly. 
+Each task or topic is represented by a card or a content container. The overview page acts as a UI framework for organizing multiple cards on a single page. 
+The overview page is based on SAP Fiori elements technology, and uses annotated views of app data, meaning that the app content can be tailored to the domain or SAP Fiori elements role. Different types of cards allow you to visualize information in an attractive and efficient way. 
+For more information, see Overview Page . 
+Form entry object page 
+The form entry object page allows users to create an application with an object page and a generated form. The object page floorplan enables end-users to provide data entry in the generated application. 
+For more information, see Object Page . 
+Flexible programming model 
+The flexible programming model makes it easy for you to extend apps based on SAP Fiori elements for OData V4. You can use any SAPUI5 coding or controls in extension points, and take advantage of the provided building blocks. 
+For more information, see Flexible Programming Model. 
+Data Source 
+This section provides information on how to connect your application with a data source during generation. 
+ Tip 
+When running SAP Fiori tools in Visual Studio Code (VS Code), you can save the connection information to a remote system. For more information, see Managing System Connection. 
+ Tip 
+You can create a UI service for your SAP ABAP system. For more information, see UI Service Generation. This is custom documentation. For more information, please visit SAP Help Portal. 44
+9/5/25, 7:12 PM 
+Connect to an SAP System 
+Connect to an SAP system using VS Code 
+In either case, you can create a new system to connect to, or select one of the saved systems you may have already used. Adding a new system 
+1. Enter a system name that you use to save the connection details for either an on-premise SAP ABAP system or SAP Business Technology Platform system. 
+2. Select the SAP ABAP system type. 
+For the SAP ABAP system hosted in the SAP Business Technology Platform, you can choose from the following authentication types: 
+Service Key 
+Reentrance Ticket 
+If you choose Service Key authentication, you must provide a service key that contains the key information for the required SAP ABAP system. Your administrator needs to provide this service key for the selected SAP ABAP system. Once this information is available, a browser tab launches and prompts you to authenticate against the system. 
+For more information about how to create a service key, see Create Service Keys Using the Cockpit. 
+If you choose Reentrance Ticket authentication, provide the URL to your SAP S/4HANA Cloud system and log in when the browser window appears. 
+ Note 
+Authenticating with reentrance tickets requires SAP S/4HANA Cloud 2408 or higher. 
+ Note 
+Once you have authenticated your user for the new system in the browser, SAP Fiori application generator shows you the list of OData services available for the user you’ve used to log in. Please see the Service dropdown with the title Service (for user [<USERNAME>]). 
+For an on-premise SAP ABAP system, you need to provide the system URL and optional client ID, along with the authentication details for that system if required. 
+ Example 
+https://someurl:12345, client: 010 
+In both scenarios, you can store the system details in the secure storage of your operating system: 
+Microsoft Windows: Credential Manager 
+macOS: Keychain 
+Saving the system in this way ensures that you don’t need to continually provide these details for generating an application or running it locally. 
+The saved connections can be viewed and deleted in the SAP Systems view in VS Code. 
+If you want to update the connection, we recommend that you delete the system from the SAP Systems view and recreate it in the project generator. For more information, see Managing System Connection. 
+ Note 
+This is custom documentation. For more information, please visit SAP Help Portal. 45
+9/5/25, 7:12 PM 
+When connecting for the first time, only the New System option is available. 
+Using a saved system 
+1. Select a previously saved system. 
+The wizard skips the authentication if your saved system credentials are still valid. 
+2. If saved authentication details are invalid, you’ll be prompt to reauthenticate. For example, if your password is expired. 
+Connect to an SAP system using SAP Business Application Studio 
+When using the SAP Fiori application generator in SAP Business Application Studio, you can select from a list of destinations that are configured for the SAP Business Application Studio instance. The generator automatically retrieves the available destinations to select from. If you do not have the correct access to use the destination endpoint, an error occurs. 
+The destinations are expected to have a catalog service that provides a list of ODataV2 and V4 services that are available. 
+If you want to use a destination to reference a service URL endpoint, see Connect to an OData Service with a customized URL. 
+ Note 
+In SAP Business Application Studio, to create a SAP Fiori elements application in SAP BTP ABAP environment: OrgManager 
+SpaceManager 
+SpaceDeveloper 
+Connect to an OData Service with a Customized URL 
+If the OData endpoint that you want to use in your application can't be accessed directly, you can set it up as a destination and directly reference it in the generator. To do so, perform the following steps: 
+1. In SAP Business Application Studio, launch the SAP Fiori application generator and select the required template. 2. Select Connect to an OData Service from the data source drop-down list. 
+3. For the data source URL field, use the destination name followed by .dest. In this case, SAP Business Application Studio should be able to route to your service with the destination name. 
+ Example 
+If the URL defined in the Destination is https://someurl.com/someservice, you must be with the destination name MyDestination, the following URL will be used in the SAP Fiori application generator: 
+https://MyDestination.dest/someservice 
+Connect to an OData Service 
+Enter the OData endpoint URL to generate your application. 
+All OData endpoints that are either authenticated or unauthenticated are supported. 
+This is custom documentation. For more information, please visit SAP Help Portal. 46
+9/5/25, 7:12 PM 
+The OData endpoint must be the correct version of the template that you’ve selected. For example, a OData V2 endpoint must be provided for an OData V2 template. The wizard informs you in case of any mismatch between the OData version and the template version. 
+ Note 
+If necessary, the system prompts you to provide your name and password. 
+Upload a Metadata Document 
+Upload a metadata XML file that you want to use. Now, you can generate the application without relying on a back-end service being available. 
+Only EDMX format is supported for the metadata XML file. 
+After the metadata XML file is validated, you can select the required entity options for the application. 
+ Note 
+Using the metadata.xml file restricts the generated application to only mock data. 
+Connect to SAP Business Accelerator Hub 
+ Caution 
+SAP Business Accelerator Hub has been deprecated from the Application Generator as a data source and will be removed in a future release. We strongly recommend that you use the Service Center in SAP Business Application Studio to generate applications if you intend to still use SAP Business Accelerator Hub. 
+For more information, see Service Center. 
+When users don't have their data source available, they can generate an application with the SAP Business Accelerator Hub. This data source is only intended to support development and must be replaced with a real data source before going live. 
+ Note 
+Ensure that you logged in to https://api.sap.com/ at least once before connecting to SAP Business Accelerator Hub. 
+In the Data Source and Service Selection wizard page, select Connect to SAP Business Accelerator Hub from the Data source dropdown list. 
+When the SAP Business Accelerator Hub option is selected, a list of predefined services relevant to different industries appears. Select a service that you want to generate an application with. For example, Just-In-Time Calls, Transaction Classifications, Content, and Request of Quotation. 
+After the service is selected, two more fields appear for authentication purposes: Enter your Username and Enter your Password. 
+Fill in the fields and click Next to proceed with application generation. 
+ Caution 
+SAP Business Accelerator Hub services are not intended for use with SAP Fiori UI development. 
+This is custom documentation. For more information, please visit SAP Help Portal. 47
+9/5/25, 7:12 PM 
+ Note 
+It is not recommended to deploy applications that use the SAP Business Accelerator Hub, as this is a sandbox data source and is intended for local development only. See Run Your HTML5 Application with the SAP Business Accelerator Hub, for more details on running your application with SAP Business Accelerator Hub. 
+For more information, see https://api.sap.com/ . 
+Use a Local CAP Project 
+You can either select a local SAP Cloud Application Programming Model (CAP) project that has been detected in your workspace, or manually select the CAP project folder path and the generator will retrieve the services that are defined for that project. 
+ Note 
+A local CAP Project data source is limited to the List Report Object Page and Analytical List Page templates that are based on OData V4. This option is not available for the Worklist and Overview Page templates. 
+ Note 
+OData V2 Support for CAP - While CAP defaults to OData service V4, the latest protocol version, some projects need to fallback to OData service V2, for example, to keep using existing V2-based UIs. SAP Fiori tools does not recommend and support having both OData service V2 and OData service V4 applications in the app folder within the CAP project. In case, you have a requirement to create both OData service V2 and OData service V4 applications, it is recommended that you generate the OData service V2 app outside of the CAP project. 
+For more information about CAP services, see: https://cap.cloud.sap/docs/about/ . 
+SAP Fiori tools support two types of SAP CAP Projects: 
+SAP CAP Node.js Project 
+Project Prerequisites 
+Node.js 
+Sample Projects: 
+CAP Node.js Teched2020 
+Cloud CAP Samples 
+ Note 
+If you use one of the sample projects, ensure the workspace root is set to the cloned repository and execute npm install. 
+SAP CAP Node.js Project steps 
+1. Perform the steps identified in the SAP Fiori Elements section. 
+2. On the Data Source and Service Selection wizard page, in the Data source dropdown list, select Use a Local CAP Project. If there is only one CAP project in the workspace, the project is auto selected. 
+This is custom documentation. For more information, please visit SAP Help Portal. 48
+9/5/25, 7:12 PM 
+3. If there are CAP projects detected in your workspace, you can then choose from the list of CAP projects that have been found. If your CAP project is not in the list, select Manually select CAP project folder path and browse to your CAP project location. If the generator is unable to find any local CAP projects in your workspace, you can provide the CAP project folder path manually. 
+ Note 
+If the generator cannot find a major version of @sap/CDS in your workspace – either globally or as part of the project – that matches the version specified in your CAP project, then you won't be permitted to generate your application because the generated application uses an invalid @sap/CDS version. 
+4. In the OData service drop-down list, select a service, and click Next. 
+5. On the Entity Selection wizard page, select the main entity from a drop-down list. 
+ Note 
+The properties of this entity are used to display data on the List Report from the entity collection. 
+6. Leave the value for the Navigation Entity field as None and click Next. 
+7. On the Project Attributes wizard page, add the required attributes to the application project. For example: Module name: incidents 
+Application title: My Incidents 
+Application namespace: sap.fe.demo 
+For the rest of the attributes, keep the default values. 
+For more information on the Project Attributes wizard page, see SAP Fiori Elements Application. 
+8. Click Finish to start the app generation. 
+SAP CAP Java Project 
+Project Prerequisites 
+Ensure cds, java, and mvn are installed on your computer to be able to execute these commands in the terminal and identify their version numbers: 
+ cds --version 
+ java --version 
+ mvn --version 
+For more information, see Setting Up Local Development in the CAP Java documentation. 
+Sample Projects: 
+CAP Samples for Java 
+ Note 
+If you use one of the sample projects, confirm that all system requirements are met. Execute the mvn command: 
+cd cloud-cap-samples-java 
+mvn spring-boot:run 
+This is custom documentation. For more information, please visit SAP Help Portal. 49
+9/5/25, 7:12 PM 
+It takes some time for the command to install dependencies, build, and start the project. After the command is executed, click the http://localhost:8080 link to open a browser and see the services, such as admin or browse. You can cancel the command by entering Ctrl + C in the terminal. 
+SAP CAP Java Project steps 
+1. Perform the steps identified in the SAP Fiori Elements section. 
+2. On the Data Source and Service Selection wizard page, in the Data source dropdown list, select Use a Local CAP Project. If there is only one CAP project in the workspace, the project is auto selected. 
+3. If there are CAP projects detected in your workspace, you can then choose from the list of CAP projects that have been found. If your CAP project is not in the list, select Manually select CAP project folder path and browse to your CAP project location. If the generator is unable to find any local CAP projects in your workspace, you can provide the CAP project folder path manually. 
+4. In the OData service dropdown list, select a service, for example, CatalogService, and click Next. 
+5. On the Entity Selection wizard page, select the main entity from a dropdown list. 
+ Note 
+The properties of this entity are used to display data on the List Report from the entity collection. 
+6. Leave the value for the Navigation Entity field as None and click Next. 
+7. On the Project Attributes wizard page, add the required attributes to the application project. For example: Module name: books 
+Application title: Books 
+For the rest of the attributes, keep the default values. 
+For more information on the Project Attributes wizard page, see SAP Fiori Elements Application. 
+8. Click Finish. 
+9. In the terminal, execute the command mvn spring-boot:run. 
+10. Open the file app/books/README.md and find the link leading to the application, such as 
+http://localhost:8080/books/webapp/index.html. 
+11. Click the link to the application. 
+12. When prompted, enter the username and password. For example, user/user or admin/admin. 
+ Note 
+You can check the terminal output to see the username and password credentials to be used. 
+The SAP Fiori launchpad sandbox with a newly created application appears. 
+Floorplan Properties 
+After you select a data source for your application, you can customize the application by setting the following properties: 
+Floorplan Properties 
+This is custom documentation. For more information, please visit SAP Help Portal. 50
+9/5/25, 7:12 PM 
+Main entity: Represents the entity set that is used to populate the main content area of the list page. For a parametrized entity set, use a result entity set name instead. 
+Navigation entity: Represents the association from the main entity to navigate to applications. 
+Table type: Represents the type of table to be generated. The Table type property is only supported for floorplans that support a list in a table such as the list report page, worklist page, and analytical list page. For more information, see Table Types . 
+ Tip 
+If the OData V4 service supports the Analytical table type and the selected main entity supports the analytical table, then the table type defaults to Analytical for the list report and worklist floorplans. 
+Floorplan OData V2 Properties 
+The following properties are only applicable to floorplans based on OData V2: 
+Worklist Page 
+Variant management: By default, variant management is hidden. To enable variant management at the table level, set variantManagementHidden to false in the manifest.json file. To enable variant management at the page level, set smartVariantManagement to true and variantManagementHidden to false in the manifest.json file. 
+Analytical List Page 
+Table type: Defines the supported table types. 
+Allow multi select: Enables a checkbox for selecting multiple items in a table. This setting is only effective using defined actions either through an annotation or manifest. 
+Auto hide: Determines the chart or table interaction. If it is set to true, the chart acts as a filter for a table. If it is set to false, the matching table rows are highlighted but the table is not filtered. 
+Enable smart variant management. Enables variant management at the page level. 
+Floorplan OData V4 Properties 
+The following properties are only applicable to floorplans based on OData V4: 
+Analytical List Page 
+Selection mode: Defines different row selection modes for the generated table. 
+Freestyle SAPUI5 
+Learn how to generate a freestyle SAPUI5 application. 
+ Note 
+If you are using SAP Business Application Studio, ensure you use a SAP Fiori dev space. 
+1. In the SAP Fiori generator, select a template that supports freestyle SAPUI5 applications and click Next. For more information, see Supported Templates. 
+This is custom documentation. For more information, please visit SAP Help Portal. 51
+9/5/25, 7:12 PM 
+2. Select a Data source and click Next. For more information, see Data Source. 
+3. Enter a name for your view and click Next. For more information, see Template Properties. 
+4. Configure the project attributes and click Finish. A list of project attributes is provided below: 
+ Tip 
+Mandatory fields are prefilled with default text. 
+Module name (Required): The module name attribute is used as the folder and package name for the generated application. The module name must be alphanumeric and cannot contain spaces. 
+Application title (Required): The application title attribute is used as the title in the header of the generated application. 
+Application namespace (Required): The application namespace attribute is used as the SAPUI5 project namespace. It must start with a letter and only contain letters, digits, and periods. 
+Description: The description attribute is used as the description of the application. 
+Project folder (Required): The project folder attribute is used as the parent folder in which the new application is generated. The new application is generated in a new folder with the module name. If a folder with the same name already exists, you must choose a new module name. 
+Minimum SAPUI5 version: The minimum SAPUI5 version attribute is used as the minimum SAPUI5 version required in the application. 
+The dropdown shows the list of available SAPUI5 versions grouped by maintenace status and the default version is preselected. For more information on the maintenace status of SAPUI5 versions, see SAPUI5 
+Versions Maintenance Status . 
+If the source system is an ABAP on-premise system, then the default version selected in the dropdown is equal to the SAPUI5 version on the ABAP system. 
+Add deployment configuration to MTA project 
+The add deployment to MTA project attribute is used if an MTA file already exists in the project folder path. If a project is generated inside an app router configuration project that has an MTA file, then uses its deployment configuration by default. For more information, see Adding Deployment Configuration to an Existing MTA Deployment File. 
+Add deployment configuration: The add deployment configuration attribute is used to determine whether to configure deployment settings. For more information, see Add Deployment Configuration. 
+Add FLP configuration: The Add FLP configuration attribute is used to determine whether to add a SAP Fiori launchpad configuration. For more information, see Add FLP configuration. 
+Configure virtual endpoints for local preview: 
+The configure virtual endpoints for local preview attribute is used to determine whether to activate virtual endpoints for preview. When active, preview files are not created during generation and virtual endpoints are used instead. 
+Configure advanced options: The configure advanced options attribute is used to determine whether to display advanced options. For more information, see Configure advanced options. 
+5. Click Finish to generate the application. 
+Supported Templates 
+This is custom documentation. For more information, please visit SAP Help Portal. 52
+9/5/25, 7:12 PM 
+This is a list of supported templates that enable you to create freestyle SAPUI5 applications. 
+Basic 
+The Basic Template is intended for those developers who want to create their SAPUI5 app from scratch. With this basic template, a blank canvas is available to start coding right away. The basic file structure is set up according to our best practices. 
+Custom Page 
+Create an SAP Fiori elements application containing a custom page based on the flexible programming model. With this custom page template, you can add the Page building block as a default layout. For more information, see Flexible Programming Model. 
+ Caution 
+SAP Fiori tools supports the development of SAP Fiori elements and freestyle SAPUI5 applications with a minimum SAPUI5 version of 1.65 or higher. 
+Basic Template 
+The basic template is intended for all developers who want to start developing their own SAPUI5 app from scratch. 
+With this basic template you have a blank canvas to start coding right away. The basic file structure is set up according to our best practices. 
+ Note 
+This template does not include Node.js features and is intended for standalone use. If you want to convert it to a launchpad app you have to add some features manually, such as the Save as Tile feature. 
+Screenshot of the Basic App 
+The index.html file defines the page that is displayed when the app is started. It is located in the webapp folder. It contains an XML view with a header and a title from the sap.m library as a starting point. You can easily modify the app to add more functionality. 
+Integrated Tests 
+This is custom documentation. For more information, please visit SAP Help Portal. 53
+9/5/25, 7:12 PM 
+Test for the Basic App 
+An important best practice is to have unit and integration tests for your app. With this template, we have included sample tests that you can use: Tests on formatters and the app controller are the basic tests any app should cover. You can find them in the test subfolder of the webapp folder. 
+Where Can I Find the Basic Template? 
+You can find the basic template in SAP Fiori tools. 
+Data Source 
+This section provides information on how to connect your application with a data source during generation. In the Data Source and Service Selection wizard page, you can select from one of the following options: 
+Connect to an SAP System 
+Connect to an SAP system using VS Code 
+In either case, you can create a system to connect to or select from any saved systems you may have already used. Adding a new system 
+1. Enter a system name that you use to save the connection details for either an on-premise SAP ABAP system or SAP Business Technology Platform system. 
+2. Select the SAP ABAP system type 
+This is custom documentation. For more information, please visit SAP Help Portal. 54
+9/5/25, 7:12 PM 
+For the SAP ABAP system hosted in the SAP Business Technology Platform, you can choose from the following authentication types: 
+Service Key 
+Reentrance Ticket 
+If you choose Service Key authentication, you must provide a service key that contains the key information for the required SAP ABAP system. Your administrator needs to provide this service key for the selected SAP ABAP system. Once this information is available, a browser tab launches and prompts you to authenticate against the system. 
+For more information about how to create a service key, see Create Service Keys Using the Cockpit. 
+If you choose Reentrance Ticket authentication, provide the URL to your SAP S/4HANA Cloud system and log in when the browser window appears. 
+ Note 
+Authenticating with reentrance tickets requires SAP S/4HANA Cloud 2408 or higher. 
+ Note 
+Once you have authenticated your user for the new system in the browser, SAP Fiori application generator shows you the list of OData services available for the user you’ve used to log in. Please see the Service dropdown with the title Service (for user [<USERNAME>]). 
+For an on-premise SAP ABAP system, you need to provide the system URL and optional client ID, along with the authentication details for that system if required. 
+ Example 
+https://someurl:12345, client: 010 
+In both scenarios, you can store the system details in the secure storage of your operating system. 
+Microsoft Windows: Keychain. 
+macOS: Credential Manager. 
+Saving the system in this way ensures that you do not need to continually provide these details for generating an application or running the generated application locally. 
+A saved system can be deleted from either of these places, as needed. 
+ Note 
+When connecting for the first time, only the New System option is available. 
+Connecting to an SAP System using SAP Business Application Studio 
+When using the SAP Fiori application generator in SAP Business Application Studio, you can select from a list of destinations that are configured for a SAP Business Application Studio instance. The generator automatically retrieves the available destinations, and you can select from the list. If you do not have the correct access to use the destination end point, an error occurs. 
+Connect to an OData service with a Customized URL 
+If the OData endpoint that you want to use in your application can't be accessed directly, you can set it up as a destination and directly reference it in the generator. To do so, perform the following steps: 
+This is custom documentation. For more information, please visit SAP Help Portal. 55
+9/5/25, 7:12 PM 
+1. In SAP Business Application Studio, launch the SAP Fiori Generator and select the required template. 
+2. Select Connect to an OData Service from the data source dropdown list. 
+3. For the data source URL field, use the destination name followed by .dest. In this case, SAP Business Application Studio should be able to route to your service with the destination name. 
+ Example 
+If the URL defined in the Destination is https://someurl.com/someservice with the destination name MyDestination, the following URL will be used in the SAP Fiori generator: 
+https://MyDestination.dest/someservice 
+Connect to an OData Service 
+Enter the OData endpoint URL to generate your application. All OData endpoints that are either authenticated with basic authentication or unauthenticated are supported. 
+ Note 
+The provided OData endpoint must be the correct version for the template that you select. For example, an OData V2 endpoint must be provided for the OData V2 template. The wizard informs you if there is any mismatch between the OData version and the template version. 
+If necessary, the system prompts you to provide your name and password. 
+Upload a Metadata Document 
+To generate the application without relying on a back end service being available, upload a metadata.xml file that you want to use. 
+Only EDMX format is supported for the metadata.xml file. 
+Once the metadata.xml file has been validated, the system allows you to select the required entity options for the application. 
+ Note 
+When using a metadata.xml file, the generated application is limited to only mock data. 
+Connect to SAP Business Accelerator Hub 
+ Caution 
+SAP Business Accelerator Hub has been deprecated from the Application Generator as a data source and will be removed in a future release. We strongly recommend that you use the Service Center in SAP Business Application Studio to generate applications if you intend to still use SAP Business Accelerator Hub. 
+For more information, see Service Center. 
+When users do not have their data source available, they can generate an application with the SAP Business Accelerator Hub. This data source is only intended to support development and must be replaced with a real data source before going live. When the SAP Business Accelerator Hub option is selected, a list of predefined services relevant to different industries appears. 
+This is custom documentation. For more information, please visit SAP Help Portal. 56
+9/5/25, 7:12 PM 
+Select a service that you want to generate an application with. For example, Just-In-Time Calls, Transaction Classifications, Content, and Request of Quotation. 
+Once the service is selected, two more fields appear for authentication purposes: Enter your Username and Enter your Password. 
+Fill in the fields and click Next to proceed with the application generation. 
+ Caution 
+SAP Business Accelerator Hub services are not intended for use with SAP Fiori UI development. 
+ Note 
+You cannot deploy applications that use the SAP Business Accelerator Hub, as this data source is intended for local development only. 
+For more information, see https://api.sap.com/ . 
+Use a Local CAP Project 
+You can select a local SAP Cloud Application Programming Model (CAP) project in your filesystem and the generator retrieves the services that are defined for that project. The folder location you provide is validated to ensure it is an SAP Cloud Application Programming Model (CAP) Node.js project that the generator can support. 
+For more information about CAP services, see: https://cap.cloud.sap/docs/about/ . 
+Template Properties 
+Once the data source is supplied, you can customize the application by providing the View name. This is a unique name selected for the SAPUI5 view to be created. 
+
+Additional Configuration 
+Add Deployment Configuration 
+1. Select Yes if you want to configure deployment settings. 
+2. From the Choose the target dropdown list, select the deploy target from the following options: 
+ABAP 
+This is custom documentation. For more information, please visit SAP Help Portal. 57
+9/5/25, 7:12 PM 
+Cloud Foundry 
+When the target system is selected, the Deploy Configuration SAP Fiori launchpad wizard appears with the following prompts: ABAP system 
+Destination name (required). The ABAP destination to the back-end system. 
+Is this an SAP Cloud Platform system? 
+Select Yes or No. Applicable only if the system to be discovered is a Steampunk system. 
+Target System URL. This field has already been prefilled according to the selected project. 
+Not applicable in SAP Business Application Studio. 
+Client. A self-contained commercial, organizational, and technical unit within an SAP system. Business data of clients are separated from each other, and clients serve a specific purpose in an SAP instance. 
+Not applicable to a Steampunk system and in an SAP Business Application Studio. 
+The following options are available to select from: 
+Use project defined client - xxx 
+Enter client 
+Use default system client 
+Is this an SAP S/4HANA Cloud system? Select Yes or No. Not applicable if the user responds Yes to Is this an SAP Cloud Platform system?. 
+SAPUI5 ABAP Repository (required). The technical name of the SAP Fiori application being deployed. 
+Package. A transportable ABAP repository object that groups development objects. An SAP Fiori application deployed in the ABAP backend must be assigned to an appropriate package. If it’s supposed to be a local application that isn't sent to another system, the package can be $TMP. In this case, there’s no Transport Request. Not applicable for SAP S/4HANA Cloud. 
+Fetch Transport Request list from target system?. Select Yes or No. If you select Yes, the applicable list of transport requests is retrieved from the target system and displayed in a dropdown for you to choose. If the lists of transport requests are unable to be retrieved from the target system, the existing manual text entry will be required. 
+Transport Request number. The ID of a container that is used to transfer data from one SAP installation to another. It collects changes made in a development system, allowing distribution of them across the defined transport landscape. 
+Not applicable for SAP S/4HANA Cloud system. For more information on transport requests, see Managing Transport Requests. 
+Cloud Foundry system 
+Destination name (required). The Cloud Foundry destination to the back-end system. 
+Add FLP Configuration 
+Select Yes if you want to add an SAP Fiori launchpad configuration. A new step appears with the FLP Configuration prompts. 
+ Note 
+If the configuration already exists, the existing values are displayed. In this case, the user still can change the inputs. This is custom documentation. For more information, please visit SAP Help Portal. 58
+9/5/25, 7:12 PM 
+Semantic Object. Represents a business entity, such as a customer, a sales order, or a product. Using semantic objects, the user can bundle applications that reflect a specific scenario and refer to objects in a standardized way, abstracting from concrete implementations of these objects. It’s used in mapping URLs of SAP Fiori applications to objects in the launchpad. 
+Action. Describes which operation, such as display or approve Purchase Orders, is intended to be performed on a semantic object. For example, Purchase Order or Product. 
+Title. The name of the SAP Fiori application that appears on the SAP Fiori launchpad tile in a free text format. Subtitle (optional). A free text field where the user can further describe the application in the launchpad. 
+Configure Advanced Options 
+Select Yes if you want to configure advanced options. 
+Select SAPUI5 theme: 
+Quartz Light 
+Belize 
+ Note 
+Belize has been deprecated since SAPUI5 version 1.120 and has been removed from version 1.136 onwards. 
+Quartz Dark 
+ Note 
+Quartz Dark is only available on SAPUI5 versions 1.72 and later. 
+Morning Horizon 
+Evening Horizon 
+ Note 
+Morning Horizon and Evening Horizon are shown in the dropdown if the minimum SAPUI5 version selected is 1.102 or above. Morning Horizon is selected by default. 
+Add Eslint configuration to the project. 
+Choosing this option includes the SAP Fiori eslint plugin library in the generated application that allows the developer to check and ensure that the SAP Fiori application adheres to the best practice for SAP Fiori code development. Executing the target npm run lint in the generated application checks for any linting errors. 
+Add JavaScript code assist libraries to your project 
+With this option, libraries are included in the generated project to provide ui5 code completion prompts in the editor along with the eslint rules and recommended configuration for the static jsdoc code checks. 
+For more information, see Adding JavaScript Code Assist. 
+Update project to use NPM Workspaces (CAP only) 
+Optionally update your CAP application to support NPM workspaces which will permit the generated SAP Fiori application to maintain and define the npm libraries it needs inside the application and not at the root of the CAP project. This is a pre requisite to adding support for TypeScript for SAP Fiori applications in a CAP project. 
+Enable TypeScript (Experimental) 
+You can optionally choose to generate your application with TypeScript support. This is an experimental feature and is subject to future updates to enhance support. 
+This is custom documentation. For more information, please visit SAP Help Portal. 59
+9/5/25, 7:12 PM 
+ Note 
+TypeScript support in a CAP application requires npm workspaces to be enabled as detailed above. 
+Generating an MTA Deployment File 
+In the MTA deployment scenario, developers can generate an app router configuration, that contains the mta.yaml file, and then add multiple generated SAP Fiori apps to the app router configuration project. To do so, open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Open CF Application Router Generator command. 
+
+The user can manage the source code of the app router configuration and multiple SAP Fiori elements projects under a single root directory. 
+The app router configuration project has the following structure: 
+router - The folder that contains the app router configuration. 
+ Note 
+This folder can have a different name, such as configurable. 
+.gitignore - The file that contains the list of files to be ignored by source control. 
+mta.yaml - The file that contains the MTA configuration. 
+package-lock.json - The file is generated automatically for any operations where npm modifies either the node_modules tree or package.json file and describes the exact tree that was generated. 
+package.json - The file that contains specifics of npm package.json. 
+Once the app router configuration project is generated, one or more SAP Fiori apps can be generated inside its root directory by using the SAP Fiori application generator. 
+ Note 
+There are the following router types: managed, Application Frontend service, and standalone. For more information, see SAP Tech Bytes: FAQ Managed Approuter vs. Standalone Approuter or Developing HTML5 Applications in the Cloud Foundry Environment. 
+Adding an SAP Fiori Application to an MTA Deployment File with the SAP Fiori Application Generator 
+This is custom documentation. For more information, please visit SAP Help Portal. 60
+9/5/25, 7:12 PM 
+Adding Deployment Configuration to an Existing MTA Deployment File 
+When the user selects a project folder path for an application and an MTA file already exists in the selected folder, the SAP Fiori application generator automatically switches to Yes for adding deployment configuration. During the generation of an application, the generator updates the MTA project file by default with the supplied deployment configuration. 
+
+ Note 
+For successful deployment of the generated application, the MTA file must already have the required services defined, depending on whether the application has to be deployed by using the managed, Application Frontend service, or standalone application router. To ensure the required services are added to the MTA deployment file, use the MTA generator provided by SAP Fiori tools or the Application Router generator in SAP Business Application Studio. For more information, see Generating an MTA Deployment File. 
+ Note 
+For local CAP projects, you can optionally chose to generate an instance based destination as part of CF deployment configuration, or use an existing instance based destination that is already defined in your MTA deployment file. 
+Creating an MTA Deployment File during Application Generation 
+If the MTA deployment file is not available in the project folder location, you can create a new file. To do so, when adding deployment configuration, select Cloud Foundry as the target landscape. In this case, the relevant MTA file to be used with a managed application router will be added to the same folder as your generated SAP Fiori application. 
+ Note 
+In this scenario, the generated MTA file is not applicable for use with multiple applications, as it is contained in the same folder as the SAP Fiori application. We recommend that you first create the MTA file and then generate the SAP Fiori application in a subfolder. 
+This is custom documentation. For more information, please visit SAP Help Portal. 61
+9/5/25, 7:12 PM 
+Adding JavaScript Code Assist 
+You can modify an SAP Fiori project with JavaScript code assist libraries in the Advanced configuration step. 
+To add JavaScript code assist libraries to the already generated application with SAPUI5 version 1.76 and newer, perform the following steps in your project: 
+1. Update the package.json file: 
+"devDependencies": { "eslint": "5.16.x", "@sap/eslint-plugin-ui5-jsdocs": "2.0.x", "@sapui5/t 2. Add tsconfig.json with the following content to the root folder : 
+{ "compilerOptions": { "module": "none", "noEmit": true, "checkJs": true, "allowJs": true, "t 3. Add the .eslintrc file with the following content to the root folder: 
+{ "plugins": ["@sap/ui5-jsdocs"], "extends": ["plugin:@sap/ui5-jsdocs/recommended", "eslint:r 4. Delete the node_modules folder and execute npm install. 
+Open a .js file to see the code completion for SAPUI5: 
+Security Certificate 
+This is custom documentation. For more information, please visit SAP Help Portal. 62
+9/5/25, 7:12 PM 
+During application generation, SAP Fiori application generator rejects the connection request and reports an error if the certificate was generated using a local certificate authority that is unknown to the operating system. 
+We recommend that you fix this error by installing the required certificates using the instructions below. You can choose to ignore the error and continue generation with the invalid certificate but this is not recommended. 
+ Tip 
+Please ensure you have Node.js installed locally. For more information, see Visual Studio Code. 
+ Note 
+The instructions below are applicable when the security certificate is valid, but it is using a local certificate authority that is unknown to the operating system. 
+If the SSL certificate is invalid such as an expired certificate, wrong host, or unable to verify the leaf signature, you can use the NODE_TLS_REJECT_UNAUTHORIZED=0 environment variable to ignore the error. However, it is recommended that the SSL certificate error is resolved rather than ignoring the error. 
+1. Ensure that you have a copy of the local certificate authority saved locally. 
+ Note 
+Create or select a folder to store your downloaded certificate. To export the certificate from your browser, follow the instructions based on your web browser. 
+2. Once the certificate file is downloaded, the issue can be resolved for VS Code by importing it into your global certificate store. To do so, perform the following steps: 
+Microsoft Windows 
+Right-click the CA certificate file and select Install Certificate. 
+Follow the prompts to add the certificate to the trust store either for the current user or for all users. 
+macOS. 
+Right-click the CA certificate file. 
+Select Open With and naviagte to Keychain Access. 
+Select System as the keychain to import into. 
+3. To resolve the issue for using the command line with Yeoman, set the following environment variable to point to the location of the downloaded certificate file: NODE_EXTRA_CA_CERTS 
+Microsoft Windows: 
+Right-click the  (Computer) icon and select Properties. Alternatively, in Windows Control Panel, select 
+System. 
+Microsoft Windows 10 
+Right-click Windows Start Button and select System. 
+In System Settings under Related Settings, select System info. 
+Select Advanced system settings. 
+On the Advanced tab, select Environment Variables. 
+This is custom documentation. For more information, please visit SAP Help Portal. 63
+9/5/25, 7:12 PM 
+macOS 
+Click New to create a new environment variable. 
+Add NODE_EXTRA_CA_CERTS and ensure the value points to the downloaded certificate file that is stored in the folder from Step 1. 
+Click Apply and then OK for the changes to take effect. 
+In the command-line terminal, before executing the Yeoman command to run the generators, execute the following command: 
+export NODE_EXTRA_CA_CERTS=path/to/certificate/file 
+Replace path/to/certificate/file with the location of the downloaded certificate. 
+Generating an Application with the Project Accelerator or Joule Using SAP Fiori Tools AI 
+You can use the Project Accelerator, from SAP Fiori tools AI, or Joule to generate data models, services, sample data, and an SAP Fiori UI for your project based on your business requirements. 
+You can use the Project Accelerator or Joule to kick-start your SAP Fiori development by directly translating your business requirements into a CAP project with a single SAP Fiori elements application. Your business requirements can consist of text, images, or text and images. The generated application can consist of just a list report, a list report page with one or multiple object pages, or a form entry object page. 
+The following video shows an overview of the Project Accelerator: Project Accelerator: Elevate Development with AI in SAP Fiori tools . 
+ Tip 
+This is custom documentation. For more information, please visit SAP Help Portal. 64
+9/5/25, 7:12 PM 
+The Project Accelerator no longer has a staging area to approve the generated project. Instead, it automatically creates a project in the project folder that you choose. 
+Prerequisites 
+Ensure the following prerequisites are met: 
+You have a subscription to SAP Build Code or have signed up for SAP Build Code Test Drive . For more information, see What is SAP Build Code. 
+You have created a dev space that contains both SAP Fiori tools and CAP tools extensions. 
+You are using SAP Business Application Studio as your integrated development environment (IDE). 
+Procedure 
+Prepare your business requirements for generating a new application. Your business requirements can consist of text, images, or text and images. 
+ Tip 
+Field values and restrictions, such as an alphanumeric string, are easier to describe using text. Columns are easier to describe using images. 
+To generate an application using text, proceed with the following: Generating an Application Using Text. 
+To generate an application using an image, proceed with the following: Generating an Application Using an Image. 
+To generate an application using text and images, proceed with the following: Generating an Application Using Text and Images. 
+ Caution 
+SAP Fiori tools does not filter personal or sensitive data. Therefore, you should not share personal or sensitive data in your business requirements document. 
+Supported Features 
+You can define the following features as requirements in your input: 
+General Features 
+Entities and entity labels 
+Entity properties and property labels 
+Entity associations (1:1 and 1:n) 
+Entities with code lists based on the explicit values in the user input 
+Value help based on 1:1 associations and code lists 
+Criticality highlighting for eligible properties in code lists 
+A single list report application 
+A single application with a list report and one or multiple object pages 
+This is custom documentation. For more information, please visit SAP Help Portal. 65
+9/5/25, 7:12 PM 
+A single application with the Form Entry Object Page floorplan 
+List Report Features 
+Filter fields 
+Basic table columns 
+Features such as charts and icons are not supported. 
+Multiple views for a table in multiple table mode 
+For more information, see Defining Multiple Views on a List Report Table - Multiple Table Mode. 
+Initial data load 
+For more information, see Loading Behavior of Data on Initial Launch of the Application . 
+Object Page Features 
+Section tabs 
+Form sections with basic fields 
+Table sections with basic columns 
+Navigation from table section to second object page 
+If your request does not contain any instructions for a specific supported feature, the generated app will either exclude it, or it will be implemented at SAP Fiori tools AI's own discretion. For example, if SAP Fiori tools AI finds no explicit request for the filters in the list report, the app may contain the filter fields of SAP Fiori tools AI's choice. 
+If your request contains instructions for unsupported features, they will either be implemented at SAP Fiori tools AI's own discretion, or not be considered. 
+If your request only contains text, SAP Fiori tools AI does not generate object page header features based on your specific requirements, but may use the general description of your app to generate some basic header features. 
+SAP Fiori tools AI uses your input to create UI features such as fields and columns but chooses random values to fill these columns with test data. In addition, data from images you have used to represent the page layout is also used to generate test data. The generated test data is only intended for testing the app in preview mode and is stored in a test folder of the generated project. The only exception is the code lists or enum values that are based on the explicit values from your input. These values are treated as properties of associated entities and stored in a data folder. 
+By default, all generated apps are draft-enabled and contain standard actions. Other actions are not supported. 
+To learn more about how SAP Fiori tools AI generates your application, observe the logs. For more information, see Viewing Generation Logs. 
+Generating an Application Using Text 
+Learn how to generate an application with the Project Accelerator using SAP Fiori tools AI and text. 
+Procedure 
+1. Launch the Project Accelerator using SAP Fiori tools AI through one of the following options: 
+This is custom documentation. For more information, please visit SAP Help Portal. 66
+9/5/25, 7:12 PM 
+a. Command Palette 
+Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori tools AI: Launch the Project Accelerator command. 
+b. SAP Fiori 
+Click the  (SAP Fiori) icon on the activity bar. 
+c. Joule 
+Click the  (Joule) icon on the activity bar. 
+ Note 
+Once you’ve opened the Project Accelerator in SAP Fiori tools AI, your query must be related to generating an SAP Fiori elements application. You cannot make general requests to the AI assistant. 
+2. Depending on the method you used to launch SAP Fiori tools AI, enter your business requirements as follows: Text input: 
+Command Palette and SAP Fiori: Under Project Accelerator, enter your business requirements in the 
+Business Requirements textbox. 
+Joule: Enter /fiori-gen-spec-app #(path to your docx, markdown, or text file) and click the Send icon. 
+File input: 
+Upload the file to your workspace folder in SAP Business Application Studio. 
+Command Palette and SAP Fiori: Under Project Accelerator, click Choose File (docx, .md, .txt, .jpg) and choose your markdown, text, or docx file. 
+Joule: Enter the /fiori-gen-spec-app command followed by your business requirements and click the Send icon. 
+For the best results, use English and follow the provided examples: 
+Example 1: Manage Contracts and Customer Information in the System 
+Example 2: Display Customers with Related Contracts 
+ Note 
+The Project Accelerator cannot generate a second application for the same project, so ensure your request only refers to a single application. 
+3. Provide the Project Folder Path that you want to generate the project into. 
+4. Click Generate. 
+ Note 
+If you launch SAP Fiori tools AI using Joule, you are transferred to the Project Accelerator to generate your application. 
+Depending on your business requirements, generation may take some time. 
+You can stop the generation if you want to cancel the process and make further changes. To stop the generation, click the  (Stop) icon. Then, click Yes at the Are you sure you want to stop generation? prompt. The process is stopped. You can then edit your business requirements and generate a new application. 
+This is custom documentation. For more information, please visit SAP Help Portal. 67
+9/5/25, 7:12 PM 
+5. The generated project is added to your filesystem at the project folder path you chose. Then, Application Information is launched for the associated SAP Fiori application. You can then make further changes using SAP Fiori tools. 
+Example 1: Manage Contracts and Customer Information in the System 
+ Sample Code 
+I want to create an SAP Fiori application that satisfies the requirements from the following use Description 
+As a contract manager or administrator, I want to create and manage contracts and customer infor so that I can effectively track and handle legal agreements and customer interactions. 
+Customer Description 
+Contract: A Contract involves defining a structured representation of a legal agreement or arran Contracts can cover a wide range of agreements, such as sales contracts, service agreements, emp Common attributes of a contract might include: 
+Contract ID: A unique identifier for the contract. 
+1. Contract ID: A unique identifier for the contract. 
+2. Customer: Information about the customer involved 
+3. Contract Type: The type of contract (e.g. sales, service, employment). 
+4. Start Date: The date on which the contract becomes valid. 
+5. End Date: The date on which the contract expires (if applicable). 
+6. Status: The current status of the contract (draft, active, expired, terminated, etc.) 
+Customer: A customer is an individual, organization, or entity that purchases goods, products, o typically a business or seller. A typical customer has the following attributes: 1. Name 
+2. Identification Number 
+3. Address 
+4. Contact Information 
+Identification Number: A unique identification number for a customer is a distinct and non-repea assigned to each customer record within a database or information system. This number serves as  that uniquely distinguishes one customer from another. 
+Name: A "name" typically refers to the given name of a person or entity, or a label by which the Address: An "address" typically refers to a physical location where an individual, business, or  or can be reached. 
+Acceptance Criteria 
+Scenario 1: List All Contracts 
+Given I am logged into the contract management system, when I launch the SAP Fiori application t then I should be able to view the list of all the contracts in a list without pressing the GO bu The list of all the contracts should have : Contract ID, Customer, Contract Type and Start Date Next to this list, I would like to see the list of all customers. 
+The list of filters should include Contract Type, Contract Status and Start Date. 
+Scenario 2: View Contract Details 
+Given I am logged into the contract management system, when I select a specific contract from th then I should be able to view the contract details. 
+The contract details will be: 
+Field Name Tab in App Section or Field Group 
+---------- ---------- ---------------------- 
+ContractID Contract Data Contract Details 
+Customer Name Contract Data Contract Details 
+Contract Type Contract Data Contract Details 
+Status Contract Data Contract Details 
+Start Date Contract Data Contract Details 
+End Date Contract Data Contract Details 
+Example 2: Display Customers with Related Contracts This is custom documentation. For more information, please visit SAP Help Portal. 68
+9/5/25, 7:12 PM 
+ Sample Code 
+I want to create an SAP Fiori application that shows my customers with their contracts.  Each customer has the following attributes: 
+1. Name 
+2. Identification Number 
+3. Address 
+4. Contract Information 
+A contract is referencing a customer. One customer can have multiple contracts. Attributes of a  5. Contract ID: A unique identifier for the contract 
+6. Customer: Information about the customer involved 
+7. Contract Type: The type of contract (sales, service, employment) 
+8. Start Date: The date on which the contract becomes valid 
+9. End Date: The date on which the contract expires (if applicable) 
+10. Status: The current status of the contract (draft, active, expired, terminated, etc.) When starting the CAP application I first want to see a list of customers. 
+When selecting a specific row in that list, I want to see to a page with details of that custome 
+It should show the following sections: 
+- section "Customer Info" displaying the attributes of the selected customer 
+- section "Contracts" showing a list of all contracts for this customer 
+When selecting a specific row in the contracts list, I want to see a page with details of that c - section "Contract Info" containing: 
+ - contract ID 
+ - Customer Name 
+ - Contract Type 
+ - Status 
+- section "Validity" containing 
+ - Start Date 
+ - End Date 
+Generating an Application Using an Image 
+Learn how to generate an application with the Project Accelerator using SAP Fiori tools AI and an image. 
+To generate an application using an image, the image must be uploaded to your workspace folder in SAP Business Application Studio. The image must represent the application model or the UI of a single list report or object page. To use multiple images, proceed with the following: Generating an Application Using Text and Images. 
+Procedure 
+1. Prepare the image you will use as your business requirement. For the best results, label your image using English and follow the provided example: Example: Manage Travel List Report Page. 
+2. Upload the image to your workspace folder in SAP Business Application Studio. 
+3. Launch the Project Accelerator using SAP Fiori tools AI through one of the following options: 
+a. Command Palette 
+Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori tools AI: Launch the Project Accelerator command. 
+b. SAP Fiori 
+Click the  (SAP Fiori) icon on the activity bar. 
+ Note 
+This is custom documentation. For more information, please visit SAP Help Portal. 69
+9/5/25, 7:12 PM 
+Once you’ve opened the Project Accelerator in SAP Fiori tools AI, your query must be related to generating an SAP Fiori elements application. You cannot make general requests to the AI assistant. 
+4. Under Project Accelerator, click Choose File (.docx, .md, .txt, .jpg) and choose your image. 
+ Note 
+The Project Accelerator cannot generate a second application for the same project, so ensure your request only refers to a single application. 
+5. Provide the Project Folder Path that you want to generate the project into. 
+6. Click Generate. 
+Depending on your business requirement, generation may take some time. 
+You can stop the generation if you want to cancel the process and make further changes. To stop the generation, click the  (Stop) icon. Then, click Yes at the Are you sure you want to stop generation? prompt. The process is stopped. You can then edit your business requirement and generate a new application. 
+7. The generated project is added to your filesystem at the project folder path you chose. Then, Application Information is launched for the associated SAP Fiori application. You can then make further changes using SAP Fiori tools. 
+Example: Manage Travel List Report Page 
+Example 1: Application Model 
+To use this example, save the image below and upload it to your workspace folder in SAP Business Application Studio. This is custom documentation. For more information, please visit SAP Help Portal. 70
+9/5/25, 7:12 PM 
+Example 2: Page UI 
+To use this example, save the image below and upload it to your workspace folder in SAP Business Application Studio. 
+Generating an Application Using Text and Images 
+Learn how to generate an application with the Project Accelerator using SAP Fiori tools AI and a combination of text and images. 
+To generate an application using a combination of text and images, or using multiple images, you must either create a Microsoft Word document (.docx) file or create a markdown (.md) file that references the images you want to use. If you are using a markdown file, the images must be uploaded to your workspace folder in SAP Business Application Studio. 
+ Tip 
+Each image must represent a single list report or object page and be accompanied by text explaining the relation between the pages. 
+The text can also provide some additional information that is not adequately described from the image, such as code list values. 
+If the page contains multiple views that are not visible, such as different tabs or sections, the user input should have multiple images depicting the same page in these different states, along with an explanatory text. 
+For example, if an object page contains multiple sections and their content is not visible in a single image, the text should list all of the sections and describe which section corresponds to which image. 
+If you are using a Microsoft Word document (.docx) file, ensure it only contains text and images. Do not add advanced formatting such as headers, footers, and tables. 
+Procedure 
+1. Prepare the file you will use as your business requirements. For the best results, label your images using English and follow the provided example: Example: Manage Travel App List Report Object Page. 
+2. Upload the file to your workspace folder in SAP Business Application Studio. 
+3. Launch the Project Accelerator using SAP Fiori tools AI through one of the following options: 
+a. Command Palette 
+Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori tools AI: Launch the Project Accelerator command. 
+b. SAP Fiori 
+This is custom documentation. For more information, please visit SAP Help Portal. 71
+9/5/25, 7:12 PM 
+Click the  (SAP Fiori) icon on the activity bar. 
+ Note 
+Once you’ve opened the Project Accelerator in SAP Fiori tools AI, your query must be related to generating an SAP Fiori elements application. You cannot make general requests to the AI assistant. 
+4. Under Project Accelerator, click Choose File (.docx, .md, .txt, .jpg) and choose your file. 
+ Note 
+The Project Accelerator cannot generate a second application for the same project, so ensure your request only refers to a single application. 
+5. Provide the Project Folder Path that you want to generate the project into. 
+6. Click Generate. 
+Depending on your business requirements, generation may take some time. 
+You can stop the generation if you want to cancel the process and make further changes. To stop the generation, click the  (Stop) icon. Then, click Yes at the Are you sure you want to stop generation? prompt. The process is stopped. You can then edit your business requirements and generate a new application. 
+7. The generated project is added to your filesystem at the project folder path you chose. Then, Application Information is launched for the associated SAP Fiori application. You can then make further changes using SAP Fiori tools. 
+Example: Manage Travel App List Report Object Page 
+To use this example, create a markdown (.md file) in your workspace folder in SAP Business Application Studio and copy and paste the sample code below. Then, save the images below with the filename specified in the sample code and upload them to the same directory as the markdown file you created. 
+ Sample Code 
+Markdown 
+I want to create a travel application that shows a list of trips taken by employees. The list of trips should include the following details: 
+![Alt Text](Travel_List.jpeg) 
+Each trip can have many bookings and multiple notes. On the travel details page, the app should  ![Alt Text](Travel_Details.jpeg) 
+The total trip price should equal the price of all the bookings for that trip. If there are no b If there are any bookings associated with a trip, then each booking must cost more than zero. Clicking on a booking should allow the user to see more details. 
+This is custom documentation. For more information, please visit SAP Help Portal. 72
+9/5/25, 7:12 PM 
+This is custom documentation. For more information, please visit SAP Help Portal. 73
+9/5/25, 7:12 PM 
+
+Viewing Generation Logs 
+Learn how to view the logs for generating an application with the Project Accelerator using SAP Fiori tools AI. 
+You can view the logs to learn more about how SAP Fiori tools AI generates your application and obtain further information to assist with troubleshooting. 
+If generation fails or the generated app is not as expected, you can open a ticket and provide the logs. For generation failures, follow the steps below. For issues with a generated app, attach a .zip archive of your generated project. The logs for the generated application are contained in its .fiori-ai folder. 
+Procedure 
+1. Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Developer: Set Log Level command. 2. Set the Log Level to Info. 
+ Tip 
+You must set the log level before you generate your application and whenever the dev space is restarted. 
+3. Open the Terminal ( View Terminal from the Menu Bar) and click the Output tab. 
+4. From the dropdown menu, select SAP Fiori tools - AI. 
+This is custom documentation. For more information, please visit SAP Help Portal. 74
+9/5/25, 7:12 PM 
+Experimental: Developing an Application Using Advanced Features 
+Learn how to develop an application in a CAP project generated with the Project Accelerator using advanced features of application modeler. 
+Application modeler offers advanced features you can use to develop applications generated with the Project Accelerator. 
+ Caution 
+Experimental features are not part of the officially delivered scope that SAP guarantees for future releases. This means that experimental features may be changed by SAP at any time for any reason without notice. Experimental features are not for productive use. You must not demonstrate, test, examine, evaluate or otherwise use experimental features in a live operating environment or with data that has not been sufficiently backed up. 
+ Tip 
+When service and database schema files have been updated outside of Application Modeler, except for formatting changes such as adding empty lines, advanced features are turned off. 
+Add UI Features and Auto-Generate New Entity Properties 
+When using the Page Editor to add new UI features or configure properties, the database and service may not contain the required entity properties. 
+You can enter the name for a new property and it is auto-generated for you in the db/schema.cds file along with the UI feature or property you configure. 
+To auto-generate an entity property for a new table column, for example, perform the following steps: 
+1. Open the Page Editor and add a new column. For more information, see Maintaining Annotation-Based Elements. 2. In the Columns dropdown, click the Enter new property field and enter a value. 
+3. (Optional) Click String to set a different type for your property. 
+4. Click Add. 
+This is custom documentation. For more information, please visit SAP Help Portal. 75
+9/5/25, 7:12 PM 
+
+A new column is added to your table and the related .csv file is also updated with the dummy test data corresponding to the selected property type. 
+You can then refine the dummy test data to match your application context. For more information, see Refine Test Data with AI. 
+Add Tables and Charts and Auto-Generate New Entities 
+When using the Page Editor to add an analytical chart, table or chart views in a list report page, or table or chart sections in an object page, the database and service may not contain the required 1:n entity. 
+You can enter the name for a new entity and it is auto-generated for you in the db/schema.cds file with the UUID property along with the UI feature you configure. It is also referenced in the srv/service.cds file and a new .csv file is also auto-generated. 
+If you add a chart-based element, the newly-generated entity is also annotated with the @Aggregation.ApplySupported annotation, where the property you chose as the Dimension is referenced in GroupableProperties and the property you chose as the measure in AggregatableProperties. 
+To auto-generate an entity property for a new table column, for example, perform the following steps: 
+1. Open the Page Editor and add a new chart view. For more information, see Maintaining Annotation-Based Elements. 2. In the Entity dropdown, click the Enter new entity field and enter a value. 
+3. Select a Chart Type. 
+4. In the Dimension dropdown, click the Enter new property field and enter a value. 
+5. (Optional) Click String to set a new type for your property. 
+6. Select Create new measure. 
+7. In the Property dropdown, click the Enter new property field and enter a value. 
+8. (Optional) Click Integer to set a different type for your property. 
+This is custom documentation. For more information, please visit SAP Help Portal. 76
+9/5/25, 7:12 PM 
+9. Select an Aggregation Method. 
+10. Click Add. 
+Your new chart view is added based on the newly-generated entity. The entity is added to the db/schema.cds file with the UUID property and the properties you created for the measure and dimension. It is also referenced in the srv/service.cds file where it is annotated with the @Aggregation.ApplySupported annotation. The new .csv file is also auto-generated in the test/data folder and contains dummy test data for the UUID, measure, and dimension properties. 
+Add Value Help and Auto-Generate New Entities 
+When using the Page Editor, you can add value help to fields and filters even when the database and service do not contain the appropriate entity. 
+To auto-generate a 1:1 associated entity for value help, perform the following steps: 
+1. In the Page Editor for an object page, search for display type. 
+2. Set Display Type to Value Help. 
+3. In the Value Source Entity dropdown, click the Enter new entity field and enter a name for the new entity. 4. In the Value Source Property dropdown, click the Enter new property field and enter a value. 
+5. (Optional) In the Value Description Property dropdown, click the Enter new property field and enter a value. 6. (Optional) If you set a value for the Value Description Property, you can also set a value for Text Arrangement. 7. (Optional) You can switch Display as Dropdown on and off as needed. 
+8. (Optional) Click Add Column under Results List and in the Property dropdown, click the Enter new property field and enter a value to show additional information in the value help. Click String to set a new type for your property. 
+ Restriction 
+You cannot choose the UUID type when defining properties for value help. 
+9. (Optional) Click Add Sort Property under Sort Order and in the Add Sort Property dropdown, choose the property to be used for sorting the results lists. 
+10. Click Apply. 
+Your application is updated as follows: 
+The new entity and the properties you chose to create in the value help dialog are generated. Note: The generated entity used for the value help does not contain the UUID property. 
+The 1:1 association to the newly created entity is added to the entity of the initial field or filter. 
+The annotations required for the value help are generated. 
+The initial property is replaced with navigation to the key field of the new associated entity in the annotations and manifest.json file. 
+The test data matching the values in the main entity are auto-generated for the key property of the new entity and dummy data is generated for the remaining properties. 
+You can then refine the dummy test data to match your application context. For more information, see Refine Test Data with AI. Refine Test Data with AI 
+This is custom documentation. For more information, please visit SAP Help Portal. 77
+9/5/25, 7:12 PM 
+You can refine the test data you have auto-generated to provide meaningful values using AI. To refine test data with AI, perform the following steps: 
+1. In the Page Editor, click the  (Refine Test Data with AI) icon. 
+2. Click Generate. 
+Your test data is refined to provide meaningful values for your application context. 
+Previewing an Application 
+ Note 
+In the development environment, localhost is used as an HTTP proxy server to reach the back-end OData service. A domain security policy, that is applied in some companies, includes localhost, which forces HTTPS to be used in redirected URLs. As a result, when the user attempts to access a website, an error may occur. 
+If an SSL protocol error appears after the URL redirection, check the security configuration of your browser. For example, Chrome HSTS configuration can be accessed by entering the following URL address to the browser: chrome://net internals/#hsts. 
+Starting a Preview from Terminal 
+After the application is successfully generated, several options to preview it are available by running npm start scripts in the terminal: 
+Use Live Data 
+Use Mock Data 
+Use Local Sources 
+Use Custom Middlewares 
+Starting a Preview with Run Control 
+For various options of starting your application, use the Run Control function in VS Code or SAP Business Application Studio. You can also create a new Run Configuration in SAP Business Application Studio or Launch Configuration in VS Code: 
+Use Run Control 
+Create a New Run Configuration in Visual Studio Code 
+Create a New Run Configuration in SAP Business Application Studio 
+Starting a Preview from Context Menu 
+This section provides instructions on previewing an application from a context menu in VS Code and SAP Business Application Studio. 
+You can right-click the project folder or any application-related subfolder and click Preview Application. You have the following options by default: 
+This is custom documentation. For more information, please visit SAP Help Portal. 78
+9/5/25, 7:12 PM 
+start - starts the application with real service data. 
+start-local - starts the application with mock data and a local copy of the SAPUI5 resources for offline work. start-noflp - starts the application without the sandbox for SAP Fiori launchpad. 
+start-mock - starts the application with mock data. 
+Run configurations - starts the application using the existing run configuration selection in the preview command. 
+ Note 
+Automatic download is only supported with SAPUI5 versions 1.76 and higher. 
+Enabling App-to-App Navigation Preview 
+App-to-App Navigation Preview 
+Convert a Project to Use Virtual Endpoints 
+Using virtual endpoints allows developers to focus on developing applications. Virtual endpoints are automatically kept up-to-date with new package versions and best practises. 
+Prerequisites 
+You have SAPUI5 CLI version 3.0.0 or higher installed. For more information, see Migrate to v3 . 
+If you have @sap/ux-ui5-tooling installed, it must be version 1.15.4 or higher. 
+You have @sap-ux/ui5-middleware-fe-mockserver or cds-plugin-ui5 installed. 
+If you use sap/ui/core/util/MockServer or @sap/ux-ui5-fe-mockserver-middleware, you must migrate to @sap-ux/ui5-middleware-fe-mockserver. For more information, see @sap-ux/ui5-middleware-fe-mockserver . 
+If you use @sap/grunt-sapui5-bestpractice-build, you must migrate to @ui5/cli. For more information, see @ui5/cli . 
+Context 
+This is custom documentation. For more information, please visit SAP Help Portal. 79
+9/5/25, 7:12 PM 
+Use the sap-ux converter to convert your project to use virtual endpoints. The converter renames the local HTML files, deletes the JavaScript, TypeScript, and test files used for the existing preview functionality, and configures virtual endpoints instead. For more information, see sap-ux convert preview-config . 
+To convert your application to use virtual endpoints, perform the following steps: 
+Procedure 
+1. Launch the converter using one of the following options: 
+a. Open the Command Palette ( CMD/CTRL + Shift + P ) and execute the Fiori: Convert Preview Config command. 
+b. Open Application Info and click Convert Preview Config. 
+2. Press Y to simulate the conversion or N to convert the project. 
+3. Press Y to convert the test runners or N to decline. 
+Results 
+Your application has been converted to use virtual endpoints. For more information about the conversion, see the output in the terminal. 
+ Tip 
+If you have modified the local HTML files, such as flpSandbox.html, move the modified content to a custom init script for the preview middleware. For more information, see preview-middleware - Migration . If you have not modified the local HTML files, you can delete them. 
+Previewing an SAP Fiori Elements CAP Project 
+Once your CAP project is generated, you can preview it in Visual Studio Code or SAP Business Application Studio. 
+Visual Studio Code 
+To run an application preview in VS Code, perform the following steps: 
+1. In VS Code, open the terminal. 
+ Note 
+To open the terminal in VS Code: 
+Use the Ctrl+` keyboard shortcut with the backtick character. 
+Use the View Terminal menu command. 
+From the Command Palette ( CMD/CTRL + Shift + P ), execute the View: Toggle Integrate Terminal command. 
+2. Ensure you are in the root directory of your project. 
+3. In the terminal, type cds run and press Enter. 
+A new line appears, such as: 
+This is custom documentation. For more information, please visit SAP Help Portal. 80

@@ -1,0 +1,490 @@
+Introduction
+
+Natural Language Processing (NLP) has increasingly attracted the attention of the financial community. This trend can be explained by at least three major factors. The first factor refers to the business perspective. It is the economics of gaining competitive advantage using alternative sources of data and going beyond historical stock prices, thus, trading by analyzing market news automatically. The second factor is the major advancements in the technologies to collect, store, and query massive amounts of user-generated data almost in real-time. The third factor refers to the progress made by the NLP community in understanding unstructured text. Over the last decades the number of studies using NLP for financial forecasting has experienced exponential growth. According to BIBREF0 , until 2008, less than five research articles were published per year mentioning both “stock market” and “text mining” or “sentiment analysis” keywords. In 2012, this number increased to slightly more than ten articles per year. The last numbers available for 2016 indicates this has increased to sixty articles per year.
+
+The ability to mechanically harvest the sentiment from texts using NLP has shed light on conflicting theories of financial economics. Historically, there has been two differing views on whether disagreement among market participants induces more trades. The “non-trade theorem” BIBREF1 states that assuming all market participants have common knowledge about a market event, the level of disagreement among the participants does not increase the number of trades but only leads to a revision of the market quotes. In contrast, the theoretically framework proposed in BIBREF2 advocates that disagreement among market participants increases trading volume. Using textual data from Yahoo and RagingBull.com message boards to measure the dispersion of opinions (positive or negative) among traders, it was shown in BIBREF3 that disagreement among users' messages helps to predict subsequent trading volume and volatility. Similar relation between disagreement and increased trading volume was found in BIBREF4 using Twitter posts. Additionally, textual analysis is adding to the theories of medium-term/long-term momentum/reversal in stock markets BIBREF5 . The unified Hong and Stein model BIBREF6 on stock's momentum/reversal proposes that investors underreact to news, causing slow price drifts, and overreact to price shocks not accompanied by news, hence inducing reversals. This theoretical predicated behaviour between price and news was systematically estimated and supported in BIBREF7 , BIBREF8 using financial media headlines and in BIBREF9 using the Consumer Confidence Index® published by The Conference Board BIBREF10 . Similarly, BIBREF11 uses the Harvard IV-4 sentiment lexicon to count the occurrence of words with positive and negative connotation of the Wall Street Journal showing that negative sentiment is a good predictor of price returns and trading volumes.
+
+Accurate models for forecasting both price returns and volatility are equally important in the financial domain. Volatility measures how wildly the asset is expected to oscillate in a given time period and is related to the second moment of the price return distribution. In general terms, forecasting price returns is relevant to take speculative positions. The volatility, on the other hand, measures the risk of these positions. On a daily basis, financial institutions need to assess the short-term risk of their portfolios. Measuring the risk is essential in many aspects. It is imperative for regulatory capital disclosures required by banking supervision bodies. Moreover, it is useful to dynamically adjust position sizing accordingly to market conditions, thus, maintaining the risk within reasonable levels.
+
+Although, it is crucial to predict the short-term volatility from the financial markets application perspective, much of the current NLP research on volatility forecasting focus on the volatility prediction for very long-term horizons (see BIBREF12 , BIBREF13 , BIBREF14 , BIBREF15 , BIBREF16 ). Predominately, these works are built on extensions of the bag-of-words representation that has the main drawback of not capturing word order. Financial forecasting, however, requires the ability to capture semantics that is dependent upon word order. For example, the headline “Qualcomm sues Apple for contract breach” and “Apple sues Qualcomm for contract breach” trigger different responses for each stock and for the market aggregated index, however, they share the same bag-of-words representation. Additionally, these works use features from a pretrained sentiment analyis model to train the financial forecasting model. A key limitation of this process is that it requires a labelled sentiment dataset. Additionally, the error propagation is not end-to-end. In this work, we fill in the gaps of volatility prediction research in the following manner:
+
+Related work
+
+Previous work in BIBREF12 incorporates sections of the “Form 10-K” to predict the volatility twelve months after the report is released. They train a Support Vector Regression model on top of sparse representation (bag-of-words) with standard term weighting (e.g. Term-Frequency). This work was extended in BIBREF13 , BIBREF14 , BIBREF15 , BIBREF16 by employing the Loughran-McDonald Sentiment Word Lists BIBREF20 , which contain three lists where words are grouped by their sentiments (positive, negative and neutral). In all these works, the textual representation is engineered using the following steps: 1) For each sentiment group, the list is expanded by retrieving 20 most similar words for each word using Word2Vec word embeddings BIBREF21 . 2) Finally, each 10-K document is represented using the expanded lists of words. The weight of each word in this sparse representation is defined using Information Retrieval (IR) methods such as term-frequency (tf) and term-frequency with inverted document frequency (tfidf). Particularly, BIBREF16 shows that results can be improved using enhanced IR methods and projecting each sparse feature into a dense space using Principal Component Analysis (PCA).
+
+The works described above ( BIBREF13 , BIBREF14 , BIBREF15 , BIBREF16 ) target long-horizon volatility predictions (one year or quarterly BIBREF16 ). In particular, BIBREF16 and BIBREF15 uses market data (price) features along with the textual representation of the 10-K reports. These existing works that employ multi-modal learning BIBREF22 are based on a late fusion approach. For example, stacking ensembles to take into account the price and text predictions BIBREF16 . In contrast, our end-to-end trained model can learn the joint distribution of both price and text.
+
+Predicting the price direction rather than the volatility was the focus in BIBREF23 . They extracted sentiment words from Twitter posts to build a time series of collective Profile of Mood States (POMS). Their results show that collective mood accurately predicts the direction of Down Jones stock index (86.7% accuracy). In BIBREF24 handcrafted text representations including term count, noun-phrase tags and extracted named entities are employed for predicting stock market direction using Support Vector Machine (SVM). An extension of Latent Dirichlet Allocation (LDA) is proposed in BIBREF25 to learn a joint latent space of topics and sentiments.
+
+Our deep learning models bear a close resemblance to works focused on directional price forecasting BIBREF26 , BIBREF27 . In BIBREF26 , headline news are processed using Stanford OpenIE to generate triples that are fed into a Neural Tensor Network to create the final headline representation. In BIBREF27 , a character-level embedding is pre-trained in an unsupervised manner. The character embedding is used as input to a sequence model to learn the headline representation. Particularly, both works average all headline representations in a given day, rather than attempting to weight the most relevant ones. In this work, we propose a neural attention mechanism to capture the News Relevance and provide experimental evidence that it is a key component of the end-to-end learning process. Our attention extends the previous deep learning methods from BIBREF26 , BIBREF27 .
+
+Despite the fact that end-to-end deep learning models have attained state-of-the-art performance, the large number of parameters make them prone to overfitting. Additionally, end-to-end models are trained from scratch requiring large datasets and computational resources. Transfer learning (TL) alleviates this problem by adapting representations learnt from a different and potentially weakly related source domain to the new target domain. For example, in computer vision tasks the convolutional features learnt from ImageNet BIBREF28 dataset (source domain) have been successfully transferred to multiple domain target tasks with much smaller datasets such as object classification and scene recognition BIBREF29 . In this work, we consider TL in our experiments for two main reasons. First, it address the question whether our proposed dataset is suitable for end-to-end training since the performance of the transferred representations can be compared with end-to-end learning. Second, it is still to be investigated which dataset transfers better to the forecasting problem. Recently, the NLP community has focused on universal representations of sentences BIBREF17 , BIBREF19 , which are dense representations that carry the meaning of a full sentence. BIBREF17 found that transferring the sentence representation trained on the Stanford Natural Language Inference (SNLI) BIBREF30 dataset achieves state-of-the-art sentence representations to multiple NLP tasks (e.g. sentiment analysis, question-type and opinion polarity). Following BIBREF17 , in this work, we investigate the suitability of SNLI and Reuters RCV1 BIBREF31 datasets to transfer learning to the volatility forecasting task. To the best of our knowledge, the hierarchical attention mechanism at headline level, proposed in our work, has not being applied to volatility prediction so far; neither has been investigated the ability to transfer sentence encoders from source datasets to the target forecasting problem (Transfer Learning).
+
+Our dataset
+
+Our corpus covers a broad range of news including news around earnings dates and complements the 10-K reports content. As an illustration, the headlines “Walmart warns that strong U.S. dollar will cost $15B in sales” and “Procter & Gamble Co raises FY organic sales growth forecast after sales beat” describe the company financial conditions and performance from the management point of view – these are also typical content present in Section 7 of the 10-K reports.
+
+In this section, we describe the steps involved in compiling our dataset of financial news at stock level, which comprises a broad range of business sectors.
+
+Sectors and stocks
+
+The first step in compiling our corpus was to choose the constituents stocks. Our goal was to consider stocks in a broad range of sectors, aiming a diversified financial domain corpus. We found that Exchange Traded Funds (ETF) provide a mechanical way to aggregate the most relevant stocks in a given industry/sector. An ETF is a fund that owns assets, e.g. stock shares or currencies, but, unlike mutual funds are traded in stock exchanges. These ETFs are extremely liquid and track different investment themes. We decided to use SPDR Setcor Funds constituents stocks in our work since the company is the largest provider of sector funds in the United States. We included in our analysis the top 5 (five) sector ETFs by financial trading volume (as in Jan/2018). Among the most traded sectors we also filtered out the sectors that were similar to each other. For example, the Consumer Staples and Consumer Discretionary sectors are both part of the parent Consumer category. For each of the top 5 sectors we selected the top 10 holdings, which are deemed the most relevant stocks. tbl:stockuniverse, details our dataset sectors and its respective stocks.
+
+Stock specific data
+
+We assume that an individual stock news as the one that explicitly mention the stock name or any of its surface forms in the headline. As an illustration, in order to collect all news for the stock code PG, Procter & Gamble company name, we search all the headlines with any of these words: Procter&Gamble OR Procter and Gamble OR P&G. In this example, the first word is just the company name and the remaining words are the company surface forms.
+
+We automatically derived the surface forms for each stock by starting with a seed of surface forms extracted from the DBpedia Knowledge Base (KB). We then applied the following procedure:
+
+Relate each company name with the KB entity unique identifier.
+
+Retrieve all values of the wikiPageRedirects property. The property holds the names of different pages that points to the same entity/company name. This step sets the initial seed of surface forms.
+
+Manually, filter out some noisy property values. For instance, from the Procter & Glamble entity page we were able to automatically extract dbr:Procter_and_gamble and dbr:P_&_G, but had to manually exclude the noisy associations dbr:Female_pads and dbr:California_Natural.
+
+The result of the steps above is a dictionary of surface forms $wd_{sc}$ .
+
+Stock headlines
+
+Our corpus is built at stock code level by collecting headlines from the Reuters Archive. This archive groups the headlines by date, starting from 1 January 2007. Each headline is a html link (<a href> tag) to the full body of the news, where the anchor text is the headline content followed by the release time. For example, the page dated 16 Dec 2016 has the headline “Procter & Gamble appoints Nelson Peltz to board 5:26PM UTC”.
+
+For each of the 50 stocks (5 sectors times 10 stocks per sector) selected using the criteria described in sub:corpussecstock, we retrieved all the headlines from the Reuters Archive raging from 01/01/2007 to 30/12/2017. This process takes the following steps:
+
+For a given stock code ( $sc$ ) retrieve all surface forms $wd_{sc}$ .
+
+For each day, store only the headlines content matching any word in $wd_{sc}$ . For each stored headline we also store the time and timezone.
+
+Convert the news date and time to Eastern Daylight Time (EDT).
+
+Categorize the news release time. We consider the following category set: {before market, during market , after market, holidays, weekends}. during market contains news between 9:30AM and 4:00PM. before market before 9:30AM and after market after 4:00PM.
+
+The time categories prevents any misalignment between text and stock price data. Moreover, it prevents data leakage and, consequently, unrealistic predictive model performance. In general, news released after 4:00PM EDT can drastically change market expectations and the returns calculated using close to close prices as in the GARCH(1,1) model (see eq:closingreturn). Following BIBREF3 , to deal with news misalignment, news issued after 4:00PM (after market) are grouped with the pre-market (before market) on the following trading day.
+
+tbl:stocktimecat shows the distribution of news per sector for each time category. We can see a high concentration of news released before the market opens (55% on average). In contrast, using a corpus compiled from message boards, a large occurrence of news during market hours was found BIBREF3 . This behaviour indicating day traders' activity. Our corpus comprise financial news agency headlines, a content more focused on corporate events (e.g. lawsuits, merges & acquisitions, research & development) and on economic news (see tbl:stockheadlinesexmaples for a sample of our dataset). These headlines are mostly factual. On the other hand, user-generated content such as Twitter and message boards (as in BIBREF3 , BIBREF4 ) tends to be more subjective.
+
+U.S. macroeconomic indicators such as Retail Sales, Jobless Claims and GDP are mostly released around 8:30AM (one hour before the market opens). These numbers are key drivers of market activity and, as such, have a high media coverage. Specific sections of these economic reports impact several stocks and sectors. Another factor that contribute to the high activity of news outside regular trading hours are company earnings reports. These are rarely released during trading hours. Finally, before the market opens news agencies provide a summary of the international markets developments, e.g. the key facts during the Asian and Australian trading hours. All these factors contribute to the high concentration of pre-market news.
+
+Background
+
+We start this section by reviewing the GARCH(1,1) model, which is a strong benchmark used to evaluate our neural model. We then review the source datasets proposed in the literature that were trained independently and transfered to our volatility prediction model. Finally, we review the general architectures of sequence modelling and attention mechanisms.
+
+GARCH model
+
+Financial institutions use the concept of “Value at risk” to measure the expected volatility of their portfolios. The widespread econometric model for volatility forecasting is the Generalized Autoregressive Conditional Heteroskedasticity (GARCH) BIBREF32 , BIBREF33 . Previous research shows that the GARCH(1,1) model is hard to beat. For example, BIBREF34 compared GARCH(1,1) with 330 different econometric volatility models showing that they are not significantly better than GARCH(1,1). Let $p_t$ be the price of an stock at the end of a trading period with closing returns $r_t$ given by
+
+$$r_t = \frac{p_t}{p_{t-1}} - 1 $$   (Eq. 29)
+
+The GARCH process explicitly models the time-varying volatility of asset returns. In the GARCH(1,1) specification the returns series $r_t$ follow the process:
+
+$$r_t &= \mu + \epsilon _t  \\
+\epsilon _t &= \sigma _t z_t  \\
+\sigma ^2_t &= a_0 + a_1 \epsilon _{t-1}^2 + b_1 \sigma _{t-1}^2$$   (Eq. 30)
+
+where $\mu $ is a constant (return drift) and $z_t$ is a sequence of i.i.d. random variables with mean zero and unit variance. It is worth noting that although the conditional mean return described in eq:garchcondmean has a constant value, the conditional volatility $\sigma _t$ is time-dependent and modeled by eq:att.
+
+The one-step ahead expected volatility forecast can be computed directly from eq:garchcondvariance and is given by
+
+$$E_T[\sigma _{T+1}^2] = a_0 + a_1 E_T[\epsilon ^2] + b_1 E_T[\sigma _{T}^2] $$   (Eq. 32)
+
+In general, the $t^{\prime }$ -steps ahead expected volatility $E_T[\sigma _{T+t^{\prime }}^2]$ can be easily expressed in terms of the previous step expected volatility. It is easy to prove by induction that the forecast for any horizon can be represented in terms of the one-step ahead forecast and is given by
+
+$$E_T[\sigma _{T+t^{\prime }}^2] - \sigma _u^2 = (a_1 + b_1)^{(t^{\prime } -1)} \left(E_T[\sigma _{T+1}^2] - \sigma _u^2\right)$$   (Eq. 33)
+
+where $\sigma _u$ is the unconditional volatility:
+
+$$\sigma _u = \sqrt{a_0 / (1 - a_1 - b_1)} $$   (Eq. 34)
+
+From the equation above we can see that for long horizons, i.e. $t^\prime \rightarrow \infty $ , the volatility forecast in eq:forecastrecursive converges to the unconditional volatility in eq:unvar.
+
+All the works reviewed in sec:introduction ( BIBREF12 , BIBREF13 , BIBREF14 , BIBREF15 , BIBREF16 ) consider GARCH(1,1) benchmark. However, given the long horizon of their predictions (e.g. quarterly or annual), the models are evaluated using the unconditional volatility $\sigma _u$ in eq:unvar. In this work, we focus on the short-term volatility prediction and use the GARCH(1,1) one-day ahead conditional volatility prediction in eq:forecastoneperiod to evaluate our models.
+
+Let $\sigma _{t+1}$ denote the ex-post “true” daily volatility at a given time $t$ . The performance on a set with $N$ daily samples can be evaluated using the standard Mean Squared Error ( $MSE$ ) and Mean Absolute Error ( $MAE$ )
+
+$$MSE &= \frac{1}{N} \sum _{t=1}^{N} \left( E_t[\sigma _{t+1}] - \sigma _{t+1}\right)^2  \\
+MAE &= \frac{1}{N} \sum _{t=1}^{N}\left|E_t[\sigma _{t+1}] - \sigma _{t+1} \right|$$   (Eq. 36)
+
+Additionally, following BIBREF35 , the models are also evaluated using the coefficient of determination $R^2$ of the regression
+
+$$\sigma _{t+1} = a + b E_t[\sigma _{t+1}] + e_t$$   (Eq. 37)
+
+where
+
+$$R^2 = 1 - \frac{\sum _{t=1}^{N}e^{2}_{t}}{\sum _{t=1}^{N}\left(E_t[\sigma _{t+1}] - \frac{1}{N} \sum _{t=1}^{N}E_t[\sigma _{t+1}]\right)^{2}}$$   (Eq. 38)
+
+One of the challenges in evaluating GARCH models is the fact that the ex-post volatility $\sigma _{t+1}$ is not directly observed. Apparently, the squared daily returns $r_{t+1}^{2}$ in eq:closingreturn could stand as a good proxy for the ex-post volatility. However, the squared returns yield very noisy measurements. This is a direct consequence of the term $z^t$ that connects the squared return to the latent volatility factor in eq:garchwhitenoise. The use of intraday prices to estimate the ex-post daily volayility was first proposed in BIBREF35 . They argue that volatility estimators using intraday prices is the proper way to evaluate the GARCH(1,1) model, as opposed to squared daily returns. For example, considering the Deutsche Mark the GARCH(1,1) model $R^2$ improves from $0.047$ (squared returns) to $0.33$ (intraday returns) BIBREF35 .
+
+It is clear from the previous section that any volatility model evaluation using the noisy squared returns as the ex-post volatility proxy will lead to very poor performance. Therefore, high-frequency intraday data is fundamental to short-term volatility performance evaluation. However, intraday data is difficult to acquire and costly. Fortunately, there are statistically efficient daily volatility estimators that only depend on the open, high, low and close prices. These price “ranges” are widely available. In this section, we discuss these estimators.
+
+Let $O_t$ , $H_t$ , $L_t$ , $C_t$ be the open, high, low and close prices of an asset in a given day $t$ . Assuming that the daily price follows a geometric Brownian motion with zero drift and constant daily volatility $\sigma $ , Parkinson (1980) derived the first daily volatility estimator
+
+$$\widehat{\sigma _{PK,t}^2} = \frac{\ln \left(\frac{H_t}{L_t}\right)^2}{4\ln (2)} $$   (Eq. 41)
+
+which represents the daily volatility in terms of its price range. Hence, it contains information about the price path. Given this property, it is expected that $\sigma _{PK}$ is less noisy than the volatility calculated using squared returns. The Parkinson's volatility estimator was extended by Garman-Klass (1980) which incorporates additional information about the opening ( $O_t$ ) and closing ( $C_t$ ) prices and is defined as
+
+$$\widehat{\sigma _{GK,t}^{2}} = \frac{1}{2} \ln \left(\frac{H_t}{L_t}\right)^2 - (2\ln (2) - 1) \ln \left(\frac{C_t}{O_t}\right)^2 $$   (Eq. 42)
+
+The relative noisy of different estimators $\hat{\sigma }$ can be measured in terms of its relative efficiency to the daily volatility $\sigma $ and is defined as
+
+$$e\left(\widehat{\sigma ^{2}}, \sigma ^2\right) \equiv \frac{Var[\sigma ^2]}{Var[\widehat{\sigma ^{2}}]}$$   (Eq. 43)
+
+where $Var[\cdot ]$ is the variance operator. It follows directly from eq:garchwhitenoise that the squared return has efficiency 1 and therefore, very noisy. BIBREF36 reports Parkinson ( $\widehat{\sigma _{PK,t}^2}$ ) volatility estimator has 4.9 relative efficiency and Garman-Klass ( $\widehat{\sigma _{GK,t}^2}$ ) 7.4. Additionally, all the described estimators are unbiased.
+
+Many alternative estimators to daily volatility have been proposed in the literature. However, experiments in BIBREF36 rate the Garman-Klass volatility estimator as the best volatility estimator based only on open, high, low and close prices. In this work, we train our models to predict the state-of-the-art Garman-Klass estimator. Moreover, we evaluate our models and GARCH(1,1) using the metrics described in sub:evalution, but with the appropriate volatility proxies, i.e. Parkinson and Garman-Klass estimators.
+
+Transfer Learning from other source domains
+
+Vector representations of words, also known as Word embeddings BIBREF21 , BIBREF37 , that represent a word as a dense vector has become the standard building blocks of almost all NLP tasks. These embeddings are trained on large unlabeled corpus and are able to capture context and similarity among words.
+
+Some attempts have been made to learn vector representations of a full sentence, rather than only a single word, using unsupervised approaches similar in nature to word embeddings. Recently, BIBREF17 showed state-of-the-art performance when a sentence encoder is trained end-to-end on a supervised source task and transferred to other target tasks. Inspired by this work, we investigate the performance of sentence encoders trained on the Text categorization and Natural Language Inference (NLI) tasks and use these encoders in our main short-term volatility prediction task.
+
+A generic sentence encoder $S_e$ receives the sentence words as input and returns a vector representing the sentence. This can be expressed as a mapping
+
+$$S_e \colon \mathbb {R}^{T^{S} \times d_w} \rightarrow \mathbb {R}^{d_S}$$   (Eq. 45)
+
+from a variable size sequence of words to a sentence vector $S$ of fixed-size $d_S$ , where $T^{S}$ is the sentence number of words and $d_w$ is the pre-trained word embedding dimension.
+
+In the following sections, we describe the datasets and architectures to train the sentence encoders of the auxiliary transfer learning tasks.
+
+The Reuters Corpus Volume I (RCV1) is corpus containing 806,791 news articles in the English language collected from 20/08/1996 to 19/08/1997 BIBREF31 . The topic of each news was human-annotated using a hierarchical structure. At the top of the hierarchy, lies the coarse-grained categories: CCAT (Corporate), ECAT (Economics), GCAT (Government), and MCAT (Markets). A news article can be assigned to more than one category meaning that the text categorization task is mutilabel. Each news is stored in a separate XML file. lst:rcv1xmlexample shows the typical structure of an article.
+
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<newsitem itemid="6159" id="root" date="1996-08-21" xml:lang="en">
+
+<headline>Colombia raises internal coffee price.</headline>
+
+<dateline>BOGOTA 1996-08-21</dateline>
+
+<copyright>(c) Reuters Limited 1996</copyright>
+
+<metadata>
+
+<codes class="bip:topics:1.0">
+
+<code code="C13">
+
+<editdetail attribution="Reuters BIP Coding Group" action="confirmed" date="1996-08-21"/>
+
+</code>
+
+<code code="C31">
+
+<editdetail attribution="Reuters BIP Coding Group" action="confirmed" date="1996-08-21"/>
+
+</code>
+
+<code code="CCAT">
+
+<editdetail attribution="Reuters BIP Coding Group" action="confirmed" date="1996-08-21"/>
+
+</code>
+
+<code code="M14">
+
+<editdetail attribution="Reuters BIP Coding Group" action="confirmed" date="1996-08-21"/>
+
+</code>
+
+<code code="M141">
+
+<editdetail attribution="Reuters BIP Coding Group" action="confirmed" date="1996-08-21"/>
+
+</code>
+
+<code code="MCAT">
+
+<editdetail attribution="Reuters BIP Coding Group" action="confirmed" date="1996-08-21"/>
+
+</code>
+
+</codes>
+
+</metadata>
+
+</newsitem>
+
+The RCV1 dataset is not released with a standard train, validation, test split. In this work, we separated 15% of samples as a test set for evaluation purposes. The remaining samples were further split leaving 70% and 15% for training and validation, respectively.
+
+Regarding the categories distribution, we found that, from the original 126 categories, 23 categories were never assigned to any news; therefore, were disregarded. From the 103 classes left we found a high imbalance among the labels with a large number of underrepresented categories having less than 12 samples. The very low number of samples for these minority classes brings a great challenge to discriminate the very fine-grained categories. Aiming to alleviate this problem, we grouped into a same class all categories below the second hierarchical level. For example, given the root node CCAT (Corporate) we grouped C151 (ACCOUNTS/EARNINGS), C1511 (ANNUAL RESULTS) and C152 (COMMENT/FORECASTS) into the direct child node C15 (PERFORMANCE). Using this procedure the original 103 categories where reduced to 55. One of the benefits of this procedure was that the less represented classes end up having around thousand samples compared with only 12 samples in the original dataset.
+
+fig:rcv1arch, shows the architecture for the end-to-end text categorization task. On the bottom of the architecture $S_e$ receives word embeddings and outputs a sentence vector $S$ . The $S$ vector pass through a fully connected (FC) layer with sigmoid activation function that outputs a vector $\hat{y} \in \mathbb {R}^{55}$ with each element $\hat{y}_j \in [0,1]$ .
+
+The architecture described above is trained under the assumption that each category is independent but not mutually exclusive since a sample can have more than one category assigned (multilabel classification). The loss per sample is the average log loss across all labels:
+
+$$\mathcal {L}(\hat{y}, y) = - \sum _{i=1}^{55}\left( y_i \log (\hat{y}_i) + (1-y_{i}) \log (1-\hat{y}_{i}) \right)$$   (Eq. 48)
+
+where the index $i$ runs over the elements of the predicted and true vectors.
+
+Given the high categories imbalance, during the training we monitor the $F_1$ metric of the validation set and choose the model with the highest value.
+
+Stanford Natural Language Inference (SNLI) dataset BIBREF30 consist of 570,000 pairs of sentences. Each pair has a premise and a hypothesis, manually labeled with one of the three labels: entailment, contradiction, or neutral. The SNLI has many desired properties. The labels are equally balanced, as opposed to the RCV1 dataset. Additionally, language inference is a complex task that requires a deeper understanding of the sentence meaning making this dataset suitable for learning supervised sentence encoders that generalize well to other tasks BIBREF17 . tbl:snliexmaples, shows examples of SNLI dataset sentence pairs and its respective labels.
+
+In order to learn sentence encoders that can be transfered to other tasks unambiguously, we consider a neural network architecture for the sentence encoder with shared parameters between the premise and hypothesis pairs as in BIBREF17 .
+
+fig:snliarch, describes the neural network architecture. After each premise and hypothesis is encoded into $S_p$ and $S_h$ , respectively, we have a fusion layer. This layer has no trainable weights and just concatenate each sentence embedding. Following BIBREF17 , we add two more matching methods: the absolute difference $\vert S_p - S_h \vert $ and the element-wise $S_p \odot S_h$ . Finally, in order to learn the pair representation, $S_ph$ is feed into and FC layer with rectified linear unit (ReLU) activation function, which is expressed as $f(x) = \log (1 + e^x)$ . The last softmax layer outputs the probability of each class.
+
+Finally, the NLI classifier weights are optimized in order to minimize the categorical log loss per sample
+
+$$\mathcal {L}(\hat{y}, y) = - \sum _{j=1}^{3}y_i \log (\hat{y}_i)$$   (Eq. 52)
+
+During the training, we monitor the validation set accuracy and choose the model with the highest metric value.
+
+Sequence Models
+
+We start this section by reviewing the Recurrent Neural Network (RNN) architecture and its application to encode a sequence of words.
+
+RNN's are capable of handling variable-length sequences, this being a direct consequence of its recurrent cell, which shares the same parameters across all sequence elements. In this work, we adopt the Long Short-Term Memory (LSTM) cell BIBREF38 with forget gates $f_t$ BIBREF39 . The LSTM cell is endowed with a memory state that can learn representations that depend on the order of the words in a sentence. This makes LSTM more fit to find relations that could not be captured using standard bag-of-words representations.
+
+Let $x_1, x_2, \cdots , x_T$ be a series of observations of length $T$ , where $x_t \in \mathbb {R}^{d_w}$ . In general terms, the LSTM cell receives a previous hidden state $h_{t-1}$ that is combined with the current observation $x_t$ and a memory state $C_t$ to output a new hidden state $h_t$ . This internal memory state $C_{t}$ is updated depending on its previous state and three modulating gates: input, forget, and output. Formally, for each step $t$ the updating process goes as follows (see fig:lstmcell for a high level schematic view): First, we calculate the input $i_t$ , forget $T$0 , and output $T$1 gates:
+
+$$i_t &= \sigma _s\left(W_i x_t + U_i h_{t-1} + b_i\right) \\
+f_t &= \sigma _s\left(W_f x_t + U_f h_{t-1} + b_f\right) \\
+o_t &= \sigma _s\left(W_o x_t + U_o h_{t-1} + b_o\right)$$   (Eq. 54)
+
+where $\sigma _s$ is the sigmoid activation. Second, a candidate memory state $\widetilde{C}_t$ is generated:
+
+$$\widetilde{C}_t = \tanh \left(W_c x_t + U_c h_{t-1} + b_c\right)$$   (Eq. 55)
+
+Now we are in a position to set the final memory state $C_t$ . Its value is modulated based on the input and forget gates of eq:inputforgetgates and is given by:
+
+$$C_t = i_t \odot \widetilde{C}_t + f_t \odot C_{t-1}$$   (Eq. 56)
+
+Finally, based on the memory state and output gate of eq:inputforgetgates, we have the output hidden state
+
+$$h_t = o_t \odot \tanh \left(C_t\right)$$   (Eq. 57)
+
+Regarding the trainable weights, let $n$ be the LSTM cell number of units. It follows that $W$ 's and $U$ 's matrices of the affine transformations have ${n \times d_w}$ and ${n \times n}$ dimensions, respectively. Its bias terms $b$ 's are vectors of size $n$ . Consequently, the total number of parameters is $4 (n d_w + n^2 + n)$ and does not depend on the sequence number of time steps $T$ .
+
+We see that the LSTM networks are able to capture temporal dependencies in sequences of arbitrary length. One straightforward application is to model the Sentence encoder discussed in sec:transferlearning, which outputs a sentence vector representation using its words as input.
+
+Given a sequence of words $\left\lbrace w_t\right\rbrace _{t=1}^{T}$ we aim to learn the words hidden state $\left\lbrace h_t\right\rbrace _{t=1}^{T}$ in a way that each word captures the influence of its past and future words. The Bidirectional LSTM (BiLSTM) proposed in BIBREF40 is an LSTM that “reads” a sentence, or any sequence in general, from the beginning to the end (forward) and the other way around (backward). The new state $h_t$ is the concatenation
+
+$$h_t = [\overrightarrow{h_t}, \overleftarrow{h_t}]$$   (Eq. 59)
+
+where
+
+$$\overrightarrow{h_t} &= \text{LSTM}\left(w_1, \cdots , w_T\right) \\
+\overleftarrow{h_t} &= \text{LSTM}\left(w_T, \cdots , w_1\right) \\$$   (Eq. 60)
+
+Because sentences have different lengths, we need to convert the $T$ concatenated hidden states of the BiLSTM into a fixed-length sentence representation. One straightforward operation is to apply any form of pooling. Attention mechanism is an alternative approach where the sentence is represented as an weighted average of hidden states where the weights are learnt end-to-end.
+
+In the next sections we describe the sentence encoders using pooling and attention layers.
+
+The max-pooling layer aims to extract the most salient word features all over the sentence. Formally, it outputs a sentence vector representation $S_{MP} \in \mathbb {R}^{2n}$ such that
+
+$$S_{MP} = \max _{t=1}^{T} h_t$$   (Eq. 62)
+
+where $h_t$ is defined in eq:htconcat and the $\max $ operator is applied over the time steps dimension. fig:bilstmmaxpool illustrates the BiLSTM max-pooling (MP) sentence encoder.
+
+The efficacy of the max-pooling layer was assessed in many NLP studies. BIBREF41 employed a max-pooling layer on top of word representations and argues that it performs better than mean pooling. Experimental results in BIBREF17 show that among three types of pooling (max, mean and last) the max-pooling provides the most universal sentence representations in terms of transferring performance to other tasks. Grounded on these studies, in this work, we choose the BiLSTM max-pooling as our pooling layer of choice.
+
+Attention mechanisms were introduced in the deep learning literature to overcome some simplifications imposed by pooling operators. When we humans read a sentence, we are able to spot its most relevant parts in a given context and disregard information that is redundant or misleading. The attention model aims to mimic this behaviour.
+
+Attention layers were proposed for different NLP tasks. For example, NLI, with cross-attention between premise and hypothesis, Question & Answering and Machine Translation (MT). Specifically in the Machine Translation task, each word in the target sentence learns to attend the relevant words of the source sentence in order to generate the sentence translation.
+
+A sentence encoder with attention (or self-attentive) BIBREF42 , BIBREF43 , BIBREF44 assigns different weights to the own words of the sentence; therefore, converting the hidden states into a single sentence vector representation.
+
+Considering the word hidden vectors set $\lbrace h_1, \cdots , h_T\rbrace $ where $h_t \in \mathbb {R}^n$ , the attention mechanism is defined by the equations:
+
+$$\tilde{h}_t &= \sigma \left(W h_t + b \right) \\
+\alpha _{t} &= \frac{\exp ({v^{\intercal } \cdot \tilde{h}_t} )}{\sum _{t} \exp ({v \cdot \tilde{h}_t})} \\
+S_{A_w} &= \sum _{t} \alpha _{t} h_t$$   (Eq. 66)
+
+where $W \in \mathbb {R}^{d_a \times n}$ , $b \in \mathbb {R}^{d_a \times 1}$ , and $v \in \mathbb {R}^{d_a \times 1}$ are trainable parameters.
+
+We can see that the sentence representation $S_{A_w}$ is a weighted average of the hidden states. fig:bilstminneratt provides a schematic view of the BiLSTM attention, where we can account the attention described in eq:att as a two layer model with a dense layer ( $d_a$ units) followed by another dense that predicts $\alpha _t$ (single unit).
+
+Methodology
+
+In this section, we first introduce our problem in a deep multimodal learning framework. We then present our neural architecture, which is able to address the problems of news relevance and novelty. Finally, we review the methods applied to learn commonalities between stocks (global features).
+
+Problem statement
+
+Our problem is to predict the daily stock volatility. As discussed in subsub:rangevolestimators, the Gaman-Klass estimator $\widehat{\sigma _{GK,t}}$ in eq:volgk is a very efficient short-term volatility proxy, thus, it is adopted as our target variable.
+
+Our goal is to learn a mapping between the next day volatility $\sigma _{t+1}$ and historical multimodal data available up to day $t$ . To this aim, we use a sliding window approach with window size $T$ . That is, for each stock $sc$ a sample on day $t$ is expressed as a sequence of historical prices $P^{sc}_t$ and corpus headlines $N^{sc}_t$ . The price sequence is a vector of Daily Prices (DP) and expressed as
+
+$$P^{sc}_t = \left[DP^{sc}_{t-T}, DP^{sc}_{t-T+1}, \cdots , DP^{sc}_t \right]$$   (Eq. 69)
+
+where $DP^{sc}_{t^{\prime }}$ is a vector of price features. In order to avoid task-specific feature engineering, the daily price features are expressed as the simple returns:
+
+$$DP^{sc}_t = \left[ \frac{O^{sc}_{t}}{C^{sc}_{t-1}} - 1, \frac{H^{sc}_{t}}{C^{sc}_{t-1}} - 1, \frac{L^{sc}_{t}}{C^{sc}_{t-1}} - 1, \frac{C^{sc}_{t}}{C^{sc}_{t-1}} - 1 \right]$$   (Eq. 70)
+
+The sequence of historical corpus headlines $N^{sc}_t$ is expressed as
+
+$$N^{sc}_t = \left[n^{sc}_{t-T}, n^{sc}_{t-T+1}, \cdots , n^{sc}_{t} \right]$$   (Eq. 71)
+
+where $n^{sc}_{t^{\prime }}$ is a set containing all headlines that influence the market on a given day $t^{\prime }$ .
+
+Aiming to align prices and news modes, we consider the explicit alignment method discussed in subsec:stockheadlines. That is, $n^{sc}_{t^{\prime }}$ contains all stock headlines before the market opens ( $\texttt {before market}_{t}$ ), during the trading hours
+
+( $\texttt {during market}_{t}$ ), and previous day after-markets
+
+( $\texttt {after market}_{t-1}$ ).
+
+As a text preprocessing step, we tokenize the headlines and convert each word to an integer that refers to its respective pre-trained word embedding. This process is described as follows: First, for all stocks of our corpus we tokenize each headline and extract the corpus vocabulary set $V$ . We then build the embedding matrix $E_w \in \mathbb {R}^{\vert V \vert \times d_w}$ , where each row is a word embedding vector $d_w$ dimensions. Words that do not have a corresponding embedding, i.e. out of vocabulary words, are skipped.
+
+Finally, the input sample of the text mode is a tensor of integers with $T \times l_n \times l_s$ dimensions, where $l_n$ is the maximum number of news occurring in a given day and $l_s$ is the maximum length of a corpus sentence. Regarding the price mode, we have a $T \times 4$ tensor of floating numbers.
+
+Global features and stock embedding
+
+Given the price and news histories for each stock $sc$ we could directly learn one model per stock. However, this approach suffers from two main drawbacks. First, the market activity of one specific stock is expected to impact other stocks, which is a widely accepted pattern named “spillover effect”. Second, since our price data is sampled on a daily basis, we would train the stock model relying on a small number of samples. One possible solution to model the commonality among stocks would be feature enrichment. For example, when modeling a given stock $X$ we would enrich its news and price features by concatenating features from stock $Y$ and $Z$ . Although the feature enrichment is able to model the effect of other stocks, it still would consider only one sample per day.
+
+In this work, we propose a method that learns an global model.
+
+The global model is implemented using the following methods:
+
+Multi-Stock batch samples: Since our models are trained using Stochastic Gradient Descent, we propose at each mini-batch iteration to sample from a batch set containing any stock of our stocks universe. As a consequence, the mapping between volatility and multimodal data is now able to learn common explanatory factors among stocks. Moreover, adopting this approach increases the total number of training samples, which is now the sum of the number of samples per stock.
+
+Stock Embedding: Utilizing the Multi-Stock batch samples above, we tackle the problem of modeling commonality among stocks. However, it is reasonable to assume that stocks have part of its dynamic driven by idiosyncratic factors. Nevertheless, we could aggregate stocks per sector or rely on any measure of similarity among stocks. In order to incorporate information specific to each stock, we propose to equip our model with a “stock embedding” mode that is learnt jointly with price and news modes. That is to say, we leave the task of distinguishing the specific dynamic of each stock to be learnt by the neural network. Specifically, this stock embedding is modeled using a discrete encoding as input, i.e. $\mathcal {I}^{sc}_t$ is a vector with size equal to the number of stocks of the stocks universe and has element 1 for the i-th coordinate and 0 elsewhere, thus, indicating the stock of each sample.
+
+Formally, we can express the one model per stock approach as the mapping
+
+$$\begin{split}
+\sigma ^{sc}_{t+1} = f^{sc} ( DN^{sc}_{t-T}, DN^{sc}_{t-T+1}, \cdots , DN^{sc}_t ; \\
+DP^{sc}_{t-T}, DP^{sc}_{t-T+1}, \cdots , DP^{sc}_t )
+\end{split}$$   (Eq. 75)
+
+where $DN^{sc}_{t^{\prime }}$ is a fixed-vector representing all news released on a given day for the stock $sc$ and $DP^{sc}_{t^{\prime }}$ is defined in eq:pricemodevec.
+
+The global model attempts to learn a single mapping $f$ that at each mini-batch iteration randomly aggregates samples across all the universe of stocks, rather than one mapping $f^{sc}$ per stock. The global model is expressed as
+
+$$\begin{split}
+\sigma ^{sc}_{t+1} = f ( DN^{sc}_{t-T}, DN^{sc}_{t-T+1}, \cdots , DN^{sc}_t ; \\
+DP^{sc}_{t-T}, DP^{sc}_{t-T+1}, \cdots , DP^{sc}_t ; \\
+\mathcal {I}^{sc}_t)
+\end{split}$$   (Eq. 77)
+
+In the next section, we describe our hierarchical neural model and how the news, price and stock embedding are fused into a joint representation.
+
+Our multimodal hierarchical network
+
+In broad terms, our hierarchical neural architecture is described as follows. First, each headline released on a given day $t$ is encoded into a fixed-size vector $S_t$ using a sentence encoder. We then apply our daily New Relevance Attention (NRA) mechanism that attends each news based on its content and converts a variable size of news released on a given day into a single vector denoted by Daily News ( $DN$ ). We note that this representation take account of the overall effect of all news released on a given day. This process is illustrated in fig:DNencoder. We now are in a position to consider the temporal effect of the past $T$ days of market news and price features. fig:nntimeseriesarch illustrates the neural network architecture from the temporal sequence to the final volatility prediction. For each stock code $sc$ the temporal encoding for news is denoted by Market News $MN^{sc}_t$ and for the price by Market Price $MP^{sc}_t$ and are a function of the past $T$ Daily News representations ${\lbrace DN^{sc}_{t-T}, \cdots , DN^{sc}_t \rbrace }$ (Text mode) and Daily Prices features $S_t$0 (Price mode), where each Daily Price $S_t$1 feature is given by eq:pricemodevec and the $S_t$2 representation is calculated using Daily New Relevance Attention. After the temporal effects of $S_t$3 past days of market activity were already encoded into the Market News $S_t$4 and Market Price $S_t$5 , we concatenate feature-wise $S_t$6 , $S_t$7 and the Stock embedding $S_t$8 . The stock embedding $S_t$9 represents the stock code of the sample on a given day $t$ . Finally, we have a Fully Connected (FC) layer that learns the Joint Representation of all modes. This fixed-sized joint representation is fed into a FC layer with linear activation that predicts the next day volatility $\hat{\sigma }_{t+1}$ .
+
+Below, we detail, for each mode separately, the layers of our hierarchical model.
+
+– Text mode
+
+Word Embedding Retrieval
+
+Standard embedding layer with no trainable parameters. It receives a vector of word indices as input and returns a matrix of word embeddings.
+
+News Encoder
+
+This layer encodes all news on a given day and outputs a set news embeddings $\lbrace S^{1}_t, \cdots , S^{l_n}_t \rbrace $ . Each encoded sentence has dimension $d_S$ , which is a hyperparameter of our model. This layer constitutes a key component of our neural architectures and, as such, we evaluate our models considering sentence encoders trained end-to-end, using the BiLSTM attention (subsec:bilstminneratt) and BiLSTM max-pooling (subsec:bilstmmaxpool) architectures, and also transferred from the RCV1 and SNLI as fixed features.
+
+Daily news relevance attention
+
+Our proposed news relevance attention mechanism for all news released on a given day. The attention mechanism is introduced to tackle information overload. It was designed to “filter out” redundant or misleading news and focus on the relevant ones based solely on the news content. Formally, the layer outputs a Daily News (DN) embedding $DN^{sc}_t = \sum _{i=1}^{l_n} \beta _i S^{sc^{i}}_t$ , which is a linear combination of all encoded news on a given day $t$ . This news-level attention uses the same equations as in eq:att, but with trainable weights $\lbrace W_{R}, b_{R}, v_{R}\rbrace $ , i.e. the weights are segregated from the sentence encoder. fig:DNencoder, illustrates our relevance attention. Note that this layer was deliberately developed to be invariant to headlines permutation, as is the case with the linear combination formula above. The reason is that our price data is sampled daily and, as a consequence, we are not able to discriminate the market reaction for each intraday news.
+
+News Temporal Context
+
+Sequence layer with daily news embeddings $DN^{sc}_t$ as time steps. This layer aims to learn the temporal context of news, i.e. the relationship between the news at day $t$ and the $T$ past days. It receives as input a chronologically ordered sequence of $T$ past Daily News embeddings ${\lbrace DN^{sc}_{t-T}, \cdots , DN^{sc}_t \rbrace }$ and outputs the news mode encoding Market News $MN^{sc}_t \in d_{MN}$ . The sequence with $T$ time steps is encoded using a BiLSTM attention. The layer was designed to capture the temporal order that news are released and the current news novelty. i.e. news that were repeated in the past can be “forgotten” based on the modulating gates of the LSTM network.
+
+– Price mode
+
+Price Encoder
+
+Sequence layer analogous to News Temporal Context, but for the price mode. The input is the ordered sequence Daily Prices ${\lbrace DP^{sc}_{t-T}, \cdots , DP^{sc}_t \rbrace }$ of size $T$ , where each element the price feature defined in eq:pricemodevec. Particularly, the architecture consists of two stacked LSTM's. The first one outputs for each price feature time step a hidden vector that takes the temporal context into account. Then these hidden vectors are again passed to a second independent LSTM. The layer outputs the price mode encoding Market Price $MP^{sc}_t \in d_{MP}$ . This encoding is the last hidden vector of the second LSTM Market.
+
+– Stock embedding
+
+Stock Encoder
+
+Stock dense representation. The layer receives the discrete encoding $\mathcal {I}^{sc}_t$ indicating the sample stock code pass through a FC layer and outputs a stock embedding $E_{sc}$ .
+
+– Joint Representation
+
+Merging
+
+Feature-wise News, Price, and Stock modes concatenation. No trainable parameters.
+
+Joint Representation Encoder
+
+FC layer of size $d_{JR}$ .
+
+Multimodal learning with missing modes
+
+During the training we feed into our neural model the price, news, and stock indicator data. The price and stock indicator modes data occur in all days. However, at the individual stock level we can have days that the company is not covered by the media. This feature imposes challenges to our multimodal training since neural networks are not able to handle missing modes without special intervention. A straightforward solution would be to consider only days with news released, disregarding the remaining samples. However, this approach has two main drawbacks. First, the “missing news” do not happen at random, or are attributed to measurement failure as is, for example, the case of multimodal tasks using mechanical sensors data. Conversely, as highlighted in BIBREF7 , BIBREF8 the same price behaviour results in distinct market reactions when accompanied or not by news. In other words, specifically to financial forecasting problems the absence or existence of news are highly informative.
+
+Some methods were proposed in the multimodal literature to effectively treat informative missing modes or “informative missingness”, which is a characteristic refereed in the literature as learning with missing modalities BIBREF22 . In this work, we directly model the news missingness as a feature of our text model temporal sequence by using the method initially proposed in BIBREF45 , BIBREF46 for clinical data with missing measurements and applied in the context of financial forecasting in BIBREF47 . Specifically, we implement the Zeros & Imputation (ZI) method BIBREF46 in order to jointly learn the price mode and news relationship across all days of market activity.
+
+The ZI implementation is described as follows: Before the daily news sequence is processed by the text temporal layer (described in itm:newstclayer) we input a 0 vector for all time steps with missing news and leave the news encoding unchanged otherwise. This step is called zero imputation. In addition, we concatenate feature-wise an indicator vector with value 1 for all vectors with zero imputation and 0 for the days with news.
+
+As described in BIBREF47 , the ZI method endow a temporal sequence model with the ability to learn different representations depending on the news history and its relative time position. Moreover, it allows our model to predict the volatility for all days of our time series and, at the same time, take into account the current and past news informative missingness. Furthermore, the learnt positional news encoding works differently than a typical “masking”, where days without news are not passed through the LSTM cell. Masking the time steps would be losing information about the presence or absence of news concomitant with prices.
+
+Experimental results and discussions
+
+We aim to evaluate our hierarchical neural model in the light of three main aspects. First, we asses the importance of the different sentence encoders to our end-to-end models and how it compares to transferring the sentence encoder from our two auxiliary TL tasks. Second, we ablate our proposed news relevance attention (NRA) component to evaluate its importance. Finally, we consider a model that takes into consideration only the price mode (unimodal), i.e. ignoring any architecture related to the text mode.
+
+Before we define the baselines to asses the three aspects described above, we review in the next section the scores of the trained TL tasks.
+
+Auxiliary transfer learning tasks
+
+This section reports the performance of the auxiliary TL tasks considered in this work. Our ultimate goal is to indicate that our scores are in line with previous works All the architectures presented in sec:transferlearning are trained for a maximum of 50 epochs using mini-batch SGD with Adam optimizer BIBREF48 . Moreover, at the end of each epoch, we evaluate the validation scores, which are accuracy (Stanfor SNLI dataset) and F1 (RCV1 dataset), and save the weights with the best values. Aiming to seeped up training, we implement early stopping with patience set to 8 epochs. That is, if the validation scores do not improve for more than 10 epochs we halt the training. Finally, we use Glove pre-trained word embeddings BIBREF37 as fixed features.
+
+tbl:tlevaluation compares our test scores with state-of-the-art (SOTA) results reported in previous works. We can see that our scores for the SNLI task are very close to state-of-the-art.
+
+Regarding the RCV1 dataset, our results consider only the headline content for training, while the refereed works consider both the news headline and message body. The reason for training using only the headlines is that both tasks are learnt with the sole purpose of transferring the sentence encoders to our main volatility prediction task, whose textual input is restricted to headlines.
+
+Training setup
+
+During the training of our hierarchical neural model described in sub:HAN we took special care to guard against overfitting. To this aim, we completely separate 2016 and 2017 as the test set and report our results on this “unseen” set. The remaining data is further split into training (2007 to 2013) and validation (2014 to 2015). The model convergence during training is monitored in the validation set. We monitor the validation score of our model at the end of each epoch and store the network weights if the validation scores improves between two consecutive epochs. Additionally, we use mini-batch SGD with Adam optimizer and early stopping with patience set to eight epochs. The hyperparameter tunning is performed using grid search.
+
+All training is performed using the proposed global model approach described in sub:globalmodel, which learns a model that takes into account the features of all the 40 stocks of our corpus. Using this approach our training set has a total of 97,903 samples. Moreover, during the SGD mini-batch sampling the past $T$ days of price and news history tensors and each stock sample stock indicator are randomly selected from the set of all 40 stocks.
+
+Stocks universe result
+
+In order to evaluate the contributions of each component of our neural model described in sub:HAN and the effect of using textual data to predict the volatility, we report our results using the following baselines:
+
+- News (unimodal price only): This baseline completely ablates (i.e. removes) any architecture related to the news mode, considering only the price encoding and the stock embedding components. Using this ablation we aim to evaluate the influence of news to the volatility prediction problem.
+
++ News (End-to-end Sentence Encoders) - NRA: This baseline ablates our proposed new relevance attention (NRA) component, and instead, makes use of the same Daily Averaging method in BIBREF26 , BIBREF27 , where all fixed-sized headline representations on a given day are averaged without taking into account the relevance of each news. We evaluate this baseline for both BiLSTM attention (Att) and BiLSTM max-pooling (MP) sentence encoders. Here, our goal is to asses the true contribution of our NRA component in the case SOTA sentence encoders are taken into account.
+
++ News (End-to-End W-L Att Sentence Encoder) + NRA: The Word-Level Attention (W-L Att) sentence encoder implements an attention mechanism directly on top of word embeddings, and, as such, does not consider the order of words in a sentence. This baseline complements the previous one, i.e. it evaluates the influence of the sentence encoder when our full specification is considered.
+
++ News (TL Sentence Encoders) + NRA: Makes use of sentence encoders of our two auxiliary TL tasks as fixed features. This baseline aims to address the following questions, namely: What dataset and models are more suitable to transfer to our specific volatility forecasting problem; How End-to-End models, which are trained on top of word embeddings, perform compared to sentence encoders transferred from other tasks.
+
+tbl:comparativeallsectors summarizes the test scores for the ablations discussed above. Our best model is the + News (BiLSTM Att) + NRA, which is trained end-to-end and uses our full architecture. The second best model, i.e. + News (BiLSTM MP) + NRA, ranks slightly lower and only differs form the best model in terms of the sentence encoder. The former sentence encoder uses an attention layer (subsec:bilstminneratt) and the the last a max-pooling layer (subsec:bilstmmaxpool), where both layers are placed on top of the LSTM hidden states of each word.
+
+Importantly, our experiments show that using news and price (multimodal) to predict the volatility improves the scores by 11% (MSE) and 9% (MAE) when compared with the – News (price only unimodal) model that considers only price features as explanatory variables.
+
+When comparing the performance of End-to-End models and the TL auxiliary tasks the following can be observed: The end-to-end models trained with the two SOTA sentence encoders perform better than transferring sentence encoder from both auxiliary tasks. However, our experiments show that the same does not hold for models trained end-to-end relying on the simpler WL-Att sentence encoder, which ignores the order of words in a sentence. In other words, considering the appropriate TL task, it is preferable to transfer a SOTA sentence encoder trained on a larger dataset than learning a less robust sentence encoder in an end-to-end fashion. Moreover, initially, we thought that being the RCV1 a financial domain corpus it would demonstrate a superior performance when compared to the SNLI dataset. Still, the SNLI transfers better than RCV1. We hypothesize that the text categorization task (RCV1 dataset) is not able to capture complex sentence structures at the same level required to perform natural language inference. Particularly to the volatility forecasting problem, our TL results corroborates the same findings in BIBREF17 , where it was shown that SNLI dataset attains the best sentence encoding for a broad range of pure NLP tasks, including, among other, text categorization and sentiment analysis.
+
+Significantly, experimental results in tbl:comparativeallsectors clearly demonstrate that our proposed news relevance attention (NRA) outperforms the News Averaging method proposed in previous studies BIBREF26 , BIBREF27 . Even when evaluating our NRA component in conjunction with the more elementary W-L Att sentence encoder it surpass the results of sophisticated sentence encoder using a News Averaging approach. In other words, our results strongly points to the advantage of discriminating noisy from impacting news and the effectiveness of learning to attend the most relevant news.
+
+Having analyzed our best model, we now turn to its comparative performance with respect to the widely regarded GARCH(1,1) model described in sec:GARCH.
+
+We asses our model performance relative to GARCH(1,1) using standard loss metrics (MSE and MAE) and the regression-based accuracy specified in eq:regressionloss and measured in terms of the coefficient of determination $R^2$ . In addition, we evaluate our model across two different volatility proxies: Garman-Klass ( $\widehat{\sigma _{GK}}$ ) (eq:volgk) and Parkinson ( $\widehat{\sigma _{PK}}$ ) (eq:volpk). We note that, as reviewed in sub:evalution, these two volatility proxies are statically efficient and proper estimators of the next day volatility.
+
+tbl:garchallsectors reports the comparative performance among our best Price + News model (+ News BiLSTM (MP) + NRA), our Price only (unimodal) model and GARCH(1,1). The results clearly demonstrate the superiority of our model, being more accurate than GRACH for both volatility proxies. We note that evaluating the GARCH(1,1) model relying on standard MSE and MAE error metrics should be taken with a grain of salt. BIBREF35 provides the background theory and arguments supporting $R^2$ as the metric of choice to evaluate the predictive power of a volatility model. In any case, the outperformance or our model with respect to GARCH(1,1) permeates all three metrics, name $R^2$ , $MSE$ and $MAE$ .
+
+Sector-level results
+
+Company sectors are expected to have different risk levels, in the sense that each sector is driven by different types of news and economic cycles. Moreover, by performing a sector-level analysis we were initially interested in understanding if the outperformance of our model with respect to GARCH(1,1) was the result of a learning bias to a given sector or if, as turned out to be the case, the superior performance of our model spreads across a diversified portfolio of sectors.
+
+In order to evaluate the performance per sector, we first separate the constituents stocks for each sector in tbl:stockuniverse. Then, we calculate the same metrics discussed in the previous section for each sector individually.
+
+tbl:garcheachsector reports our experimental results segregated by sector. We observe that the GRACH model accuracy, measured using the $R^2$ score, has a high degree of variability among sectors. For example, the accuracy ranges from 0.15 to 0.44 for the HealthCare and Energy sector, respectively. This high degree of variability is in agreement with previous results reported in BIBREF16 , but in the context of long-term (quarterly) volatility predictions. Although the GARCH(1,1) accuracy is sector-dependent, without any exception, our model using price and news as input clearly outperforms GRACH sector-wise. This fact allow us to draw the following conclusions:
+
+Our model outperformance is persistent across sectors, i.e. the characteristics of the results reported in tbl:garchallsectors permeates all sectors, rather than being composed of a mix of outperforming and underperforming sector contributions. This fact provides a strong evidence that our model is more accurate than GARCH(1,1).
+
+The proposed Global model approach discussed in sub:globalmodel is able to generalize well, i.e. the patterns learnt are not biased to a given sector or stock.
+
+One of the limitations of our work is to rely on proxies for the volatility estimation. Although these proxies are handy if only open, high, low and close daily price data is available, having high frequency price data we could estimate the daily volatility using the sum of squared intraday returns to measure the true daily latent volatility. For example, in evaluating the performance for the one-day-ahead GARCH(1,1) Yen/Dollar exchange rate BIBREF35 reports $R^2$ values of 0.237 and 0.392 using hourly and five minutes sampled intraday returns, respectively. However, we believe that utilizing intraday data would further improve our model performance.
+
+Since our experimental results demonstrate the key aspect of the news relevance attention to model architecture we observe that intraday data would arguably ameliorate the learning process. Having intraday data would allow us to pair each individual news release with the instantaneous market price reaction. Using daily data we are losing part of this information by only measuring the aggregate effect of all news to the one-day-ahead prediction.
+
+Conclusion
+
+We study the joint effect of stock news and prices on the daily volatility forecasting problem. To the best of our knowledge, this work is one of the first studies aiming to predict short-term (daily) rather than long-term (quarterly or yearly) volatility taking news and price as explanatory variables and using a comprehensive dataset of news headlines at the individual stock level. Our hierarchical end-to-end model benefits from state-of-the-art approaches to encode text information and to deal with two main challenges in correlating news with market reaction: news relevance and novelty. That is, to address the problem of how to attend the most important news based purely on its content (news relevance attention) and to take into account the temporal information of past news (temporal context). Additionally, we propose a multi-stock mini-batch + stock embedding method suitable to model commonality among stocks.
+
+The experimental results show that our multimodal approach outperforms the GARCH(1,1) volatility model, which is the most prevalent econometric model for daily volatility predictions. The outperformance being sector-wise and demonstrates the effectiveness of combining price and news for short-term volatility forecasting. The fact that we outperform GARCH(1,1) for all analyzed sectors confirms the robustness of our proposed architecture and evidences that our global model approach generalizes well.
+
+We ablated (i.e. removed) different components of our neural architecture to assess its most relevant parts. To this aim, we replaced our proposed news relevance attention layer, which aims to attend the most important news on a given day, with a simpler architecture proposed in the literature, which averages the daily news. We found that our attention layer improves the results. Additionally, we ablated all the architecture related to the news mode and found that news enhances the forecasting accuracy.
+
+Finally, we evaluated different sentence encoders, including those transfered from other NLP tasks, and concluded that they achieve better performance as compared to a plain Word-level attention sentence encoder trained end-to-end. However, they do not beat state-of-the-art sentence encoders trained end-to-end.
+
+In order to contribute to the literature of Universal Sentence Encoders, we evaluated the performance of transferring sentence encoders from two different tasks to the volatility prediction problem. We showed that models trained on the Natural Language Inference (NLI) task are more suitable to forecasting problems than a financial domain dataset (Reuters RCV1). By analyzing different architectures, we showed that a BiLSTM with max-pooling for the SNLI dataset provides the best sentence encoder.
+
+In the future, we plan to make use of intraday prices to better assess the predictive power of our proposed models. Additionally, we would further extend our analysis to other stock market sectors.

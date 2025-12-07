@@ -1,0 +1,75 @@
+Introduction
+
+Dense word vectors (or embeddings) are a key component in modern NLP architectures for tasks such as sentiment analysis, parsing, and machine translation. These vectors can be learned by exploiting the distributional hypothesis BIBREF0, paraphrased by BIBREF1 as “a word is characterized by the company that it keeps”, usually by constructing a cooccurrence matrix over a training corpus, re-weighting it using Pointwise Mutual Information ($\mathit {PMI}$) BIBREF2, and performing a low-rank factorization to obtain dense vectors.
+
+Unfortunately, $\mathit {PMI}(w,c)$ goes to negative infinity when the word-context pair $(w,c)$ does not appear in the training corpus. Due to unreliable statistics, this happens very frequently in finite corpora. Many models work around this issue by clipping negative $\mathit {PMI}$ values at 0, a measure known as Positive $\mathit {PMI}$ ($\mathit {PPMI}$), which works very well in practice. An unanswered question is: “What is lost/gained by collapsing the negative $\mathit {PMI}$ spectrum to 0?”. Understanding which type of information is captured by $\mathit {\texttt {-}PMI}$ can help in tailoring models for optimal performance.
+
+In this work, we attempt to answer this question by studying the kind of information contained in the negative and positive spectrums of $\mathit {PMI}$ ($\mathit {\texttt {-}PMI}$ and $\mathit {\texttt {+}PMI}$). We evaluate weighted factorization of different matrices which use either $\mathit {\texttt {-}PMI}$, $\mathit {\texttt {+}PMI}$, or both on various semantic and syntactic tasks. Results show that $\mathit {\texttt {+}PMI}$ alone performs quite well on most tasks, capturing both semantics and syntax, in contrast to $\mathit {\texttt {-}PMI}$, which performs poorly on nearly all tasks, except those that test for syntax. Our main contribution is deepening our understanding of distributional semantics by extending BIBREF1's paraphrase of the distributional hypothesis to “a word is not only characterized by the company that it keeps, but also by the company it rejects”. Our secondary contributions are the proposal of two $PMI$ variants that account for the spectrum of $\mathit {\texttt {-}PMI}$, and the justification of the popular $PPMI$ measure.
+
+In this paper, we first look at related work ($§$SECREF2), then study $\mathit {\texttt {-}PMI}$ and ways of accounting for it ($§$SECREF3), describe experiments ($§$SECREF4), analyze results ($§$SECREF5), and close with ideas for future work ($§$SECREF6).
+
+Related Work
+
+There is a long history of studying weightings (also known as association measures) of general (not only word-context) cooccurrence matrices; see BIBREF3, BIBREF4 for an overview and BIBREF5 for comparison of different weightings. BIBREF6 show that word vectors derived from $\mathit {PPMI}$ matrices perform better than alternative weightings for word-context cooccurrence. In the field of collocation extraction, BIBREF7 address the negative infinity issue with $\mathit {PMI}$ by introducing the normalized $\mathit {PMI}$ metric. BIBREF8 show theoretically that the popular Skip-gram model BIBREF9 performs implicit factorization of shifted $\mathit {PMI}$.
+
+Recently, work in explicit low-rank matrix factorization of $\mathit {PMI}$ variants has achieved state of the art results in word embedding. GloVe BIBREF10 performs weighted factorization of the log cooccurrence matrix with added bias terms, but does not account for zero cells. BIBREF11 point out that GloVe's bias terms correlate strongly with unigram log counts, suggesting that GloVe is factorizing a variant of $\mathit {PMI}$. Their SwiVel model modifies the GloVe objective to use Laplace smoothing and hinge loss for zero counts of the cooccurrence matrix, directly factorizing the $\mathit {PMI}$ matrix, sidestepping the negative infinity issue. An alternative is to use $\mathit {PPMI}$ and variants as in BIBREF12, BIBREF13, BIBREF14, BIBREF15, BIBREF16. However, it is not clear what is lost by clipping the negative spectrum of $\mathit {PMI}$, which makes the use of $\mathit {PPMI}$, though it works well in practice, seem unprincipled.
+
+In the study of language acquisition, BIBREF17 argue that indirect negative evidence might play an important role in human acquisition of grammar, but do not link this idea to distributional semantics.
+
+PMI & Matrix Factorization
+
+PMI: A cooccurrence matrix $M$ is constructed by sliding a symmetric window over the subsampled BIBREF9 training corpus and for each center word $w$ and context word $c$ within the window, incrementing $M_{wc}$. $\mathit {PMI}$ is then equal to:
+
+where * denotes summation over the corresponding index. To deal with negative values, we propose clipped $\mathit {PMI}$,
+
+which is equivalent to $\mathit {PPMI}$ when $z = 0$.
+
+Matrix factorization: LexVec BIBREF15 performs the factorization $M^{\prime } = WC^\top $, where $M^{\prime }$ is any transformation of $M$ (such as $\mathit {PPMI}$), and $W, C$ are the word and context embeddings respectively. By sliding a symmetric window over the training corpus (window sampling), LexVec performs one Stochastic Gradient Descent (SGD) step every time a $(w,c)$ pair is observed, minimizing
+
+Additionally, for every center word $w$, $k$ negative words BIBREF9 are drawn from the unigram context distribution $P_n$ (negative sampling) and SGD steps taken to minimize:
+
+Thus the loss function prioritizes the correct approximation of frequently cooccurring pairs and of pairs where either word occurs with high frequency; these are pairs for which we have more reliable statistics.
+
+In our experiments, we use LexVec over Singular Value Decomposition (SVD) because a) Empirical results shows it outperforms SVD BIBREF15. b) The weighting of reconstruction errors by statistical confidence is particularly important for $\mathit {\texttt {-}PMI}$, where negative cooccurrence between a pair of frequent words is more significant and should be better approximated than that between a pair of rare words. GloVe's matrix factorization is even more unsuitable for our experiments as its loss weighting — a monotonically increasing function of $M_{wc}$ — ignores reconstruction errors of non-cooccurring pairs.
+
+Spectrum of PMI: To better understand the distribution of $\mathit {CPMI}$ values, we plot a histogram of $10^5$ pairs randomly sampled by window sampling and negative sampling in fig:hist, setting $z=-5$. We can clearly see the spectrum of $\mathit {\texttt {-}PMI}$ that is collapsed when we use $\mathit {PPMI}$ ($z=0$). In practice we find that $z=-2$ captures most of the negative spectrum and consistently gives better results than smaller values so we use this value for the rest of this paper. We suspect this is due to the large number of non-cooccurring pairs ($41.7\%$ in this sample) which end up dominating the loss function when $z$ is too small.
+
+Normalization: We also experiment with normalized $\mathit {PMI}$ ($\mathit {NPMI}$) BIBREF7:
+
+such that $NPMI(w,c) = -1$ when $(w,c)$ never cooccur, $NPMI(w,c) = 0$ when they are independent, and $NPMI(w,c) = 1$ when they always cooccur together. This effectively captures the entire negative spectrum, but has the downside of normalization which discards scale information. In practice we find this works poorly if done symmetrically, so we introduce a variant called $\mathit {NNEGPMI}$ which only normalizes $\mathit {\texttt {-}PMI}$:
+
+We also experimented with Laplace smoothing as in BIBREF18 for various pseudocounts but found it to work consistently worse than both $\mathit {CPMI_z}$ and $\mathit {NNEGPMI}$ so we omit further discussion in this paper.
+
+Materials
+
+In order to identify the role that $\mathit {\texttt {-}PMI}$ and $\mathit {\texttt {+}PMI}$ play in distributional semantics, we train LexVec models that skip SGD steps when target cell values are $>0$ or $\le 0$, respectively. For example, $-\mathit {CPMI}_{\texttt {-}2}$ skips steps when $\mathit {CPMI}_{\texttt {-}2}(w,c) > 0$. Similarly, the $\mathit {\texttt {+}PPMI}$ model skips SGD steps when $\mathit {PPMI}(w,c) \le 0$. We compare these to models that include both negative and positive information to see how the two interact.
+
+We use the default LexVec configuration for all $\mathit {PMI}$ variants: fixed window of size 2, embedding dimension of 300, 5 negative samples, positional contexts, context distribution smoothing of $.75$, learning rate of $.025$, no subword information, and negative distribution power of $.75$. We train on a lowercased, alphanumerical 2015 Wikipedia dump with $3.8$B tokens, discarding tokens with frequency $< 100$, for a vocabulary size of $303,517$ words.
+
+For comparison, we include results for a randomly initialized, non-trained embedding to establish task baselines.
+
+Semantics: To evaluate word-level semantics, we use the SimLex BIBREF19 and Rare Word (RW) BIBREF20 word similarity datasets, and the Google Semantic (GSem) analogies BIBREF9. We evaluate sentence-level semantics using averaged bag of vectors (BoV) representations on the Semantic Textual Similarity (STSB) task BIBREF21 and Word Content (WC) probing task (identify from a list of words which is contained in the sentence representation) from SentEval BIBREF22.
+
+Syntax: Similarly, we use the Google Syntactic analogies (GSyn) BIBREF9 to evaluate word-level syntactic information, and Depth (Dep) and Top Constituent (TopC) (of the input sentence's constituent parse tree) probing tasks from SentEval BIBREF22 for sentence-level syntax. Classifiers for all SentEval probing tasks are multilayer perceptrons with a single hidden layer of 100 units and dropout of $.1$. Our final syntactic task is part-of-speech (POS) tagging using the same BiLSTM-CRF setup as BIBREF23 but using only word embeddings (no hand-engineered features) as input, trained on the WSJ section of the Penn Treebank BIBREF24.
+
+Results
+
+All results are shown in tab:senteval.
+
+Negative PMI: We observe that using only $\mathit {\texttt {-}PMI}$ (rows $\mathit {\texttt {-}CPMI_{\texttt {-}2}}$ and $\mathit {\texttt {-}NNEGPMI}$) performs similarly to all other models in POS tagging and both syntactic probing tasks, but very poorly on all semantic tasks, strongly supporting our main claim that $\mathit {\texttt {-}PMI}$ mostly encodes syntactic information.
+
+Our hypothesis for this is that the grammar that generates language implicitly creates negative cooccurrence and so $\mathit {\texttt {-}PMI}$ encodes this syntactic information. Interestingly, this idea creates a bridge between distributional semantics and the argument by BIBREF17 that indirect negative evidence might play an important role in human language acquisition of grammar. Positive PMI: The $\mathit {\texttt {+}PPMI}$ model performs as well or better as the full spectrum models on nearly all tasks, clearly indicating that $\mathit {\texttt {+}PMI}$ encodes both semantic and syntactic information.
+
+Why incorporate -PMI? $\mathit {\texttt {+}PPMI}$ only falters on the RW and analogy tasks, and we hypothesize this is where $\mathit {\texttt {-}PMI}$ is useful: in the absence of positive information, negative information can be used to improve rare word representations and word analogies. Analogies are solved using nearest neighbor lookups in the vector space, and so accounting for negative cooccurrence effectively repels words with which no positive cooccurrence was observed. In future work, we will explore incorporating $\mathit {\texttt {-}PMI}$ only for rare words (where it is most needed).
+
+Full spectrum models: The $\mathit {PPMI}$, $\mathit {CPMI_{\texttt {-}2}}$, and $\mathit {NNEGPMI}$ models perform similarly, whereas the $\mathit {NPMI}$ model is significantly worst on nearly all semantic tasks. We thus conclude that accounting for scale in the positive spectrum is more important than in the negative spectrum. We hypothesize this is because scale helps to uniquely identify words, which is critical for semantics (results on $WC$ task correlate strongly with performance on semantic tasks), but in syntax, words with the same function should be indistinguishable. Since $\mathit {\texttt {+}PMI}$ encodes both semantics and syntax, scale must be preserved, whereas $\mathit {\texttt {-}PMI}$ encodes mostly syntax, and so scale information can be discarded.
+
+Collapsing the negative spectrum: The $\mathit {PPMI}$ model, which collapses the negative spectrum to zero, performs almost identically to the $\mathit {CPMI_{\texttt {-}2}}$ and $\mathit {NNEGPMI}$ models that account for the range of negative values. This is justified by 1) Our discussion which shows that $\mathit {\texttt {+}PMI}$ is far more informative than $\mathit {\texttt {-}PMI}$ and 2) Looking at fig:hist, we see that collapsed values — interval $(-5,0]$ — account for only $11\%$ of samples compared to $41.7\%$ for non-collapsed negative values.
+
+Conclusions and Future Work
+
+In this paper, we evaluated existing and novel ways of incorporating $\mathit {\texttt {-}PMI}$ into word embedding models based on explicit weighted matrix factorization, and, more importantly, studied the role that $\mathit {\texttt {-}PMI}$ and $\mathit {\texttt {+}PMI}$ each play in distributional semantics, finding that “a word is not only characterized by the company that it keeps, but also by the company it rejects”. In future work, we wish to further study the link between our work and language acquisition, and explore the fact the $\mathit {\texttt {-}PMI}$ is almost purely syntactic to (possibly) subtract syntax from the full spectrum models, studying the frontier (if there is one) between semantics and syntax.
+
+Acknowledgments
+
+This research was partly supported by CAPES and CNPq (projects 312114/2015-0, 423843/2016-8, and 140402/2018-7).

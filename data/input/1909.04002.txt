@@ -1,0 +1,187 @@
+Introduction
+
+Social media platforms, particularly microblogging services such as Twitter, have become increasingly popular BIBREF0 as a means to express thoughts and opinions. Twitter users emit tweets about a wide variety of topics, which vary in the extent to which they reflect a user's personality, brand and interests. This observation motivates the question we consider here, of how to quantify the degree to which tweets are characteristic of their author?
+
+People who are familiar with a given author appear to be able to make such judgments confidently. For example, consider the following pair of tweets written by US President Donald Trump, at the extreme sides of our characterization scores (0.9996 vs. 0.0013) for him:
+
+Tweet 1: Thank you for joining us at the Lincoln Memorial tonight- a very special evening! Together, we are going to MAKE AMERICA GREAT AGAIN!
+
+Tweet 2: “The bend in the road is not the end of the road unless you refuse to take the turn." - Anonymous
+
+Although both these tweets are from the same account, we assert that Tweet 1 sounds more characteristic of Donald Trump than Tweet 2. We might also guess that the first is more popular than second. Indeed, Tweet 1 received 155,000 likes as opposed to only 234 for Tweet 2.
+
+Such an author characterization score has many possible applications. With the ability to identify the most/least characteristic tweets from a person, we can generate reduced excerpts for high-volume Twitter profiles. Similarly, identifying the least characteristic tweets can highlight unusual content or suspicious activity. A run of sufficiently unrepresentative tweets might be indicative that a hacker has taken control of a user's account.
+
+But more fundamentally, our work provides the necessary tool to study the question of how “characteristic-ness" or novelty are related to tweet popularity. Do tweets that are more characteristic of the user get more likes, replies and retweets? Is such a relationship universal, or does it depend upon the personality or domain of the author? Twitter users with a large follower base can employ our methods to understand how characteristic a new potential tweet sounds, and obtain an estimate of how popular it is likely to become.
+
+To answer these questions, we formally define the problem of author representativeness testing, and model the task as a binary classification problem. Our primary contributions in this paper include:
+
+Five approaches to authorship verification: As a proxy for the question of representativeness testing (which has no convincing source of ground truth without extensive human annotation), we consider the task of distinguishing tweets written by a given author from others they did not write. We compare five distinct computational approaches to such binary tweet classification (user vs. non-user). Our best model achieves a test accuracy of 90.37% over a dataset of 15 Twitter celebrities. We use the best performing model to compute a score (the probability of authorship), which quantifies how characteristic of the user a given tweet is.
+
+Human evaluation study: To verify that our results are in agreement with human judgment of how `characteristic' a tweet is, we ask human evaluators which of a pair of tweets sounds more characteristic of the given celebrity. The human evaluators are in agreement with our model 70.40% of the time, significant above the $0.05$ level for each of our 15 celebrities.
+
+Correlation analysis for popularity: Our characterization score exhibits strikingly high absolute correlation with popularity (likes, replies and retweets), despite the fact that tweet text is the only feature used to train the classifier which yields these scores.
+
+For 13 of the 15 celebrities in our dataset, we observe a statistically significant correlation between characterization score and popularity. Figure FIGREF4 shows the relation between tweet score and tweet popularity for Donald Trump and Justin Bieber respectively. The figure shows that the sign of this association differs for various celebrities, reflecting whether their audience seeks novelty or reinforcement.
+
+Iterative sampling for class imbalance: Our task requires distinguishing a user's tweets (perhaps 1,000 positive training examples) from the sea of all other user's tweets (implying billions of possible negative training examples). We present an iterative sampling technique to exploit this class imbalance, which improves the test accuracy for negative examples by 2.62%.
+
+Problem Formulation
+
+We formally define the author representativeness problem as follows:
+
+Input: A Twitter author $U$ and the collection of their tweets, and a new tweet $T$.
+
+Problem: Compute $\textrm {score}(T, U)$, the probability that $T$ was written by $U$. This score quantifies how characteristic of writer $U$, tweet $T$ is.
+
+Problem Formulation ::: Methodology
+
+In order to obtain this representativeness score, we model our task as a classification problem, where we seek to distinguish tweets from $U$ against tweets from all other users.
+
+By modeling this as a binary classification problem, it becomes possible to quantify how characteristic of a writer a tweet is, as a probability implied by its distance from the decision boundary. Thus, we obtain a characterization score between 0 and 1 for each tweet.
+
+Challenges: In training a classifier to distinguish between user and non-user tweets, we should ideally have an equal amount of examples of both classes. User tweets are simply all the tweets from that user's Twitter account, and measure perhaps in the thousands. Indeed, the number of tweets per user per day is limited to 2400 per day by current Twitter policy (https://help.twitter.com/en/rules-and-policies/twitter-limits). The negative examples consist of all tweets written by other Twitter users, a total of approximately 500 million per day (https://business.twitter.com). Thus there is an extreme class imbalance between user and non-user tweets. Moreover, the nature of language used on Twitter does not conform to formal syntactic or semantic rules. The sentences tend to be highly unstructured, and the vocabulary is not restricted to a particular dictionary.
+
+Problem Formulation ::: Data
+
+For the binary classification task described in Section SECREF6, we term tweets from $U$ as positive examples, and tweets from other users as negative examples.
+
+Positive examples: We take tweets written by 15 celebrities from various domains, from 01-Jan-2008 to 01-Dec-2018, as positive examples. Properties of these Twitter celebrities are provided in Table TABREF10.
+
+Negative examples: We have collected 1% of tweets from Twitter's daily feed using the Twitter API (https://developer.twitter.com/en/docs.html) to use as negative examples.
+
+Preprocessing and Filtering: We have preprocessed and filtered the data to remove tweets that are unrepresentative or too short for analysis. All text has been converted to lowercase, and stripped of punctuation marks and URLs. This is because our approaches are centered around word usage. However, in future models, punctuation may prove effective as a feature. Further, we restrict analysis to English language tweets containing no attached images. We select only tweets which are more than 10 words long, and contain at least 5 legitimate (dictionary) English words. We define an unedited transfer of an original tweet as a retweet, and remove these from our dataset. Since comments on retweets are written by the user themselves, we retain these in our dataset.
+
+We note that celebrity Twitter accounts can be handled by PR agencies, in addition to the owner themselves. Because our aim is to characterize Twitter profiles as entities, we have not attempted to distinguish between user-written and agency-written tweets. However, this is an interesting direction for future research.
+
+We use a train-test split of 70-30% on the positive examples, and generate negative training and test sets of the same sizes for each user, by randomly sampling from the large set of negative examples.
+
+Related work ::: Author identification and verification
+
+The challenge of author identification has a long history in NLP. PAN 2013 BIBREF1 introduced the question: “Given a set of documents by the same author, is an additional (out-of-set) document also by that author?” The corpus is comprised of text pieces from textbooks, newspaper articles, and fiction. Submissions to PAN 2014 BIBREF2 also model authorship verification as binary classification, by using non-author documents as negative examples. The best submission BIBREF3 in PAN 2013 uses the General Impostors (GI) method, which is a modification of the Impostors Method BIBREF4. The best submission BIBREF5 in PAN 2014 presents a modification of the GI method. These methods are based on the impostors framework BIBREF6.
+
+compressionveenman used compression distance as a document representation, for authorship verification in PAN 2013. worddist present a global feature extraction approach and achieve state-of-the-art accuracy for the PAN 2014 corpus. The best submission BIBREF7 in PAN 2015 BIBREF8 uses a character-level RNN model for author identification, in which each author is represented as a sub-model, and the recurrent layer is shared by all sub-models. This is useful if the number of authors is fixed, and the problem is modeled as multi-class classification. deeplearningauthid also approach multi-class author identification, using deep learning for feature extraction, and forensic using hierarchical clustering.
+
+intrinsicauthorverification propose an intrinsic profile-based verification method that uses latent semantic indexing (LSI), which is effective for longer texts. authoneclass and limiteddata explore methods for authorship verification for larger documents such as essays and novels. emailauthid and email2 explore author identification for emails, and taskguided for scientific papers. azarbonyad2015time make use of temporal changes in word usage to identify authors of tweets and emails. unigramsandbigrams, featureeval, and unstructured evaluate the utility of various features for this task. authidusingtextsampling proposes text sampling to address the lack of text samples of undisputed authorship, to produce a desirable distribution over classes.
+
+koppel2009computational compare methods for variants of the authorship attribution problem. bhargava2013stylometric apply stylometric analysis to tweets to determine the author. lopez2015discriminative propose a document representation capturing discriminative and subprofile-specific information of terms. rocha2016authorship review methods for authorship attribution for social media forensics. peng2016bit use bit-level n-grams for determining authorship for online news. peng2016astroturfing apply this method to detect astroturfing on social media. theophilo2019needle employ deep learning specifically for authorship attribution of short messages.
+
+Related work ::: Predicting tweet popularity
+
+suh2010want leverages features such as URL, number of hashtags, number of followers and followees etc. in a generalized linear model, to predict the number of retweets. naveed2011bad extend this approach to perform content-based retweet prediction using several features including sentiments, emoticons, punctuations etc. bandari2012pulse apply the same approach for regression as well as classification, to predict the number of retweets specifically for news articles. zaman2014bayesian present a Bayesian model for retweet prediction using early retweet times, retweets of other tweets, and the user's follower graph. tan2014effect analyze whether different wording of a tweet by the same author affects its popularity. SEISMIC BIBREF9 and PSEISMIC BIBREF10 are statistical methods to predict the final number of retweets. zhang2018predicting approach retweet prediction as a multi-class classification problem, and present a feature-weighted model, where weights are computed using information gain.
+
+Related work ::: Training with imbalanced datasets
+
+Various methods to handle imbalanced datasets have been described by kotsiantis2006handling. These include undersampling BIBREF11, oversampling, and feature selection BIBREF12 at the data level. However, due to random undersampling, potentially useful samples can be discarded, while random oversampling poses the risk of overfitting. This problem can be handled at the algorithmic level as well: the threshold method BIBREF13 produces several classifiers by varying the threshold of the classifier score. One-class classification can be performed using a divide-and-conquer approach, to iteratively build rules to cover new training instances BIBREF14. Cost-sensitive learning BIBREF15 uses unequal misclassification costs to address the class imbalance problem.
+
+Approaches to authorship verification
+
+As described in Section SECREF6, we build classification models to distinguish between user and non-user tweets. We have explored five distinct approaches to build such models.
+
+Approaches to authorship verification ::: Approach 1: Compression
+
+This approach is inspired from Kolmogorov complexity BIBREF16, which argues that the compressibility of a text reflects the quality of the underlying model. We use the Lempel-Ziv-Welch (LZW) compression algorithm BIBREF17 to approximate Kolmogorov complexity by dynamically building a dictionary to encode word patterns from the training corpus. The longest occurring pattern match present in the dictionary is used to encode the text.
+
+We hypothesize that the length of a tweet $T$ from user $U$, compressed using a dictionary built from positive examples, will be less than the length of the same tweet compressed using a dictionary built from negative examples.
+
+We use the following setup to classify test tweets for each Twitter user in our dataset:
+
+Build an encoding dictionary using positive examples ($\textrm {train}_{\textrm {pos}}$), and an encoding dictionary using negative examples ($\textrm {train}_{\textrm {neg}}$).
+
+Encode the new tweet $T$ using both these dictionaries, to obtain $T_{\textrm {pos}} = \textrm {encode}_{\textrm {pos}}(T)$ and $T_{\textrm {neg}} = \textrm {encode}_{\textrm {neg}}(T)$ respectively.
+
+If the length of $T_{\textrm {pos}}$ is less than that of $T_{\textrm {neg}}$, classify $T$ as positive; else, classify it as negative.
+
+This gives us the class label for each new tweet $T$. In addition, we compute the characterization score of tweet $T$ with respect to user $U$, as described in Equation DISPLAY_FORM18.
+
+Thus the shorter the length of the encoded tweet, the more characteristic of the user $T$ is.
+
+Approaches to authorship verification ::: Approach 2: Topic modeling
+
+We hypothesize that each user writes about topics with a particular probability distribution, and that each tweet reflects the probability distribution over these topics. We train a topic model using Latent Dirichlet Allocation (LDA) BIBREF18 on a large corpus of tweets, and use this topic model to compute topic distributions for individual tweets. We then use these values as features. We experiment with two types of classifiers: Logistic Regression (LR), and Multi Linear Perceptron (MLP) of size $(5, 5, 5)$. We represent each tweet as a distribution over $n=500$ topics.
+
+The characterization score of a tweet $T$ is given by the classifier's confidence that $T$ belongs to the positive class.
+
+Approaches to authorship verification ::: Approach 3: n-gram probability
+
+We hypothesize that a Twitter user can be characterized by usage of words and their frequencies in tweets, and model this using n-gram frequencies.
+
+We use the following setup to classify test tweets for each Twitter user in our dataset:
+
+Build a frequency dictionary of all n-grams in positive examples ($\textrm {train}_{\textrm {pos}}$), and a frequency dictionary of all n-grams in negative examples ($\textrm {train}_{\textrm {neg}}$).
+
+Compute the average probability of all n-gram sequences in the new tweet $T$ using both these dictionaries, to obtain $\textrm {prob}_{\textrm {pos}}(T)$ and $\textrm {prob}_{\textrm {neg}}(T)$ respectively. Here, we use add-one smoothing and conditional backoff to compute these probability values.
+
+If $\textrm {prob}_{\textrm {pos}}(T)$ is greater than $\textrm {prob}_{\textrm {neg}}(T)$, classify $T$ as positive; else, classify it as negative.
+
+The characterization score of tweet $T$ is given by the average n-gram probability computed using the frequency dictionary of $\textrm {train}_{\textrm {pos}}$. We experiment with $n = 1$ (unigrams) and $n = 2$ (bigrams).
+
+Approaches to authorship verification ::: Approach 4: Document embeddings
+
+We hypothesize that if we obtain latent representations of tweets as documents, tweets from the same author will cluster together, and will be differentiable from tweets from others. To that end, we use the following setup:
+
+We obtain representations of tweets as document embeddings. We experiment with two types of document embeddings: FastText BIBREF19 (embedding size = 100) and BERT-Base, uncased BIBREF20 (embedding size = 768).
+
+We then use these embeddings as features to train a classification model. We experiment with two types of classifiers: Logistic Regression (LR) and Multi Linear Perceptron (MLP) of size $(5, 5, 5)$.
+
+The characterization score of tweet $T$ is given by the classifier's confidence that $T$ belongs to the positive class.
+
+Iterative sampling: As described in Section SECREF6, there exists an extreme class imbalance for this binary classification task, in that the number of negative examples is far more than the number of positive examples. Here, we explore an iterative sampling technique to address this problem. We train our classifier for multiple iterations, coupling the same $\textrm {train}_{\textrm {pos}}$ with a new randomly sampled $\textrm {train}_{\textrm {neg}}$ set in each iteration.
+
+We conduct this experiment for all users with the best performing model for this approach, i.e. we use BERT embeddings as features, and MLP for classification. We train this classifier for 40 iterations, and compare the model's performance when we use the same set of negative examples vs. when we randomly sample new negative examples in each iteration.
+
+Figure FIGREF28 shows the mean train and test accuracy for all users over 40 iterations. As expected, the training accuracy is higher if we do not sample, as the model gets trained on the same data repeatedly in each iteration. However, if we perform random sampling, the model is exposed to a larger number of negative examples, which results in a higher test accuracy (+ 1.08%), specifically for negative test examples (+ 2.62%).
+
+Approaches to authorship verification ::: Approach 5: Token embeddings and sequential modeling
+
+In this approach, we tokenize each tweet, and obtain embeddings for each token. We then sequentially give these embeddings as input to a classifier.
+
+We use a pretrained model (BERT-Base, Uncased: 12-layer, 768-hidden, 12-heads, 110M parameters) to generate token embeddings of size 768, and pass these to a Long Short Term Memory (LSTM) BIBREF21 classifier. We use an LSTM layer with 768 units with dropout and recurrent dropout ratio 0.2, followed by a dense layer with sigmoid activation. We train this model using the Adam optimizer BIBREF22 and binary cross-entropy loss, with accuracy as the training metric.
+
+Approaches to authorship verification ::: Results and Comparison
+
+Table TABREF24 presents the user-wise test accuracy of the five approaches under the specified configurations. Note that the test set contains an equal number of positive and negative examples for each author.
+
+Other baselines that we attempted to compare against include the best submissions to the PAN 2013 and 2014 author verification challenge: pan2013winner and slightlymodifiedimpostor, which are variants of the Impostors Method. This challenge employed significantly longer documents (with an average of 1039, 845, and 4393 words per document for articles, essays and novels respectively, as opposed to an average of 19 words per tweet) and significantly fewer documents per author (an average of 3.2, 2.6 and 1 document/s per author, as opposed to an average of 6738 tweets per user). Our experiments with the authorship verification classifier BIBREF23 showed that the Impostors Method is prohibitively expensive on larger corpora, and also performed too inaccurately on short texts to provide a meaningful baseline.
+
+For 13 of the 15 users in our dataset, Approach SECREF29 (token embeddings followed by sequential modeling) has the highest accuracy. This model correctly identifies the author of 90.37% of all tweets in our study, and will be used to define the characterization score for our subsequent studies.
+
+User study
+
+To verify whether human evaluators are in agreement with our characterization model, we conducted a user study using MTurk BIBREF24.
+
+User study ::: Setup
+
+For each user in our dataset, we build a set of 20 tweet pairs, with one tweet each from the 50 top-scoring and bottom-scoring tweets written by the user. We ask the human evaluator to choose which tweet sounds more characteristic of the user. To validate that the MTurk worker knows enough about the Twitter user to pick a characteristic tweet, we use a qualification test containing a basic set of questions about the Twitter user. We were unable to find equal numbers of Turkers familiar with each subject, so our number of evaluators $n$ differs according to author.
+
+User study ::: Results
+
+Table TABREF33 describes the results obtained in the user study: the mean and standard deviation of percentage of answers in agreement with our model, the p-value, and the number of MTurk workers who completed each task. We find that the average agreement of human evaluators with our model is 70.40% over all 15 users in our dataset.
+
+For each of the 15 celebrities, the human evaluators agree with our model above a significance level of 0.05, and in 13 of 15 cases above a level of $10^{-5}$. This makes clear our scores are measuring what we intend to be measuring.
+
+Mapping with popularity ::: Correlation
+
+We now explore the relationship between characterization score and tweet popularity for each of the users in our dataset. To analyze this relationship, we perform the following procedure for each author $U$:
+
+Sort all tweets written by $U$ in ascending order of characterization score.
+
+Bucket the sorted tweets by percentile score (1 to 100).
+
+For each bucket, calculate the mean number of likes, replies, and retweets.
+
+Compute the correlation of this mean and the percentile score.
+
+The Pearson correlation coefficients (r-values) are listed in Table TABREF39. The users at the top (Trump, Bachchan, Modi) all display very strong positive correlation. We name this group UPC (Users with Positive Correlation), and the group of users at the bottom (Grande, Bieber, Kardashian) as UNC (Users with Negative Correlation).
+
+Mapping with popularity ::: Interpretation
+
+For users with positive correlation, the higher the tweet's characterization score, the more popular it becomes, i.e. the more likes, replies, and retweets it receives. In contrast, for users with negative correlation, the higher the tweet score, the less popular it becomes.
+
+Figure FIGREF41 shows the plot of log mean number of likes per bucket vs. tweet score percentile, for users with the highest positive correlation. Similarly, Figure FIGREF42 shows the plot of log mean number of likes per bucket vs. tweet score percentile, for users with the highest negative correlation.
+
+One may question whether these results are due to temporal effects: user's popularity vary with time, and perhaps the model's more characteristic tweets simply reflect periods of authorship. Figures FIGREF41 and FIGREF42 disprove this hypothesis. Here the color of each point denotes the year for which most tweets are present in the corresponding bucket. Since the distribution of colors over time is not clustered, we infer that the observed result is not an artifact of temporal effects. In both cases, there is a strong trend in tweet popularity based on tweet score. We note that the plots are presented on the log scale, meaning the trends here are exponential.
+
+Mapping with popularity ::: Qualitative Analysis
+
+We present examples of the most and least characteristic tweets for celebrities from three categories, along with their corresponding characterization scores computed using Approach SECREF29.

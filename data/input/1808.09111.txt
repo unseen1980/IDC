@@ -1,0 +1,147 @@
+Introduction
+
+Data annotation is a major bottleneck for the application of supervised learning approaches to many problems. As a result, unsupervised methods that learn directly from unlabeled data are increasingly important. For tasks related to unsupervised syntactic analysis, discrete generative models have dominated in recent years – for example, for both part-of-speech (POS) induction BIBREF0 , BIBREF1 and unsupervised dependency parsing BIBREF2 , BIBREF3 , BIBREF4 . While similar models have had success on a range of unsupervised tasks, they have mostly ignored the apparent utility of continuous word representations evident from supervised NLP applications BIBREF5 , BIBREF6 . In this work, we focus on leveraging and explicitly representing continuous word embeddings within unsupervised models of syntactic structure.
+
+Pre-trained word embeddings from massive unlabeled corpora offer a compact way of injecting a prior notion of word similarity into models that would otherwise treat words as discrete, isolated categories. However, the specific properties of language captured by any particular embedding scheme can be difficult to control, and, further, may not be ideally suited to the task at hand. For example, pre-trained skip-gram embeddings BIBREF7 with small context window size are found to capture the syntactic properties of language well BIBREF8 , BIBREF9 . However, if our goal is to separate syntactic categories, this embedding space is not ideal – POS categories correspond to overlapping interspersed regions in the embedding space, evident in Figure SECREF4 .
+
+In our approach, we propose to learn a new latent embedding space as a projection of pre-trained embeddings (depicted in Figure SECREF5 ), while jointly learning latent syntactic structure – for example, POS categories or syntactic dependencies. To this end, we introduce a new generative model (shown in Figure FIGREF6 ) that first generates a latent syntactic representation (e.g. a dependency parse) from a discrete structured prior (which we also call the “syntax model”), then, conditioned on this representation, generates a sequence of latent embedding random variables corresponding to each word, and finally produces the observed (pre-trained) word embeddings by projecting these latent vectors through a parameterized non-linear function. The latent embeddings can be jointly learned with the structured syntax model in a completely unsupervised fashion.
+
+By choosing an invertible neural network as our non-linear projector, and then parameterizing our model in terms of the projection's inverse, we are able to derive tractable exact inference and marginal likelihood computation procedures so long as inference is tractable in the underlying syntax model. In sec:learn-with-inv we show that this derivation corresponds to an alternate view of our approach whereby we jointly learn a mapping of observed word embeddings to a new embedding space that is more suitable for the syntax model, but include an additional Jacobian regularization term to prevent information loss.
+
+Recent work has sought to take advantage of word embeddings in unsupervised generative models with alternate approaches BIBREF9 , BIBREF10 , BIBREF11 , BIBREF12 . BIBREF9 build an HMM with Gaussian emissions on observed word embeddings, but they do not attempt to learn new embeddings. BIBREF10 , BIBREF11 , and BIBREF12 extend HMM or dependency model with valence (DMV) BIBREF2 with multinomials that use word (or tag) embeddings in their parameterization. However, they do not represent the embeddings as latent variables.
+
+In experiments, we instantiate our approach using both a Markov-structured syntax model and a tree-structured syntax model – specifically, the DMV. We evaluate on two tasks: part-of-speech (POS) induction and unsupervised dependency parsing without gold POS tags. Experimental results on the Penn Treebank BIBREF13 demonstrate that our approach improves the basic HMM and DMV by a large margin, leading to the state-of-the-art results on POS induction, and state-of-the-art results on unsupervised dependency parsing in the difficult training scenario where neither gold POS annotation nor punctuation-based constraints are available.
+
+Model
+
+As an illustrative example, we first present a baseline model for Markov syntactic structure (POS induction) that treats a sequence of pre-trained word embeddings as observations. Then, we propose our novel approach, again using Markov structure, that introduces latent word embedding variables and a neural projector. Lastly, we extend our approach to more general syntactic structures.
+
+Example: Gaussian HMM
+
+We start by describing the Gaussian hidden Markov model introduced by BIBREF9 , which is a locally normalized model with multinomial transitions and Gaussian emissions. Given a sentence of length INLINEFORM0 , we denote the latent POS tags as INLINEFORM1 , observed (pre-trained) word embeddings as INLINEFORM2 , transition parameters as INLINEFORM3 , and Gaussian emission parameters as INLINEFORM4 . The joint distribution of data and latent variables factors as:
+
+DISPLAYFORM0
+
+where INLINEFORM0 is the multinomial transition probability and INLINEFORM1 is the multivariate Gaussian emission probability.
+
+While the observed word embeddings do inform this model with a notion of word similarity – lacking in the basic multinomial HMM – the Gaussian emissions may not be sufficiently flexible to separate some syntactic categories in the complex pre-trained embedding space – for example the skip-gram embedding space as visualized in Figure SECREF4 where different POS categories overlap. Next we introduce a new approach that adds flexibility to the emission distribution by incorporating new latent embedding variables.
+
+Markov Structure with Neural Projector
+
+To flexibly model observed embeddings and yield a new representation space that is more suitable for the syntax model, we propose to cascade a neural network as a projection function, deterministically transforming the simple space defined by the Gaussian HMM to the observed embedding space. We denote the latent embedding of the INLINEFORM0 word in a sentence as INLINEFORM1 , and the neural projection function as INLINEFORM2 , parameterized by INLINEFORM3 . In the case of sequential Markov structure, our new model corresponds to the following generative process:
+
+For each time step INLINEFORM0 ,
+
+[noitemsep, leftmargin=*]
+
+Draw the latent state INLINEFORM0
+
+Draw the latent embedding INLINEFORM0
+
+Deterministically produce embedding
+
+INLINEFORM0
+
+The graphical model is depicted in Figure FIGREF6 . The deterministic projection can also be viewed as sampling each observation from a point mass at INLINEFORM0 . The joint distribution of our model is: DISPLAYFORM0
+
+where INLINEFORM0 is a conditional Gaussian distribution, and INLINEFORM1 is the Dirac delta function centered at INLINEFORM2 : DISPLAYFORM0
+
+General Structure with Neural Projector
+
+Our approach can be applied to a broad family of structured syntax models. We denote latent embedding variables as INLINEFORM0 , discrete latent variables in the syntax model as INLINEFORM1 ( INLINEFORM2 ), where INLINEFORM3 are conditioned to generate INLINEFORM4 . The joint probability of our model factors as:
+
+DISPLAYFORM0
+
+where INLINEFORM0 represents the probability of the syntax model, and can encode any syntactic structure – though, its factorization structure will determine whether inference is tractable in our full model. As shown in Figure FIGREF6 , we focus on two syntax models for syntactic analysis in this paper. The first is Markov-structured, which we use for POS induction, and the second is DMV-structured, which we use to learn dependency parses without supervision.
+
+The marginal data likelihood of our model is: DISPLAYFORM0
+
+While the discrete variables INLINEFORM0 can be marginalized out with dynamic program in many cases, it is generally intractable to marginalize out the latent continuous variables, INLINEFORM1 , for an arbitrary projection INLINEFORM2 in Eq. ( EQREF17 ), which means inference and learning may be difficult. In sec:opt, we address this issue by constraining INLINEFORM3 to be invertible, and show that this constraint enables tractable exact inference and marginal likelihood computation.
+
+Learning & Inference
+
+In this section, we introduce an invertibility condition for our neural projector to tackle the optimization challenge. Specifically, we constrain our neural projector with two requirements: (1) INLINEFORM0 and (2) INLINEFORM1 exists. Invertible transformations have been explored before in independent components analysis BIBREF14 , gaussianization BIBREF15 , and deep density models BIBREF16 , BIBREF17 , BIBREF18 , for unstructured data. Here, we generalize this style of approach to structured learning, and augment it with discrete latent variables ( INLINEFORM2 ). Under the invertibility condition, we derive a learning algorithm and give another view of our approach revealed by the objective function. Then, we present the architecture of a neural projector we use in experiments: a volume-preserving invertible neural network proposed by BIBREF16 for independent components estimation.
+
+Learning with Invertibility
+
+For ease of exposition, we explain the learning algorithm in terms of Markov structure without loss of generality. As shown in Eq. ( EQREF17 ), the optimization challenge in our approach comes from the intractability of the marginalized emission factor INLINEFORM0 . If we can marginalize out INLINEFORM1 and compute INLINEFORM2 , then the posterior and marginal likelihood of our Markov-structured model can be computed with the forward-backward algorithm. We can apply Eq. ( EQREF14 ) and obtain : INLINEFORM3
+
+By using the change of variable rule to the integration, which allows the integration variable INLINEFORM0 to be replaced by INLINEFORM1 , the marginal emission factor can be computed in closed-form when the invertibility condition is satisfied: DISPLAYFORM0
+
+where INLINEFORM0 is a conditional Gaussian distribution, INLINEFORM1 is the Jacobian matrix of function INLINEFORM2 at INLINEFORM3 , and INLINEFORM4 represents the absolute value of its determinant. This Jacobian term is nonzero and differentiable if and only if INLINEFORM5 exists.
+
+Eq. ( EQREF19 ) shows that we can directly calculate the marginal emission distribution INLINEFORM0 . Denote the marginal data likelihood of Gaussian HMM as INLINEFORM1 , then the log marginal data likelihood of our model can be directly written as: DISPLAYFORM0
+
+where INLINEFORM0 represents the new sequence of embeddings after applying INLINEFORM1 to each INLINEFORM2 . Eq. ( EQREF20 ) shows that the training objective of our model is simply the Gaussian HMM log likelihood with an additional Jacobian regularization term. From this view, our approach can be seen as equivalent to reversely projecting the data through INLINEFORM3 to another manifold INLINEFORM4 that is directly modeled by the Gaussian HMM, with a regularization term. Intuitively, we optimize the reverse projection INLINEFORM5 to modify the INLINEFORM6 space, making it more appropriate for the syntax model. The Jacobian regularization term accounts for the volume expansion or contraction behavior of the projection. Maximizing it can be thought of as preventing information loss. In the extreme case, the Jacobian determinant is equal to zero, which means the projection is non-invertible and thus information is being lost through the projection. Such “information preserving” regularization is crucial during optimization, otherwise the trivial solution of always projecting data to the same single point to maximize likelihood is viable.
+
+More generally, for an arbitrary syntax model the data likelihood of our approach is: DISPLAYFORM0
+
+If the syntax model itself allows for tractable inference and marginal likelihood computation, the same dynamic program can be used to marginalize out INLINEFORM0 . Therefore, our joint model inherits the tractability of the underlying syntax model.
+
+Invertible Volume-Preserving Neural Net
+
+For the projection we can use an arbitrary invertible function, and given the representational power of neural networks they seem a natural choice. However, calculating the inverse and Jacobian of an arbitrary neural network can be difficult, as it requires that all component functions be invertible and also requires storage of large Jacobian matrices, which is memory intensive. To address this issue, several recent papers propose specially designed invertible networks that are easily trainable yet still powerful BIBREF16 , BIBREF17 , BIBREF19 . Inspired by these works, we use the invertible transformation proposed by BIBREF16 , which consists of a series of “coupling layers”. This architecture is specially designed to guarantee a unit Jacobian determinant (and thus the invertibility property).
+
+From Eq. ( EQREF22 ) we know that only INLINEFORM0 is required for accomplishing learning and inference; we never need to explicitly construct INLINEFORM1 . Thus, we directly define the architecture of INLINEFORM2 . As shown in Figure FIGREF24 , the nonlinear transformation from the observed embedding INLINEFORM3 to INLINEFORM4 represents the first coupling layer. The input in this layer is partitioned into left and right halves of dimensions, INLINEFORM5 and INLINEFORM6 , respectively. A single coupling layer is defined as: DISPLAYFORM0
+
+where INLINEFORM0 is the coupling function and can be any nonlinear form. This transformation satisfies INLINEFORM1 , and BIBREF16 show that its Jacobian matrix is triangular with all ones on the main diagonal. Thus the Jacobian determinant is always equal to one (i.e. volume-preserving) and the invertibility condition is naturally satisfied.
+
+To be sufficiently expressive, we compose multiple coupling layers as suggested in BIBREF16 . Specifically, we exchange the role of left and right half vectors at each layer as shown in Figure FIGREF24 . For instance, from INLINEFORM0 to INLINEFORM1 the left subset INLINEFORM2 is unchanged, while from INLINEFORM3 to INLINEFORM4 the right subset INLINEFORM5 remains the same. Also note that composing multiple coupling layers does not change the volume-preserving and invertibility properties. Such a sequence of invertible transformations from the data space INLINEFORM6 to INLINEFORM7 is also called normalizing flow BIBREF20 .
+
+Experiments
+
+In this section, we first describe our datasets and experimental setup. We then instantiate our approach with Markov and DMV-structured syntax models, and report results on POS tagging and dependency grammar induction respectively. Lastly, we analyze the learned latent embeddings.
+
+Data
+
+For both POS tagging and dependency parsing, we run experiments on the Wall Street Journal (WSJ) portion of the Penn Treebank. To create the observed data embeddings, we train skip-gram word embeddings BIBREF7 that are found to capture syntactic properties well when trained with small context window BIBREF8 , BIBREF9 . Following BIBREF9 , the dimensionality INLINEFORM0 is set to 100, and the training context window size is set to 1 to encode more syntactic information. The skip-gram embeddings are trained on the one billion word language modeling benchmark dataset BIBREF21 in addition to the WSJ corpus.
+
+General Experimental Setup
+
+For the neural projector, we employ rectified networks as coupling function INLINEFORM0 following BIBREF16 . We use a rectified network with an input layer, one hidden layer, and linear output units, the number of hidden units is set to the same as the number of input units. The number of coupling layers are varied as 4, 8, 16 for both tasks. We optimize marginal data likelihood directly using Adam BIBREF22 . For both tasks in the fully unsupervised setting, we do not tune the hyper-parameters using supervised data.
+
+Unsupervised POS tagging
+
+For unsupervised POS tagging, we use a Markov-structured syntax model in our approach, which is a popular structure for unsupervised tagging tasks BIBREF9 , BIBREF10 .
+
+Following existing literature, we train and test on the entire WSJ corpus (49208 sentences, 1M tokens). We use 45 tag clusters, the number of POS tags that appear in WSJ corpus. We train the discrete HMM and the Gaussian HMM BIBREF9 as baselines. For the Gaussian HMM, mean vectors of Gaussian emissions are initialized with the empirical mean of all word vectors with an additive noise. We assume diagonal covariance matrix for INLINEFORM0 and initialize it with the empirical variance of the word vectors. Following BIBREF9 , the covariance matrix is fixed during training. The multinomial probabilities are initialized as INLINEFORM1 , where INLINEFORM2 . For our approach, we initialize the syntax model and Gaussian parameters with the pre-trained Gaussian HMM. The weights of layers in the rectified network are initialized from a uniform distribution with mean zero and a standard deviation of INLINEFORM3 , where INLINEFORM4 is the input dimension. We evaluate the performance of POS tagging with both Many-to-One (M-1) accuracy BIBREF23 and V-Measure (VM) BIBREF24 . Given a model we found that the tagging performance is well-correlated with the training data likelihood, thus we use training data likelihood as a unsupervised criterion to select the trained model over 10 random restarts after training 50 epochs. We repeat this process 5 times and report the mean and standard deviation of performance.
+
+We compare our approach with basic HMM, Gaussian HMM, and several state-of-the-art systems, including sophisticated HMM variants and clustering techniques with hand-engineered features. The results are presented in Table TABREF32 . Through the introduced latent embeddings and additional neural projection, our approach improves over the Gaussian HMM by 5.4 points in M-1 and 5.6 points in VM. Neural HMM (NHMM) BIBREF10 is a baseline that also learns word representation jointly. Both their basic model and extended Conv version does not outperform the Gaussian HMM. Their best model incorporates another LSTM to model long distance dependency and breaks the Markov assumption, yet our approach still achieves substantial improvement over it without considering more context information. Moreover, our method outperforms the best published result that benefits from hand-engineered features BIBREF27 by 2.0 points on VM.
+
+We found that most tagging errors happen in noun subcategories. Therefore, we do the one-to-one mapping between gold POS tags and induced clusters and plot the normalized confusion matrix of noun subcategories in Figure FIGREF35 . The Gaussian HMM fails to identify “NN” and “NNS” correctly for most cases, and it often recognizes “NNPS” as “NNP”. In contrast, our approach corrects these errors well.
+
+Unsupervised Dependency Parsing without gold POS tags
+
+For the task of unsupervised dependency parse induction, we employ the Dependency Model with Valence (DMV) BIBREF2 as the syntax model in our approach. DMV is a generative model that defines a probability distribution over dependency parse trees and syntactic categories, generating tokens and dependencies in a head-outward fashion. While, traditionally, DMV is trained using gold POS tags as observed syntactic categories, in our approach, we treat each tag as a latent variable, as described in sec:general-neural.
+
+Most existing approaches to this task are not fully unsupervised since they rely on gold POS tags following the original experimental setup for DMV. This is partially because automatically parsing from words is difficult even when using unsupervised syntactic categories BIBREF29 . However, inducing dependencies from words alone represents a more realistic experimental condition since gold POS tags are often unavailable in practice. Previous work that has trained from words alone often requires additional linguistic constraints (like sentence internal boundaries) BIBREF29 , BIBREF30 , BIBREF31 , BIBREF32 , acoustic cues BIBREF33 , additional training data BIBREF4 , or annotated data from related languages BIBREF34 . Our approach is naturally designed to train on word embeddings directly, thus we attempt to induce dependencies without using gold POS tags or other extra linguistic information.
+
+Like previous work we use sections 02-21 of WSJ corpus as training data and evaluate on section 23, we remove punctuations and train the models on sentences of length INLINEFORM0 , “head-percolation” rules BIBREF39 are applied to obtain gold dependencies for evaluation. We train basic DMV, extended DMV (E-DMV) BIBREF35 and Gaussian DMV (which treats POS tag as unknown latent variables and generates observed word embeddings directly conditioned on them following Gaussian distribution) as baselines. Basic DMV and E-DMV are trained with Viterbi EM BIBREF40 on unsupervised POS tags induced from our Markov-structured model described in sec:pos. Multinomial parameters of the syntax model in both Gaussian DMV and our model are initialized with the pre-trained DMV baseline. Other parameters are initialized in the same way as in the POS tagging experiment. The directed dependency accuracy (DDA) is used for evaluation and we report accuracy on sentences of length INLINEFORM1 and all lengths. We train the parser until training data likelihood converges, and report the mean and standard deviation over 20 random restarts.
+
+Our model directly observes word embeddings and does not require gold POS tags during training. Thus, results from related work trained on gold tags are not directly comparable. However, to measure how these systems might perform without gold tags, we run three recent state-of-the-art systems in our experimental setting: UR-A E-DMV BIBREF36 , Neural E-DMV BIBREF11 , and CRF Autoencoder (CRFAE) BIBREF37 . We use unsupervised POS tags (induced from our Markov-structured model) in place of gold tags. We also train basic DMV on gold tags and include several state-of-the-art results on gold tags as reference points.
+
+As shown in Table TABREF39 , our approach is able to improve over the Gaussian DMV by 4.8 points on length INLINEFORM0 and 4.8 points on all lengths, which suggests the additional latent embedding layer and neural projector are helpful. The proposed approach yields, to the best of our knowledge, state-of-the-art performance without gold POS annotation and without sentence-internal boundary information. DMV, UR-A E-DMV, Neural E-DMV, and CRFAE suffer a large decrease in performance when trained on unsupervised tags – an effect also seen in previous work BIBREF29 , BIBREF34 . Since our approach induces latent POS tags jointly with dependency trees, it may be able to learn POS clusters that are more amenable to grammar induction than the unsupervised tags. We observe that CRFAE underperforms its gold-tag counterpart substantially. This may largely be a result of the model's reliance on prior linguistic rules that become unavailable when gold POS tag types are unknown. Many extensions to DMV can be considered orthogonal to our approach – they essentially focus on improving the syntax model. It is possible that incorporating these more sophisticated syntax models into our approach may lead to further improvements.
+
+Sensitivity Analysis
+
+In the above experiments we initialize the structured syntax components with the pre-trained Gaussian or discrete baseline, which is shown as a useful technique to help train our deep models. We further study the results with fully random initialization. In the POS tagging experiment, we report the results in Table TABREF48 . While the performance with 4 layers is comparable to the pre-trained Gaussian initialization, deeper projections (8 or 16 layers) result in a dramatic drop in performance. This suggests that the structured syntax model with very deep projections is difficult to train from scratch, and a simpler projection might be a good compromise in the random initialization setting.
+
+Different from the Markov prior in POS tagging experiments, our parsing model seems to be quite sensitive to the initialization. For example, directed accuracy of our approach on sentences of length INLINEFORM0 is below 40.0 with random initialization. This is consistent with previous work that has noted the importance of careful initialization for DMV-based models such as the commonly used harmonic initializer BIBREF2 . However, it is not straightforward to apply the harmonic initializer for DMV directly in our model without using some kind of pre-training since we do not observe gold POS.
+
+We investigate the effect of the choice of pre-trained embedding on performance while using our approach. To this end, we additionally include results using fastText embeddings BIBREF41 – which, in contrast with skip-gram embeddings, include character-level information. We set the context windows size to 1 and the dimension size to 100 as in the skip-gram training, while keeping other parameters set to their defaults. These results are summarized in Table TABREF50 and Table TABREF51 . While fastText embeddings lead to reduced performance with our model, our approach still yields an improvement over the Gaussian baseline with the new observed embeddings space.
+
+Qualitative Analysis of Embeddings
+
+We perform qualitative analysis to understand how the latent embeddings help induce syntactic structures. First we filter out low-frequency words and punctuations in WSJ, and visualize the rest words (10k) with t-SNE BIBREF42 under different embeddings. We assign each word with its most likely gold POS tags in WSJ and color them according to the gold POS tags.
+
+For our Markov-structured model, we have displayed the embedding space in Figure SECREF5 , where the gold POS clusters are well-formed. Further, we present five example target words and their five nearest neighbors in terms of cosine similarity. As shown in Table TABREF53 , the skip-gram embedding captures both semantic and syntactic aspects to some degree, yet our embeddings are able to focus especially on the syntactic aspects of words, in an unsupervised fashion without using any extra morphological information.
+
+In Figure FIGREF54 we depict the learned latent embeddings with the DMV-structured syntax model. Unlike the Markov structure, the DMV structure maps a large subset of singular and plural nouns to the same overlapping region. However, two clusters of singular and plural nouns are actually separated. We inspect the two clusters and the overlapping region in Figure FIGREF54 , it turns out that the nouns in the separated clusters are words that can appear as subjects and, therefore, for which verb agreement is important to model. In contrast, the nouns in the overlapping region are typically objects. This demonstrates that the latent embeddings are focusing on aspects of language that are specifically important for modeling dependency without ever having seen examples of dependency parses. Some previous work has deliberately created embeddings to capture different notions of similarity BIBREF43 , BIBREF44 , while they use extra morphology or dependency annotations to guide the embedding learning, our approach provides a potential alternative to create new embeddings that are guided by structured syntax model, only using unlabeled text corpora.
+
+Related Work
+
+Our approach is related to flow-based generative models, which are first described in NICE BIBREF16 and have recently received more attention BIBREF17 , BIBREF19 , BIBREF18 . This relevant work mostly adopts simple (e.g. Gaussian) and fixed priors and does not attempt to learn interpretable latent structures. Another related generative model class is variational auto-encoders (VAEs) BIBREF45 that optimize a lower bound on the marginal data likelihood, and can be extended to learn latent structures BIBREF46 , BIBREF47 . Against the flow-based models, VAEs remove the invertibility constraint but sacrifice the merits of exact inference and exact log likelihood computation, which potentially results in optimization challenges BIBREF48 . Our approach can also be viewed in connection with generative adversarial networks (GANs) BIBREF49 that is a likelihood-free framework to learn implicit generative models. However, it is non-trivial for a gradient-based method like GANs to propagate gradients through discrete structures.
+
+Conclusion
+
+In this work, we define a novel generative approach to leverage continuous word representations for unsupervised learning of syntactic structure. Experiments on both POS induction and unsupervised dependency parsing tasks demonstrate the effectiveness of our proposed approach. Future work might explore more sophisticated invertible projections, or recurrent projections that jointly transform the entire input sequence.

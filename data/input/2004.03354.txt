@@ -1,0 +1,177 @@
+Introduction
+
+Pretrained Language Models (PTLMs) such as BERT BIBREF1 have spearheaded advances on many NLP tasks. Usually, PTLMs are pretrained on unlabeled general-domain and/or mixed-domain text, such as Wikipedia, digital books or the Common Crawl corpus.
+
+When applying PTLMs to specific domains, it can be useful to domain-adapt them. Domain adaptation of PTLMs has typically been achieved by pretraining on target-domain text. One such model is BioBERT BIBREF2, which was initialized from general-domain BERT and then pretrained on biomedical scientific publications. The domain adaptation is shown to be helpful for target-domain tasks such as biomedical Named Entity Recognition (NER) or Question Answering (QA). On the downside, the computational cost of pretraining can be considerable: BioBERTv1.0 was adapted for ten days on eight large GPUs (see Table TABREF1), which is expensive, environmentally unfriendly, prohibitive for small research labs and students, and may delay prototyping on emerging domains.
+
+We therefore propose a fast, CPU-only domain-adaptation method for PTLMs: We train Word2Vec BIBREF3 on target-domain text and align the resulting word vectors with the wordpiece vectors of an existing general-domain PTLM. The PTLM thus gains domain-specific lexical knowledge in the form of additional word vectors, but its deeper layers remain unchanged. Since Word2Vec and the vector space alignment are efficient models, the process requires a fraction of the resources associated with pretraining the PTLM itself, and it can be done on CPU.
+
+In Section SECREF4, we use the proposed method to domain-adapt BERT on PubMed+PMC (the data used for BioBERTv1.0) and/or CORD-19 (Covid-19 Open Research Dataset). We improve over general-domain BERT on eight out of eight biomedical NER tasks, using a fraction of the compute cost associated with BioBERT. In Section SECREF5, we show how to quickly adapt an existing Question Answering model to text about the Covid-19 pandemic, without any target-domain Language Model pretraining or finetuning.
+
+Related work ::: The BERT PTLM
+
+For our purpose, a PTLM consists of three parts: A tokenizer $\mathcal {T}_\mathrm {LM} : \mathbb {L}^+ \rightarrow \mathbb {L}_\mathrm {LM}^+$, a wordpiece embedding function $\mathcal {E}_\mathrm {LM}: \mathbb {L}_\mathrm {LM} \rightarrow \mathbb {R}^{d_\mathrm {LM}}$ and an encoder function $\mathcal {F}_\mathrm {LM}$. $\mathbb {L}_\mathrm {LM}$ is a limited vocabulary of wordpieces. All words that are not in $\mathbb {L}_\mathrm {LM}$ are tokenized into sequences of shorter wordpieces, e.g., tachycardia becomes ta ##chy ##card ##ia. Given a sentence $S = [w_1, \ldots , w_T]$, tokenized as $\mathcal {T}_\mathrm {LM}(S) = [\mathcal {T}_\mathrm {LM}(w_1); \ldots ; \mathcal {T}_\mathrm {LM}(w_T)]$, $\mathcal {E}_\mathrm {LM}$ embeds every wordpiece in $\mathcal {T}_\mathrm {LM}(S)$ into a real-valued, trainable wordpiece vector. The wordpiece vectors of the entire sequence are stacked and fed into $\mathcal {F}_\mathrm {LM}$. Note that we consider position and segment embeddings to be a part of $\mathcal {F}_\mathrm {LM}$ rather than $\mathcal {E}_\mathrm {LM}$.
+
+In the case of BERT, $\mathcal {F}_\mathrm {LM}$ is a Transformer BIBREF4, followed by a final Feed-Forward Net. During pretraining, the Feed-Forward Net predicts the identity of masked wordpieces. When finetuning on a supervised task, it is usually replaced with a randomly initialized task-specific layer.
+
+Related work ::: Domain-adapted PTLMs
+
+Domain adaptation of PTLMs is typically achieved by pretraining on unlabeled target-domain text. Some examples of such models are BioBERT BIBREF2, which was pretrained on the PubMed and/or PubMed Central (PMC) corpora, SciBERT BIBREF5, which was pretrained on papers from SemanticScholar, ClinicalBERT BIBREF6, BIBREF7 and ClinicalXLNet BIBREF8, which were pretrained on clinical patient notes, and AdaptaBERT BIBREF9, which was pretrained on Early Modern English text. In most cases, a domain-adapted PTLM is initialized from a general-domain PTLM (e.g., standard BERT), though BIBREF5 report better results with a model that was pretrained from scratch with a custom wordpiece vocabulary. In this paper, we focus on BioBERT, as its domain adaptation corpora are publicly available.
+
+Related work ::: Word vectors
+
+Word vectors are distributed representations of words that are trained on unlabeled text. Contrary to PTLMs, word vectors are non-contextual, i.e., a word type is always assigned the same vector, regardless of context. In this paper, we use Word2Vec BIBREF3 to train word vectors. We will denote the Word2Vec lookup function as $\mathcal {E}_\mathrm {W2V} : \mathbb {L}_\mathrm {W2V} \rightarrow \mathbb {R}^{d_\mathrm {W2V}}$.
+
+Related work ::: Word vector space alignment
+
+Word vector space alignment has most frequently been explored in the context of cross-lingual word embeddings. For instance, BIBREF10 align English and Spanish Word2Vec spaces by a simple linear transformation. BIBREF11 use a related method to align cross-lingual word vectors and multilingual BERT wordpiece vectors.
+
+Method
+
+In the following, we assume access to a general-domain PTLM, as described in Section SECREF2, and a corpus of unlabeled target-domain text.
+
+Method ::: Creating new input vectors
+
+In a first step, we train Word2Vec on the target-domain corpus. In a second step, we take the intersection of $\mathbb {L}_\mathrm {LM}$ and $\mathbb {L}_\mathrm {W2V}$. In practice, the intersection mostly contains wordpieces from $\mathbb {L}_\mathrm {LM}$ that correspond to standalone words. It also contains single characters and other noise, however, we found that filtering them does not improve alignment quality. In a third step, we use the intersection to fit an unconstrained linear transformation $\mathbf {W} \in \mathbb {R}^{d_\mathrm {LM} \times d_\mathrm {W2V}}$ via least squares:
+
+Intuitively, $\mathbf {W}$ makes Word2Vec vectors “look like” the PTLM's native wordpiece vectors, just like cross-lingual alignment makes word vectors from one language “look like” word vectors from another language. In Table TABREF7 (top), we show examples of within-space and cross-space nearest neighbors after alignment.
+
+Method ::: Updating the wordpiece embedding layer
+
+Next, we redefine the wordpiece embedding layer of the PTLM. The most radical strategy would be to replace the entire layer with the aligned Word2Vec vectors:
+
+In initial experiments, this strategy led to a drop in performance, presumably because function words are not well represented by Word2Vec, and replacing them disrupts BERT's syntactic abilities. To prevent this problem, we leave existing wordpiece vectors intact and only add new ones:
+
+Method ::: Updating the tokenizer
+
+In a final step, we update the tokenizer to account for the added words. Let $\mathcal {T}_\mathrm {LM}$ be the standard BERT tokenizer, and let $\hat{\mathcal {T}}_\mathrm {LM}$ be the tokenizer that treats all words in $\mathbb {L}_\mathrm {LM} \cup \mathbb {L}_\mathrm {W2V}$ as one-wordpiece tokens, while tokenizing any other words as usual.
+
+In practice, a given word may or may not benefit from being tokenized by $\hat{\mathcal {T}}_\mathrm {LM}$ instead of $\mathcal {T}_\mathrm {LM}$. To give a concrete example, 82% of the words in the BC5CDR NER dataset that end in the suffix -ia are inside a disease entity (e.g., tachycardia). $\mathcal {T}_\mathrm {LM}$ tokenizes this word as ta ##chy ##card ##ia, thereby exposing the orthographic cue to the model. As a result, $\mathcal {T}_\mathrm {LM}$ leads to higher recall on -ia diseases. But there are many cases where wordpiece tokenization is meaningless or misleading. For instance euthymia (not a disease) is tokenized by $\mathcal {T}_\mathrm {LM}$ as e ##uth ##ym ##ia, making it likely to be classified as a disease. By contrast, $\hat{\mathcal {T}}_\mathrm {LM}$ gives euthymia a one-wordpiece representation that depends only on distributional semantics. We find that using $\hat{\mathcal {T}}_\mathrm {LM}$ improves precision on -ia diseases.
+
+To combine these complementary strengths, we use a 50/50 mixture of $\mathcal {T}_\mathrm {LM}$-tokenization and $\hat{\mathcal {T}}_\mathrm {LM}$-tokenization when finetuning the PTLM on a task. At test time, we use both tokenizers and mean-pool the outputs. Let $o(\mathcal {T}(S))$ be some output of interest (e.g., a logit), given sentence $S$ tokenized by $\mathcal {T}$. We predict:
+
+Experiment 1: Biomedical NER
+
+In this section, we use the proposed method to create GreenBioBERT, an inexpensive and environmentally friendly alternative to BioBERT. Recall that BioBERTv1.0 (biobert_v1.0_pubmed_pmc) was initialized from general-domain BERT (bert-base-cased) and pretrained on PubMed+PMC.
+
+Experiment 1: Biomedical NER ::: Domain adaptation
+
+We train Word2Vec with vector size $d_\mathrm {W2V} = d_\mathrm {LM} = 768$ on PubMed+PMC (see Appendix for details). Then, we follow the procedure described in Section SECREF3 to update the wordpiece embedding layer and tokenizer of general-domain BERT.
+
+Experiment 1: Biomedical NER ::: Finetuning
+
+We finetune GreenBioBERT on the eight publicly available NER tasks used in BIBREF2. We also do reproduction experiments with general-domain BERT and BioBERTv1.0, using the same setup as our model. We average results over eight random seeds. See Appendix for details on preprocessing, training and hyperparameters.
+
+Experiment 1: Biomedical NER ::: Results and discussion
+
+Table TABREF7 (bottom) shows entity-level precision, recall and F1. For ease of visualization, Figure FIGREF13 shows what portion of the BioBERT – BERT F1 delta is covered. We improve over general-domain BERT on all tasks with varying effect sizes. Depending on the points of reference, we cover an average 52% to 60% of the BioBERT – BERT F1 delta (54% for BioBERTv1.0, 60% for BioBERTv1.1 and 52% for our reproduction experiments). Table TABREF17 (top) shows the importance of vector space alignment: If we replace the aligned Word2Vec vectors with their non-aligned counterparts (by setting $\mathbf {W} = \mathbf {1}$) or with randomly initialized vectors, F1 drops on all tasks.
+
+Experiment 2: Covid-19 QA
+
+In this section, we use the proposed method to quickly adapt an existing general-domain QA model to an emerging target domain: Covid-19. Our baseline model is SQuADBERT (bert-large-uncased-whole-word-masking-finetuned-squad), a version of BERT that was finetuned on general-domain SQuAD BIBREF19. We evaluate on Deepset-AI Covid-QA, a SQuAD-style dataset with 1380 questions (see Appendix for details on data and preprocessing). We assume that there is no target-domain finetuning data, which is a realistic setup for a new domain.
+
+Experiment 2: Covid-19 QA ::: Domain adaptation
+
+We train Word2Vec with vector size $d_\mathrm {W2V} = d_\mathrm {LM} = 1024$ on CORD-19 (Covid-19 Open Research Dataset) and/or PubMed+PMC. The process takes less than an hour on CORD-19 and about one day on the combined corpus, again without the need for a GPU. Then, we update SQuADBERT's wordpiece embedding layer and tokenizer, as described in Section SECREF3. We refer to the resulting model as GreenCovidSQuADBERT.
+
+Experiment 2: Covid-19 QA ::: Results and discussion
+
+Table TABREF17 (bottom) shows that GreenCovidSQuADBERT outperforms general-domain SQuADBERT in all metrics. Most of the improvement can be achieved with just the small CORD-19 corpus, which is more specific to the target domain (compare “Cord-19 only” and “Cord-19+PubMed+PMC”).
+
+Conclusion
+
+As a reaction to the trend towards high-resource models, we have proposed an inexpensive, CPU-only method for domain-adapting Pretrained Language Models: We train Word2Vec vectors on target-domain data and align them with the wordpiece vector space of a general-domain PTLM.
+
+On eight biomedical NER tasks, we cover over 50% of the BioBERT – BERT F1 delta, at 5% of BioBERT's domain adaptation CO$_2$ footprint and 2% of its cloud compute cost. We have also shown how to rapidly adapt an existing BERT QA model to an emerging domain – the Covid-19 pandemic – without the need for target-domain Language Model pretraining or finetuning.
+
+We hope that our approach will benefit practitioners with limited time or resources, and that it will encourage environmentally friendlier NLP.
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Word2Vec training
+
+We downloaded the PubMed, PMC and CORD-19 corpora from:
+
+https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_bulk/ [20 January 2020, 68GB raw text]
+
+https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/ [20 January 2020, 24GB raw text]
+
+https://pages.semanticscholar.org/coronavirus-research [17 April 2020, 2GB raw text]
+
+We extract all abstracts and text bodies and apply the BERT basic tokenizer (a word tokenizer that standard BERT uses before wordpiece tokenization). Then, we train CBOW Word2Vec with negative sampling. We use default parameters except for the vector size (which we set to $d_\mathrm {W2V} = d_\mathrm {LM}$).
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 1: Biomedical NER ::: Pretrained models
+
+General-domain BERT and BioBERTv1.0 were downloaded from:
+
+https://storage.googleapis.com/bert_models/2018_10_18/cased_L-12_H-768_A-12.zip
+
+https://github.com/naver/biobert-pretrained
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 1: Biomedical NER ::: Data
+
+We downloaded the NER datasets by following instructions on https://github.com/dmis-lab/biobert#Datasets. For detailed dataset statistics, see BIBREF2.
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 1: Biomedical NER ::: Preprocessing
+
+We cut all sentences into chunks of 30 or fewer whitespace-tokenized words (without splitting inside labeled spans). Then, we tokenize every chunk $S$ with $\mathcal {T} = \mathcal {T}_\mathrm {LM}$ or $\mathcal {T} = \hat{\mathcal {T}}_\mathrm {LM}$ and add special tokens:
+
+Word-initial wordpieces in $\mathcal {T}(S)$ are labeled as B(egin), I(nside) or O(utside), while non-word-initial wordpieces are labeled as X(ignore).
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 1: Biomedical NER ::: Modeling, training and inference
+
+We follow BIBREF2's implementation (https://github.com/dmis-lab/biobert): We add a randomly initialized softmax classifier on top of the last BERT layer to predict the labels. We finetune the entire model to minimize negative log likelihood, with the standard Adam optimizer BIBREF20 and a linear learning rate scheduler (10% warmup). Like BIBREF2, we finetune on the concatenation of the training and development set. All finetuning runs were done on a GeForce Titan X GPU (12GB).
+
+Since we do not have the resources for an extensive hyperparameter search, we use defaults and recommendations from the BioBERT repository: Batch size of 32, peak learning rate of $1 \cdot 10^{-5}$, and 100 epochs.
+
+At inference time, we gather the output logits of word-initial wordpieces only. Since the number of word-initial wordpieces is the same for $\mathcal {T}_\mathrm {LM}(S)$ and $\hat{\mathcal {T}}_\mathrm {LM}(S)$, this makes mean-pooling the logits straightforward.
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 1: Biomedical NER ::: Note on our reproduction experiments
+
+We found it easier to reproduce or exceed BIBREF2's results for general-domain BERT, compared to their results for BioBERTv1.0 (see Figure FIGREF13, main paper). While this may be due to hyperparameters, it suggests that BioBERTv1.0 was more strongly tuned than BERT in the original BioBERT paper. This observation does not affect our conclusions, as GreenBioBERT performs better than reproduced BERT as well.
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 2: Covid-19 QA ::: Pretrained model
+
+We downloaded the SQuADBERT baseline from:
+
+https://huggingface.co/bert-large-uncased-whole-word-masking-finetuned-squad
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 2: Covid-19 QA ::: Data
+
+We downloaded the Deepset-AI Covid-QA dataset from:
+
+https://github.com/deepset-ai/COVID-QA/blob/master/data/question-answering/200423_covidQA.json [24 April 2020]
+
+At the time of writing, the dataset contains 1380 questions and gold answer spans. Every question is associated with one of 98 research papers (contexts). We treat the entire dataset as a test set.
+
+Note that there are some important differences between the dataset and SQuAD, which make the task challenging:
+
+The contexts are full documents rather than single paragraphs. Thus, the correct answer may appear several times, often with slightly different wordings. Only a single one of the occurrences is annotated as correct, e.g.:
+
+What was the prevalence of Coronavirus OC43 in community samples in Ilorin, Nigeria?
+
+13.3% (95% CI 6.9-23.6%) # from main text
+
+(13.3%, 10/75). # from abstract
+
+SQuAD gold answers are defined as the “shortest span in the paragraph that answered the question” BIBREF19, but many Covid-QA gold answers are longer and contain non-essential context, e.g.:
+
+When was the Middle East Respiratory Syndrome Coronavirus isolated first?
+
+(MERS-CoV) was first isolated in 2012, in a 60-year-old man who died in Jeddah, KSA due to severe acute pneumonia and multiple organ failure
+
+2012,
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 2: Covid-19 QA ::: Preprocessing
+
+We tokenize every question-context pair $(Q, C)$ with $\mathcal {T} = \mathcal {T}_\mathrm {LM}$ or $\mathcal {T} = \hat{\mathcal {T}}_\mathrm {LM}$, which yields $(\mathcal {T}(Q), \mathcal {T}(C))$. Since $\mathcal {T}(C)$ is usually too long to be digested in a single forward pass, we define a sliding window with width and stride $N = \mathrm {floor}(\frac{509 - |\mathcal {T}(Q)|}{2})$. At step $n$, the “active” window is between $a^{(l)}_n = nN$ and $a^{(r)}_n = \mathrm {min}(|C|, nN+N)$. The input is defined as:
+
+$p^{(l)}_n$ and $p^{(r)}_n$ are chosen such that $|X^{(n)}| = 512$, and such that the active window is in the center of the input (if possible).
+
+Inexpensive Domain Adaptation of Pretrained Language Models (Appendix) ::: Experiment 2: Covid-19 QA ::: Modeling and inference
+
+Feeding $X^{(n)}$ into the pretrained QA model yields start logits $\mathbf {h^{\prime }}^{(\mathrm {start}, n)} \in \mathbb {R}^{|X^{(n)}|}$ and end logits $\mathbf {h^{\prime }}^{(\mathrm {end},n)} \in \mathbb {R}^{|X^{(n)}|}$. We extract and concatenate the slices that correspond to the active windows of all steps:
+
+Next, we map the logits from the wordpiece level to the word level. This allows us to mean-pool the outputs of $\mathcal {T}_\mathrm {LM}$ and $\hat{\mathcal {T}}_\mathrm {LM}$ even when $|\mathcal {T}_\mathrm {LM}(C)| \ne |\hat{\mathcal {T}}_\mathrm {LM}(C)|$.
+
+Let $c_i$ be a whitespace-delimited word in $C$. Let $\mathcal {T}(C)_{j:j+|\mathcal {T}(c_i)|}$ be the corresponding wordpieces. The start and end logits of $c_i$ are derived as:
+
+Finally, we return the answer span $C_{k:k^{\prime }}$ that maximizes $o^{(\mathrm {start})}_k + o^{(\mathrm {end})}_{k^{\prime }}$, subject to the constraints that $k^{\prime }$ does not precede $k$ and the answer span is not longer than 500 characters.

@@ -1,0 +1,8 @@
+google-generativeai>=0.8.0
+nltk>=3.9
+python-dotenv>=1.0.1
+tqdm>=4.66.0
+numpy>=1.26.4
+faiss-cpu==1.8.0.post1
+PySide6>=6.7
+tiktoken>=0.7.0

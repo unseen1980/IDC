@@ -1,0 +1,151 @@
+Introduction
+
+Single-document summarization is the task of generating a short summary for a given document. Ideally, the generated summaries should be fluent and coherent, and should faithfully maintain the most important information in the source document. purpleThis is a very challenging task, because it arguably requires an in-depth understanding of the source document, and current automatic solutions are still far from human performance BIBREF0 .
+
+Single-document summarization can be either extractive or abstractive. Extractive methods typically pick sentences directly from the original document based on their importance, and form the summary as an aggregate of these sentences. Usually, summaries generated in this way have a better performance on fluency and grammar, but they may contain much redundancy and lack in coherence across sentences. In contrast, abstractive methods attempt to mimic what humans do by first extracting content from the source document and then produce new sentences that aggregate and organize the extracted information. Since the sentences are generated from scratch they tend to have a relatively worse performance on fluency and grammar. Furthermore, while abstractive summaries are typically less redundant, they may end up including misleading or even utterly false statements, because the methods to extract and aggregate information form the source document are still rather noisy.
+
+In this work, we focus on extracting informative sentences from a given document (without dealing with redundancy), especially when the document is relatively long (e.g., scientific articles).
+
+Most recent works on neural extractive summarization have been rather successful in generating summaries of short news documents (around 650 words/document) BIBREF1 by applying neural Seq2Seq models BIBREF2 . However when it comes to long documents, these models tend to struggle with longer sequences because at each decoding step, the decoder needs to learn to construct a context vector capturing relevant information from all the tokens in the source sequence BIBREF3 .
+
+Long documents typically cover multiple topics. In general, the longer a document is, the more topics are discussed. As a matter of fact, when humans write long documents they organize them in chapters, sections etc.. Scientific papers are an example of longer documents and they follow a standard discourse structure describing the problem, methodology, experiments/results, and finally conclusions BIBREF4 .
+
+To the best of our knowledge only one previous work in extractive summarization has explicitly leveraged section information to guide the generation of summaries BIBREF5 . However, the only information about sections fed into their sentence classifier is a categorical feature with values like Highlight, Abstract, Introduction, etc., depending on which section the sentence appears in.
+
+In contrast, in order to exploit section information, in this paper we propose to capture a distributed representation of both the global (the whole document) and the local context (e.g., the section/topic) when deciding if a sentence should be included in the summary
+
+Our main contributions are as follows: (i) In order to capture the local context, we are the first to apply LSTM-minus to text summarization. LSTM-minus is a method for learning embeddings of text spans, which has achieved good performance in dependency parsing BIBREF6 , in constituency parsing BIBREF7 , as well as in discourse parsing BIBREF8 . With respect to more traditional methods for capturing local context, which rely on hierarchical structures, LSTM-minus produces simpler models i.e. with less parameters, and therefore faster to train and less prone to overfitting. (ii) We test our method on the Pubmed and arXiv datasets and results appear to support our goal of effectively summarizing long documents. In particular, while overall we outperform the baseline and previous approaches only by a narrow margin on both datasets, the benefit of our method become much stronger as we apply it to longer documents. purpleFurthermore, in an ablation study to assess the relative contributions of the global and the local model we found that, rather surprisingly, the benefits of our model seem to come exclusively from modeling the local context, even for the longest documents.[6] (iii) In order to evaluate our approach, we have created oracle labels for both Pubmed and arXiv BIBREF9 , by applying a greedy oracle labeling algorithm. The two datasets annotated with extractive labels will be made public.
+
+Extractive summarization
+
+Traditional extractive summarization methods are mostly based on explicit surface features BIBREF10 , relying on graph-based methods BIBREF11 , or on submodular maximization BIBREF12 . Benefiting from the success of neural sequence models in other NLP tasks, chenglapata propose a novel approach to extractive summarization based on neural networks and continuous sentence features, which outperforms traditional methods on the DailyMail dataset. In particular, they develop a general encoder-decoder architecture, where a CNN is used as sentence encoder, a uni-directional LSTM as document encoder, with another uni-directional LSTM as decoder. To decrease the number of parameters while maintaining the accuracy, summarunner present SummaRuNNer, a simple RNN-based sequence classifier without decoder, outperforming or matching the model of BIBREF2 . They take content, salience, novelty, and position of each sentence into consideration when deciding if a sentence should be included in the extractive summary. Yet, they do not capture any aspect of the topical structure, as we do in this paper. So their approach would arguably suffer when applied to long documents, likely containing multiple and diverse topics.
+
+While SummaRuNNer was tested only on news, EMNLP2018 carry out a comprehensive set of experiments with deep learning models of extractive summarization across different domains, i.e. news, personal stories, meetings, and medical articles, as well as across different neural architectures, in order to better understand the general pros and cons of different design choices. They find that non auto-regressive sentence extraction performs as well or better than auto-regressive extraction in all domains, where by auto-regressive sentence extraction they mean using previous predictions to inform future predictions. Furthermore, they find that the Average Word Embedding sentence encoder works at least as well as encoders based on CNN and RNN. In light of these findings, our model is not auto-regressive and uses the Average Word Embedding encoder.
+
+Extractive summarization on Scientific papers
+
+Research on summarizing scientific articles has a long history BIBREF13 . Earlier on, it was realized that summarizing scientific papers requires different approaches than what was used for summarizing news articles, due to differences in document length, writing style and rhetorical structure. For instance, BIBREF14 presented a supervised Naive Bayes classifier to select content from a scientific paper based on the rhetorical status of each sentence (e.g., whether it specified a research goal, or some generally accepted scientific background knowledge, etc.). More recently, researchers have extended this work by applying more sophisticated classifiers to identify more fine-grain rhetorical categories, as well as by exploiting citation contexts. 2013-discourse propose the CoreSC discourse-driven content, which relies on CRFs and SVMs, to classify the discourse categories (e.g. Background, Hypothesis, Motivation, etc.) at the sentence level. The recent work most similar to ours is BIBREF5 where, in order to determine whether a sentence should be included in the summary, they directly use the section each sentence appears in as a categorical feature with values like Highlight, Abstract, Introduction, etc.. In this paper, instead of using sections as categorical features, we rely on a distributed representation of the semantic information within each section, as the local context of each sentence. In a very different line of work, cohan-2015-scientific form the summary by also exploiting information on how the target paper is cited in other papers. Currently, we do not use any information from citation contexts.
+
+Datasets for long documents
+
+summarydataset provide a comprehensive overview of the current datasets for summarization. Noticeably, most of the larger-scale summarization datasets consists of relatively short documents, like CNN/DailyMail BIBREF1 and New York Times BIBREF15 . One exception is BIBREF9 that recently introduce two large-scale datasets of long and structured scientific papers obtained from arXiv and PubMed. These two new datasets contain much longer documents than all the news datasets (See Table TABREF6 ) and are therefore ideal test-beds for the method we present in this paper.
+
+Neural Abstractive summarization on long documents
+
+While most current neural abstractive summarization models have focused on summarizing relatively short news articles (e.g., BIBREF16 ), few researchers have started to investigate the summarization of longer documents by exploiting their natural structure. agents present an encoder-decoder architecture to address the challenges of representing a long document for abstractive summarization. The encoding task is divided across several collaborating agents, each is responsible for a subsection of text through a multi-layer LSTM with word attention. Their model seems however overly complicated when it comes to the extractive summarization task, where word attention is arguably much less critical. So, we do not consider this model further in this paper.
+
+discourselongdocument also propose a model for abstractive summarization taking the structure of documents into consideration with a hierarchical approach, and test it on longer documents with section information, i.e. scientific papers. In particular, they apply a hierarchical encoder at the word and section levels. Then, in the decoding step, they combine the word attention and section attention to obtain a context vector.
+
+This approach to capture discourse structure is however quite limited both in general and especially when you consider its application to extractive summarization. First, their hierarchical method has a large number of parameters and it is therefore slow to train and likely prone to overfitting. Secondly, it does not take the global context of the whole document into account, which may arguably be critical in extractive methods, when deciding on the salience of a sentence (or even a word). The extractive summarizer we present in this paper tries to address these limitations by adopting the parameter lean LSTM-minus method, and by explicitly modeling the global context.
+
+LSTM-Minus
+
+The LSTM-Minus method is first proposed in BIBREF6 as a novel way to learn sentence segment embeddings for graph-based dependency parsing, i.e. estimating the most likely dependency tree given an input sentence. For each dependency pair, they divide a sentence into three segments (prefix, infix and suffix), and LSTM-Minus is used to represent each segment. They apply a single LSTM to the whole sentence and use the difference between two hidden states INLINEFORM0 to represent the segment from word INLINEFORM1 to word INLINEFORM2 . This enables their model to learn segment embeddings from information both outside and inside the segments and thus enhancing their model ability to access to sentence-level information. The intuition behind the method is that each hidden vector INLINEFORM3 can capture useful information before and including the word INLINEFORM4 .
+
+Shortly after, lstm-minusconstituency use the same method on the task of constituency parsing, as the representation of a sentence span, extending the original uni-directional LSTM-Minus to the bi-directional case. More recently, inspired by the success of LSTM-Minus in both dependency and constituency parsing, lstm-minusdiscourse extend the technique to discourse parsing. They propose a two-stage model consisting of an intra-sentential parser and a multi-sentential parser, learning contextually informed representations of constituents with LSTM-Minus, at the sentence and document level, respectively.
+
+Similarly, in this paper, when deciding if a sentence should be included in the summary, the local context of that sentence is captured by applying LSTM-Minus at the document level, to represent the sub-sequence of sentences of the document (i.e., the topic/section) the target sentence belongs to.
+
+Our Model
+
+In this work, we propose an extractive model for long documents, incorporating local and global context information, motivated by natural topic-oriented structure of human-written long documents. The architecture of our model is shown in Figure FIGREF10 , each sentence is visited sequentially in the original document order, and a corresponding confidence score is computed expressing whether the sentence should be included in the extractive summary. Our model comprises three components: the sentence encoder, the document encoder and the sentence classifier.
+
+Sentence Encoder
+
+The goal of the sentence encoder is mapping sequences of word embeddings to a fixed length vector (See bottom center of Figure FIGREF10 ). There are several common methods to embed sentences. For extractive summarization, RNN were used in BIBREF17 , CNN in BIBREF2 , and Average Word Embedding in BIBREF18 . EMNLP2018 experiment with all the three methods and conclude that Word Embedding Averaging is as good or better than either RNNs or CNNs for sentence embedding across different domains and summarizer architectures. Thus, we use the Average Word Embedding as our sentence encoder, by which a sentence embedding is simply the average of its word embeddings, i.e. INLINEFORM0
+
+Besides, we also tried the popular pre-trained BERT sentence embedding BIBREF19 , but initial results were rather poor. So we do not pursue this possibility any further.
+
+Document Encoder
+
+At the document level, a bi-directional recurrent neural network BIBREF20 is often used to encode all the sentences sequentially forward and backward, with such model achieving remarkable success in machine translation BIBREF21 . As units, we selected gated recurrent units (GRU) BIBREF22 , in light of favorable results shown in BIBREF23 . The GRU is represented with the standard reset, update, and new gates.
+
+The output of the bi-directional GRU for each sentence INLINEFORM0 comprises two hidden states, INLINEFORM1 as forward and backward hidden state, respectively.
+
+A. Sentence representation As shown in Figure FIGREF10 (A), for each sentence INLINEFORM0 , the sentence representation is the concatenation of both backward and forward hidden state of that sentence. INLINEFORM1
+
+In this way, the sentence representation not only represents the current sentence, but also partially covers contextual information both before and after this sentence.
+
+B. Document representation The document representation provides global information on the whole document. It is computed as the concatenation of the final state of the forward and backward GRU, labeled as B in Figure FIGREF10 . BIBREF24 INLINEFORM0
+
+C. Topic segment representation To capture the local context of each sentence, namely the information of the topic segment that sentence falls into, we apply the LSTM-Minus method, a method for learning embeddings of text spans. LSTM-Minus is shown in detail in Figure 1 (left panel C), each topic segment is represented as the subtraction between the hidden states of the start and the end of that topic. As illustrated in Figure FIGREF10 , the representation for section 2 of the sample document (containing three sections and eight sentences overall) can be computed as INLINEFORM0 , where INLINEFORM1 are the forward hidden states of sentence 5 and 2, respectively, while INLINEFORM2 are the backward hidden states of sentence 3 and 6, respectively. In general, the topic segment representation INLINEFORM3 for segment INLINEFORM4 is computed as: INLINEFORM5
+
+where INLINEFORM0 is the index of the beginning and the end of topic INLINEFORM1 , INLINEFORM2 and INLINEFORM3 denote the topic segment representation of forward and backward, respectively. The final representation of topic INLINEFORM4 is the concatenation of forward and backward representation INLINEFORM5 . To obtain INLINEFORM6 and INLINEFORM7 , we utilize subtraction between GRU hidden vectors of INLINEFORM8 and INLINEFORM9 , and we pad the hidden states with zero vectors both in the beginning and the end, to ensure the index can not be out of bound. The intuition behind this process is that the GRUs can keep previous useful information in their memory cell by exploiting reset, update, and new gates to decide how to utilize and update the memory of previous information. In this way, we can represent the contextual information within each topic segment for all the sentences in that segment.
+
+Decoder
+
+Once we have obtained a representation for the sentence, for its topic segment (i.e., local context) and for the document (i.e., global context), these three factors are combined to make a final prediction INLINEFORM0 on whether the sentence should be included in the summary. We consider two ways in which these three factors can be combined.
+
+Concatenation We can simply concatenate the vectors of these three factors as, INLINEFORM0
+
+where sentence INLINEFORM0 is part of the topic INLINEFORM1 , and INLINEFORM2 is the representation of sentence INLINEFORM3 with topic segment information and global context information.
+
+Attentive context As local context and global context are all contextual information of the given sentence, we use an attention mechanism to decide the weight of each context vector, represented as INLINEFORM0
+
+where the INLINEFORM0 is the weighted context vector of each sentence INLINEFORM1 , and assume sentence INLINEFORM2 is in topic INLINEFORM3 .
+
+Then there is a final multi-layer perceptron(MLP) followed with a sigmoid activation function indicating the confidence score for selecting each sentence: INLINEFORM0
+
+Experiments
+
+To validate our method, we set up experiments on the two scientific paper datasets (arXiv and PubMed). With ROUGE and METEOR scores as automatic evaluation metrics, we compare with previous works, both abstractive and extractive.
+
+Training
+
+The weighted negative log-likelihood is minimized, where the weight is computed as INLINEFORM0 , to solve the problem of highly imbalanced data (typical in extractive summarization). INLINEFORM1
+
+where INLINEFORM0 represent the ground-truth label of sentence INLINEFORM1 , with INLINEFORM2 meaning sentence INLINEFORM3 is in the gold-standard extract summary.
+
+Extractive Label Generation
+
+In the Pubmed and arXiv datasets, the extractive summaries are missing. So we follow the work of BIBREF18 on extractive summary labeling, constructing gold label sequences by greedily optimizing ROUGE-1 on the gold-standard abstracts, which are available for each article. The algorithm is shown in Appendix A.
+
+Implementation Details
+
+We train our model using the Adam optimizer BIBREF25 with learning rate INLINEFORM0 and a drop out rate of 0.3. We use a mini-batch with a batch size of 32 documents, and the size of the GRU hidden states is 300. For word embeddings, we use GloVe BIBREF26 with dimension 300, pre-trained on the Wikipedia and Gigaword. The vocabulary size of our model is 50000. All the above parameters were set based on BIBREF18 without any fine-tuning. Again following BIBREF18 , we train each model for 50 epochs, and the best model is selected with early stopping on the validation set according to Rouge-2 F-score.
+
+Models for Comparison
+
+We perform a systematic comparison with previous work in extractive summarization. For completeness, we also compare with recent neural abstractive approaches. In all the experiments, we use the same train/val/test splitting.
+
+Traditional extractive summarization models: SumBasic BIBREF27 , LSA BIBREF28 , and LexRank BIBREF29
+
+Neural abstractive summarization models: Attn-Seq2Seq BIBREF1 , Pntr-Gen-Seq2Seq BIBREF16 and Discourse-aware BIBREF9
+
+Neural extractive summarization models: Cheng&Lapata BIBREF2 and SummaRuNNer BIBREF17 . Based on BIBREF18 , we use the Average Word Encoder as sentence encoder for both models, instead of the CNN and RNN sentence encoders that were originally used in the two systems, respectively.
+
+Baseline: Similar to our model, but without local context and global context, i.e. the input to MLP is the sentence representation only.
+
+Lead: Given a length limit of INLINEFORM0 words for the summary, Lead will return the first INLINEFORM1 words of the source document.
+
+Oracle: uses the Gold Standard extractive labels, generated based on ROUGE (Sec. 4.2).
+
+Results and Analysis
+
+For evaluation, we follow the same procedure as in BIBREF18 . Summaries are generated by selecting the top ranked sentences by model probability INLINEFORM0 , until the length limit is met or exceeded. Based on the average length of abstracts in these two datasets, we set the length limit to 200 words. We use ROUGE scores BIBREF30 and METEOR scores BIBREF31 between the model results and ground-truth abstractive summaries as evaluation metric. The unigram and bigram overlap (ROUGE-1,2) are intended to measure the informativeness, while longest common subsequence (ROUGE-L) captures fluency to some extent BIBREF2 . METEOR was originally proposed to evaluate translation systems by measuring the alignment between the system output and reference translations. As such, it can also be used as an automatic evaluation metric for summarization BIBREF18 .
+
+The performance of all models on arXiv and Pubmed is shown in Table TABREF28 and Table TABREF29 , respectively. Follow the work BIBREF18 , we use the approximate randomization as the statistical significance test method BIBREF32 with a Bonferroni correction for multiple comparisons, at the confidence level 0.01 ( INLINEFORM0 ). As we can see in these tables, on both datasets, the neural extractive models outperforms the traditional extractive models on informativeness (ROUGE-1,2) by a wide margin, but results are mixed on ROUGE-L. Presumably, this is due to the neural training process, which relies on a goal standard based on ROUGE-1. Exploring other training schemes and/or a combination of traditional and neural approaches is left as future work. Similarly, the neural extractive models also dominate the neural abstractive models on ROUGE-1,2, but these abstractive models tend to have the highest ROUGE-L scores, possibly because they are trained directly on gold standard abstract summaries.
+
+Compared with other neural extractive models, our models (both with attentive context and concatenation decoder) have better performances on all three ROUGE scores, as well as METEOR. In particular, the improvements over the Baseline model show that a combination of local and global contextual information does help to identify the most important sentences (more on this in the next section). Interestingly, just the Baseline model already achieves a slightly better performance than previous works; possibly because the auto-regressive approach used in those models is even more detrimental for long documents.
+
+Figure FIGREF32 shows the most important result of our analysis: the benefits of our method, explicitly designed to deal with longer documents, do actually become stronger as we apply it to longer documents. As it can be seen in Figure FIGREF32 , the performance gain of our model with respect to current state-of-the-art extractive summarizer is more pronounced for documents with INLINEFORM0 words in both datasets.
+
+Finally, the result of Lead (Table TABREF28 , TABREF29 ) shows that scientific papers have less position bias than news; i.e., the first sentences of these papers are not a good choice to form an extractive summary.
+
+As a teaser for the potential and challenges that still face our approach, its output (i.e., the extracted sentences) when applied to this paper is colored in red and the order in which the sentences are extracted is marked with the Roman numbering. If we set the summary length limit to the length of our abstract, the first five sentences in the conclusions section are extracted. If we increase the length to 200 words, two more sentences are extracted, which do seem to provide useful complementary information. Not surprisingly, some redundancy is present, as dealing explicitly with redundancy is not a goal of our current proposal and left as future work.
+
+Ablation Study
+
+In order to assess the relative contributions of the global and local models to the performance of our approach, we ran an ablation study. This was done for each dataset both with the whole test set, as well as with a subset of long documents. The results for Pubmed and arXiv are shown in Table TABREF34 and Table TABREF35 , respectively. For statistical significance, as it was done for the general results in Section 4.5, we use the approximate randomization method BIBREF32 with the Bonferroni correction at ( INLINEFORM0 ).
+
+From these tables, we can see that on both datasets the performance significantly improves when local topic information (i.e. local context) is added. And the improvement is even greater when we only consider long documents. Rather surprisingly, this is not the case for the global context. Adding a representation of the whole document (i.e. global context) never significantly improves performance. In essence, it seems that all the benefits of our model come exclusively from modeling the local context, even for the longest documents. Further investigation of this finding is left as future work.
+
+Conclusions and Future Work
+
+purpleIn this paper, we propose a novel extractive summarization model especially designed for long documents, by incorporating the local context within each topic, along with the global context of the whole document.[2] purpleOur approach integrates recent findings on neural extractive summarization in a parameter lean and modular architecture.[3] purpleWe evaluate our model and compare with previous works in both extractive and abstractive summarization on two large scientific paper datasets, which contain documents that are much longer than in previously used corpora.[4] purpleOur model not only achieves state-of-the-art on these two datasets, but in an additional experiment, in which we consider documents with increasing length, it becomes more competitive for longer documents.[5] purpleWe also ran an ablation study to assess the relative contribution of the global and local components of our approach. [1] Rather surprisingly, it appears that the benefits of our model come only from modeling the local context.
+
+For future work, we initially intend to investigate neural methods to deal with redundancy. Then, it could be beneficial to integrate explicit features, like sentence position and salience, into our neural approach. More generally, we plan to combine of traditional and neural models, as suggested by our results. Furthermore, we would like to explore more sophistical structure of documents, like discourse tree, instead of rough topic segments. As for evaluation, we would like to elicit human judgments, for instance by inviting authors to rate the outputs from different systems, when applied to their own papers. More long term, we will study how extractive/abstractive techniques can be integrated; for instance, the output of an extractive system could be fed into an abstractive one, training the two jointly.
+
+Acknowledgments
+
+This research was supported by the Language & Speech Innovation Lab of Cloud BU, Huawei Technologies Co., Ltd. Extractive Label Generation The algorithm SECREF6 is used to generate the extractive labels based on the human-made abstractive summaries, i.e. abstracts of scientific papers. Extractive label generation LabelGenerationReference,sentences,lengthLimit INLINEFORM0 = ” INLINEFORM1 = 0 INLINEFORM2 = [] INLINEFORM3 INLINEFORM4 INLINEFORM5 INLINEFORM6 in range(len( INLINEFORM7 )) INLINEFORM8 INLINEFORM9 INLINEFORM10 INLINEFORM11 INLINEFORM12 != INLINEFORM13 INLINEFORM14 .append( INLINEFORM15 ) INLINEFORM16 = INLINEFORM17 + INLINEFORM18 [ INLINEFORM19 ] INLINEFORM20 += NumberOfWords( INLINEFORM21 [ INLINEFORM22 ]) break INLINEFORM23

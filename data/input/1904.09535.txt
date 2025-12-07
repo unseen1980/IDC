@@ -1,0 +1,91 @@
+Introduction
+
+Deep Neural Networks (DNN) have been widely employed in industry for solving various Natural Language Processing (NLP) tasks, such as text classification, sequence labeling, question answering, etc. However, when engineers apply DNN models to address specific NLP tasks, they often face the following challenges.
+
+The above challenges often hinder the productivity of engineers, and result in less optimal solutions to their given tasks. This motivates us to develop an NLP toolkit for DNN models, which facilitates engineers to develop DNN approaches. Before designing this NLP toolkit, we conducted a survey among engineers and identified a spectrum of three typical personas.
+
+To satisfy the requirements of all the above three personas, the NLP toolkit has to be generic enough to cover as many tasks as possible. At the same time, it also needs to be flexible enough to allow alternative network architectures as well as customized modules. Therefore, we analyzed the NLP jobs submitted to a commercial centralized GPU cluster. Table TABREF11 showed that about 87.5% NLP related jobs belong to a few common tasks, including sentence classification, text matching, sequence labeling, MRC, etc. It further suggested that more than 90% of the networks were composed of several common components, such as embedding, CNN/RNN, Transformer and so on.
+
+Based on the above observations, we developed NeuronBlocks, a DNN toolkit for NLP tasks. The basic idea is to provide two layers of support to the engineers. The upper layer targets common NLP tasks. For each task, the toolkit contains several end-to-end network templates, which can be immediately instantiated with simple configuration. The bottom layer consists of a suite of reusable and standard components, which can be adopted as building blocks to construct networks with complex architecture. By following the interface guidelines, users can also contribute to this gallery of components with their own modules.
+
+The technical contributions of NeuronBlocks are summarized into the following three aspects.
+
+Related Work
+
+There are several general-purpose deep learning frameworks, such as TensorFlow, PyTorch and Keras, which have gained popularity in NLP community. These frameworks offer huge flexibility in DNN model design and support various NLP tasks. However, building models under these frameworks requires a large overhead of mastering these framework details. Therefore, higher level abstraction to hide the framework details is favored by many engineers.
+
+There are also several popular deep learning toolkits in NLP, including OpenNMT BIBREF0 , AllenNLP BIBREF1 etc. OpenNMT is an open-source toolkit mainly targeting neural machine translation or other natural language generation tasks. AllenNLP provides several pre-built models for NLP tasks, such as semantic role labeling, machine comprehension, textual entailment, etc. Although these toolkits reduce the development cost, they are limited to certain tasks, and thus not flexible enough to support new network architectures or new components.
+
+Design
+
+The Neuronblocks is built on PyTorch. The overall framework is illustrated in Figure FIGREF16 . It consists of two layers: the Block Zoo and the Model Zoo. In Block Zoo, the most commonly used components of deep neural networks are categorized into several groups according to their functions. Within each category, several alternative components are encapsulated into standard and reusable blocks with a consistent interface. These blocks serve as basic and exchangeable units to construct complex network architectures for different NLP tasks. In Model Zoo, the most popular NLP tasks are identified. For each task, several end-to-end network templates are provided in the form of JSON configuration files. Users can simply browse these configurations and choose one or more to instantiate. The whole task can be completed without any coding efforts.
+
+Block Zoo
+
+We recognize the following major functional categories of neural network components. Each category covers as many commonly used modules as possible. The Block Zoo is an open framework, and more modules can be added in the future.
+
+[itemsep= -0.4em,topsep = 0.3em, align=left, labelsep=-0.6em, leftmargin=1.2em]
+
+Embedding Layer: Word/character embedding and extra handcrafted feature embedding such as pos-tagging are supported.
+
+Neural Network Layers: Block zoo provides common layers like RNN, CNN, QRNN BIBREF2 , Transformer BIBREF3 , Highway network, Encoder Decoder architecture, etc. Furthermore, attention mechanisms are widely used in neural networks. Thus we also support multiple attention layers, such as Linear/Bi-linear Attention, Full Attention BIBREF4 , Bidirectional attention flow BIBREF5 , etc. Meanwhile, regularization layers such as Dropout, Layer Norm, Batch Norm, etc are also supported for improving generalization ability.
+
+Loss Function: Besides of the loss functions built in PyTorch, we offer more options such as Focal Loss BIBREF6 .
+
+Metrics: For classification task, AUC, Accuracy, Precision/Recall, F1 metrics are supported. For sequence labeling task, F1/Accuracy are supported. For knowledge distillation task, MSE/RMSE are supported. For MRC task, ExactMatch/F1 are supported.
+
+Model Zoo
+
+In NeuronBlocks, we identify four types of most popular NLP tasks. For each task, we provide various end-to-end network templates.
+
+[itemsep= -0.4em,topsep = 0.3em, align=left, labelsep=-0.6em, leftmargin=1.2em]
+
+Text Classification and Matching. Tasks such as domain/intent classification, question answer matching are supported.
+
+Sequence Labeling. Predict each token in a sequence into predefined types. Common tasks include NER, POS tagging, Slot tagging, etc.
+
+Knowledge Distillation BIBREF7 . Teacher-Student based knowledge distillation is one common approach for model compression. NeuronBlocks provides knowledge distillation template to improve the inference speed of heavy DNN models like BERT/GPT.
+
+Extractive Machine Reading Comprehension. Given a pair of question and passage, predict the start and end positions of the answer spans in the passage.
+
+User Interface
+
+NeuronBlocks provides convenient user interface for users to build, train, and test DNN models. The details are described in the following.
+
+[itemsep= -0.4em,topsep = 0.3em, align=left, labelsep=-0.6em, leftmargin=1.2em]
+
+I/O interface. This part defines model input/output, such as training data, pre-trained models/embeddings, model saving path, etc.
+
+Model Architecture interface. This is the key part of the configuration file, which defines the whole model architecture. Figure FIGREF19 shows an example of how to specify a model architecture using the blocks in NeuronBlocks. To be more specific, it consists of a list of layers/blocks to construct the architecture, where the blocks are supplied in the gallery of Block Zoo.
+
+Training Parameters interface. In this part, the model optimizer as well as all other training hyper parameters are indicated.
+
+Workflow
+
+Figure FIGREF34 shows the workflow of building DNN models in NeuronBlocks. Users only need to write a JSON configuration file. They can either instantiate an existing template from Model Zoo, or construct a new architecture based on the blocks from Block Zoo. This configuration file is shared across training, test, and prediction. For model hyper-parameter tuning or architecture modification, users just need to change the JSON configuration file. Advanced users can also contribute novel customized blocks into Block Zoo, as long as they follow the same interface guidelines with the existing blocks. These new blocks can be further shared across all users for model architecture design. Moreover, NeuronBlocks has flexible platform support, such as GPU/CPU, GPU management platforms like PAI.
+
+Experiments
+
+To verify the performance of NeuronBlocks, we conducted extensive experiments for common NLP tasks on public data sets including CoNLL-2003 BIBREF14 , GLUE benchmark BIBREF13 , and WikiQA corpus BIBREF15 . The experimental results showed that the models built with NeuronBlocks can achieve reliable and competitive results on various tasks, with productivity greatly improved.
+
+Sequence Labeling
+
+For sequence labeling task, we evaluated NeuronBlocks on CoNLL-2003 BIBREF14 English NER dataset, following most works on the same task. This dataset includes four types of named entities, namely, PERSON, LOCATION, ORGANIZATION, and MISC. We adopted the BIOES tagging scheme instead of IOB, as many previous works indicated meaningful improvement with BIOES scheme BIBREF16 , BIBREF17 . Table TABREF28 shows the results on CoNLL-2003 Englist testb dataset, with 12 different combinations of network layers/blocks, such as word/character embedding, CNN/LSTM and CRF. The results suggest that the flexible combination of layers/blocks in NeuronBlocks can easily reproduce the performance of original models, with comparative or slightly better performance.
+
+GLUE Benchmark
+
+The General Language Understanding Evaluation (GLUE) benchmark BIBREF13 is a collection of natural language understanding tasks. We experimented on the GLUE benchmark tasks using BiLSTM and Attention based models. As shown in Table TABREF29 , the models built by NeuronBlocks can achieve competitive or even better results on GLUE tasks with minimal coding efforts.
+
+Knowledge Distillation
+
+We evaluated Knowledge Distillation task in NeuronBlocks on a dataset collected from one commercial search engine. We refer to this dataset as Domain Classification Dataset. Each sample in this dataset consists of two parts, i.e., a question and a binary label indicating whether the question belongs to a specific domain. Table TABREF36 shows the results, where Area Under Curve (AUC) metric is used as the performance evaluation criteria and Queries per Second (QPS) is used to measure inference speed. By knowledge distillation training approach, the student model by NeuronBlocks managed to get 23-27 times inference speedup with only small performance regression compared with BERTbase fine-tuned classifier.
+
+WikiQA
+
+The WikiQA corpus BIBREF15 is a publicly available dataset for open-domain question answering. This dataset contains 3,047 questions from Bing query logs, each associated with some candidate answer sentences from Wikipedia. We conducted experiments on WikiQA dataset using CNN, BiLSTM, and Attention based models. The results are shown in Table TABREF41 . The models built in NeuronBlocks achieved competitive or even better results with simple model configurations.
+
+Conclusion and Future Work
+
+In this paper, we introduce NeuronBlocks, a DNN toolkit for NLP tasks built on PyTorch. NeuronBlocks targets three types of engineers, and provides a two-layer solution to satisfy the requirements from all three types of users. To be more specific, the Model Zoo consists of various templates for the most common NLP tasks, while the Block Zoo supplies a gallery of alternative layers/modules for the networks. Such design achieves a balance between generality and flexibility. Extensive experiments have verified the effectiveness of this approach. NeuronBlocks has been widely used in a product team of a commercial search engine, and significantly improved the productivity for developing NLP DNN approaches.
+
+As an open-source toolkit, we will further extend it in various directions. The following names a few examples.

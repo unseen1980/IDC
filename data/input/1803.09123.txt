@@ -1,0 +1,127 @@
+Introduction
+
+Equations are an important part of scientific articles, but many existing machine learning methods do not easily handle them. They are challenging to work with because each is unique or nearly unique; most equations occur only once. An automatic understanding of equations, however, would significantly benefit methods for analyzing scientific literature. Useful representations of equations can help draw connections between articles, improve retrieval of scientific texts, and help create tools for exploring and navigating scientific literature.
+
+In this paper we propose equation embeddings (EqEmb), an unsupervised approach for learning distributed representations of equations. The idea is to treat the equation as a "singleton word," one that appears once but that appears in the context of other words. The surrounding text of the equation—and in particular, the distributed representations of that text—provides the data we need to develop a useful representation of the equation.
+
+Figure FIGREF1 illustrates our approach. On the left is an article snippet BIBREF0 . Highlighted in orange is an equation; in this example it represents a neural network layer. We note that this particular equation (in this form and with this notation) only occurs once in the collection of articles (from arXiv). The representations of the surrounding text, however, provide a meaningful context for the equation. Those words allow us to learn its embedding, specifically as a "word" which appears in the context of its surroundings. The resulting representation, when compared to other equations' representations and word representations, helps find both related equations and related words. These are illustrated on the right.
+
+EqEmbs build on exponential family embeddings BIBREF1 to include equations as singleton observations and to model equation elements such as variables, symbols and operators. Exponential family embeddings, like all embedding methods, define a context of each word. In our initial EqEmb, the context for the words is a small window, such as four or eight words, but the context of an equation is a larger window, such as sixteen words. Using these two types of contexts together finds meaningful representations of words and equations. In the next EqEmb, which builds on the first, we consider equations to be sentences consisting of equation units, i.e., variables, symbols, and operators. Equation units help model equations across two types of context—over the surrounding units and over the surrounding words.
+
+We studied EqEmbs on four collections of scientific articles from the arXiv, covering four computer science domains: natural language processing (NLP), information retrieval (IR), artificial intelligence (AI) and machine learning (ML). We found that EqEmbs provide more efficient modeling than existing word embedding methods. We further carried out an exploratory analysis of a large set of INLINEFORM0 87k equations. We found that EqEmbs provide better models when compared to existing word embedding approaches. EqEmbs also provide coherent semantic representations of equations and can capture semantic similarity to other equations and to words.
+
+Related Work
+
+Word embeddings were first introduced in BIBREF2 , BIBREF3 and there have been many variants BIBREF4 , BIBREF5 , BIBREF6 , BIBREF7 . Common for all of them is the idea that words can be represented by latent feature vectors. These feature vectors are optimized to maximize the conditional probability of the dataset. Recently BIBREF1 extended the idea of word embeddings to other types of data. EqEmb expand the idea of word embeddings to a new type of data points – equations.
+
+There have been different proposed approaches for representing mathematical equations. BIBREF8 introduced the symbol layout tree, a representation that encodes the spatial relationship of variables and operators for the purpose of indexing and retrieving mathematical equations. Our work also falls into the framework of mathematical language processing (MLP) BIBREF9 whose first step is converting mathematical solutions into a series of numerical features.
+
+Equation Embeddings Models
+
+EqEmb are based on word embeddings BIBREF5 or specifically Bernoulli embeddings (b-embs) BIBREF1 . Word embeddings models the probability of a word INLINEFORM0 given its context INLINEFORM1 as a conditional distribution INLINEFORM2 where the context is defined as the set of words INLINEFORM3 in a window of size INLINEFORM4 that surrounds it. In word embeddings each word is assigned to two types of latent feature vectors, the embedding ( INLINEFORM5 ) and context ( INLINEFORM6 ) vectors, both of which are INLINEFORM7 dimensional.
+
+B-emb is an exponential family embedding model where the conditional distribution is a Bernoulli: DISPLAYFORM0
+
+The parameter INLINEFORM0 is defined using the word embedding INLINEFORM1 and the word context INLINEFORM2 vectors: DISPLAYFORM0
+
+where INLINEFORM0 is the logistic function.
+
+Equation Embeddings
+
+Given a dataset of words and equations the goal of the EqEmb models is to derive a semantic representation of each equation. EqEmb model equations in the context of words. EqEmb is based on the idea that a good semantic representation of equations could be discovered by expanding the original word context to include any equations that appear in a possibly larger window around it.
+
+We assign embeddings to words ( INLINEFORM0 , INLINEFORM1 ) and equations ( INLINEFORM2 , INLINEFORM3 ). The objective function contains conditionals over the observed words and equations: DISPLAYFORM0
+
+This is a sum of two sets of conditional distributions, the first over observed words ( INLINEFORM0 ) and the second over observed equations ( INLINEFORM1 ). In word embedding models, INLINEFORM2 and INLINEFORM3 are referred to as embedding and context vectors. Here we use a different terminology: the interaction INLINEFORM4 and feature vector INLINEFORM5 .
+
+In word embeddings, the context of the word INLINEFORM0 is defined to index the surrounding words in a small window around it. Here the context of the word INLINEFORM1 will be the original context ( INLINEFORM2 ) and any equations ( INLINEFORM3 ) that are in a possibly larger window around it. This is referred to as the word-equation context window.
+
+Both conditionals are Bernoulli distributions. The first conditional is defined over the words in the collection. It has the following parameter: DISPLAYFORM0
+
+The word context function is: DISPLAYFORM0
+
+This function encompasses the words in the original word context ( INLINEFORM0 ) and any equations ( INLINEFORM1 ) that appear in a possibly larger window ( INLINEFORM2 ) around it.
+
+The second term in the objective corresponds to the sum of the log conditional probabilities of each equation. Its parameter is: DISPLAYFORM0
+
+Similar to word embeddings, equation context INLINEFORM0 contains words that are in a context window around the equation: DISPLAYFORM0
+
+The equation context can have a larger window than the word context. Equation feature vectors ( INLINEFORM0 ) are only associated with the first term of the objective function. This function contains the words where the equation appears in their larger context INLINEFORM1 .
+
+The left side of Figure FIGREF1 shows an example equation in a scientific article. With a word context of size INLINEFORM0 we model the words in the article while ignoring equations. For example when modeling the word "embedding" (highlighted in green) with context window size of 4 (i.e. INLINEFORM1 ), the context contains the words that appear two words before ("current" and "word") and after ("recurrent" and "version") this word. With a word-equation context window of size INLINEFORM2 =16, the term for the word "embedding" would have the feature vector of the equation as one of its components.
+
+Equation Unit Embeddings
+
+Building on our previous method, we define a new model which we call equation unit embeddings (EqEmb-U). EqEmb-U model equations by treating them as sentences where the words are the equation variables, symbols and operators which we refer to as units. The first step in representing equations using equation units is to tokenize them. We use the approach outlined in BIBREF8 which represents equations into a syntax layout tree (SLT), a sequence of SLT tuples each of which contains the spatial relationship information between two equation symbols found within a particular window of equation symbols. Figure FIGREF11 shows example SLT representations of three equations.
+
+Each equation INLINEFORM0 is a sequence of equation units INLINEFORM1 , INLINEFORM2 similar to a sentence where the words are the equation units. For each equation unit INLINEFORM3 we assign interaction INLINEFORM4 and feature INLINEFORM5 vectors.
+
+We assume that the context of the word INLINEFORM0 will be the original context ( INLINEFORM1 ) and the equation units ( INLINEFORM2 ) of any equations that are in the word-equation context window. In addition for each equation unit we define its unit context INLINEFORM3 to be the set of surrounding equation units in a small window INLINEFORM4 around it: DISPLAYFORM0
+
+The objective is over two conditionals, one for each context type: DISPLAYFORM0
+
+The two parameters are: DISPLAYFORM0
+
+We define equation-level representations by averaging the representations of their constituent units: DISPLAYFORM0
+
+Computation
+
+We use stochastic gradient descent with Adagrad BIBREF10 to fit the embedding and context vectors. Following BIBREF1 , we reduce the computational complexity by splitting the gradient into two terms. The first term contains the non-zero entries ( INLINEFORM0 ); the second term contains the zero entries ( INLINEFORM1 ). We compute the exact gradient for the non-zero points; We subsample for the zero data points. This is similar to negative sampling BIBREF5 , which also down-weights the contributions of the zero points. Unlike BIBREF1 which uses INLINEFORM2 regularization to protect against overfitting when fitting the embedding vectors we use early stopping based on validation accuracy, for the same effect.
+
+Empirical Study
+
+We studied the performance of EqEmb on articles from the arXiv. EqEmb models provide better fits than existing embedding approaches, and infer meaningful semantic relationships between equations and words in the collection.
+
+We present a comparison of the proposed models to existing word embeddings approaches. These are: the Bernoulli embeddings (b-emb) BIBREF1 , continuous bag-of-words (CBOW) BIBREF5 , Distributed Memory version of Paragraph Vector (PV-DM) BIBREF11 and the Global Vectors (GloVe) BIBREF6 model.
+
+Datasets
+
+Our datasets are scientific articles that were published on arXiv. The sets contain articles (in LaTeX format) from four computer science domains: NLP, IR, AI, and ML. They were created by filtering arXiv articles based on their primary and secondary categories. We used the following categories for the four collections: cs.cl for NLP; cs.ir for IR; cs.ai for AI and stat.ml, stat.co, stat.me or cs.lg for ML.
+
+Table TABREF22 shows the number of documents along with the number of unique words, equations and equation units for each collection. The equations are display equations that were enumerated in the LaTeX version of the articles. Unlike inline equations, which in many instances represent variables with general meaning (e.g. INLINEFORM0 , INLINEFORM1 , INLINEFORM2 , etc.) and even numerical values, display equations typically represent mathematical concepts with more specific semantics. For the empirical study we used a random subset of 2k singletons from the total collection, along with all equations that occur more than once. For the qualitative analysis, we used all equations.
+
+We extracted words by tokenizing articles using the NLTK package BIBREF12 and restricted the vocabulary to noun phrases and adjectives. The vocabulary was selected by:
+
+removing common stopwords
+
+treating the top 25 most frequent words as stop words and removing them
+
+including words whose term frequency is greater than or equal to 10 and whose character length is greater than or equal to 4
+
+including the top 50 most frequent abbreviations whose character length is 3 (an exception to our previous rule)
+
+When tokenizing equations, we first create an effective vocabulary of equation units. We convert equations into SLT format and collect collection wide frequency statistics over the equation units. The vocabulary contains all equation units whose frequency count is greater than INLINEFORM0 .
+
+Experimental Setup
+
+We analyzed EqEmb models performance using a held out set of words that we generate for each equation in our collections. Held out sets are constructed using the following procedure: We traverse over the collections and for every discovered equation we randomly sample words from its context set. The held out set contains the sampled words and their context window which also includes the equation. For each held out word we also generate a set of negative samples for the given word context. We perform the same procedure to form a validation set. For each of the INLINEFORM0 equations in a collection, two held out words INLINEFORM1 are sampled. For a context window of size 4 the sampled word context is defined as INLINEFORM2 .
+
+During training we compute the predictive log-likelihood on the validation set of words using the fitted model after each iteration over the collection. A fitted model is a collection of interaction and feature vectors for each equation and word. Given a fitted model, the log probability of a held out word is computed using the following formula: DISPLAYFORM0
+
+which is the softmax function computed over a set of negative samples INLINEFORM0 and the held out word. In particular, we ran the model 20 times across the collection. After each collection iteration INLINEFORM1 we observe whether the predictive log-likelihood continues to improve compared to the previous ( INLINEFORM2 ) iteration. We stop at the INLINEFORM3 -th iteration when that is no longer the case.
+
+When modeling equations using EqEmb we perform two passes over the collection. In the first pass we only model words while ignoring equations. In the second pass we only model equations while holding fixed the interaction and feature vectors of all words. In context of EqEmb we treat equations as singleton words and the broader question that we are trying to answer is whether we can learn something about the meaning of the singleton words given the fixed word interaction and feature vectors.
+
+In our analysis we evaluated the performance of the EqEmb models across different sizes for the word context (W), word-equation context (E) and embedding vector size (K). Model performance was compared with 4 existing embedding models: b-emb, CBOW, GloVe and PV-DM. We used the gensim BIBREF13 implementation of the CBOW and PV-DM models. When modeling equations using the first 3 embedding models we treat equations as regular words in the collection. In case of the PV-DM model we parse the article so that equations and their surrounding context of length equivalent to the word-equation context window are labeled as a separate paragraph. We also assign paragraph labels to the article text occurring between equation paragraphs.
+
+Results
+
+Table TABREF23 shows the performance comparison results across the different embeddings models. For each model, performance results are shown on 4 latent dimension values (K=25, 50, 75 and 100). For each dimension we ran experiments by varying the context window size for words (Word Context=4, 8 and 16). In addition for the EqEmb, EqEmb-U and PV-DM models we also varied the word-equation window size (E=8 and 16). Comparisons across models are performed using the pseudo log-likelihood measure BIBREF14 . For a given held-out word INLINEFORM0 and a set of negative samples INLINEFORM1 the pseudo log-likelihood is defined as: DISPLAYFORM0
+
+We treat this a downstream task. For each model type and latent dimension configuration, we use the validation set to select the best model configuration (i.e. combination of context window sizes). We report values on both datasets.
+
+Across all collections EqEmb outperform previous embedding models and EqEmb-U further improves performance.
+
+Word Representation of Equations
+
+EqEmb help obtain word descriptions of the equations. Table TABREF25 shows example equation and the 5 most similar words obtained using 4 different embedding approaches which include CBOW, PV-DM, GloVe and EqEmb. For the query equation we obtain most similar words by computing Cosine distance between the embedding vector ( INLINEFORM0 ) representation of the query equation and the context vector representation of the words ( INLINEFORM1 ).
+
+With the embedding representation of words and equations we could also perform equation search using words as queries. For a set of query words we generate its embedding representation by taking the average of the embedding representation of each word and compute Cosine distance across all the equations embeddings. Table TABREF25 shows an example query, which consists of three words, and its 5 nearest equations discovered using EqEmb. For a given word query, EqEmb are able to retrieve query relevant equations.
+
+Discovering Semantically Similar Equations
+
+In addition to words, EqEmb models can capture the semantic similarity between equations in the collection. We performed qualitative analysis of the model performance using all discovered equations across the 4 collection. Table TABREF24 shows the query equation used in the previous analysis and its 5 most similar equations discovered using EqEmb-U. For qualitative comparisons across the other embedding models, in Appendix A we provide results over the same query using CBOW, PV-DM, GloVe and EqEmb. In Appendix A reader should notice the difference in performance between EqEmb-U and EqEmb compared to existing embedding models which fail to discover semantically similar equations. tab:irexample1,tab:nlpexample2 show two additional example equation and its 5 most similar equations and words discovered using the EqEmb model. Similar words were ranked by computing Cosine distance between the embedding vector ( INLINEFORM0 ) representation of the query equation and the context vector representation of the words ( INLINEFORM1 ). Similar equations were discovered using Euclidean distance computed between the context vector representations of the equations ( INLINEFORM2 ). We give additional example results in Appendix B.
+
+Conclusion
+
+We presented unsupervised approaches for semantic representations of mathematical equations using their surrounding words. Across 4 different collections we showed that out methods offer more effective modeling compared to existing embedding models. We also demonstrate that they can capture the semantic similarity between equations and the words in the collection. In the future we plan to explore how EqEmb could be expend to represent other objects such as images, captions and inline figures.

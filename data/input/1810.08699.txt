@@ -1,0 +1,97 @@
+Introduction
+
+Named entity recognition is an important task of natural language processing, featuring in many popular text processing toolkits. This area of natural language processing has been actively studied in the latest decades and the advent of deep learning reinvigorated the research on more effective and accurate models. However, most of existing approaches require large annotated corpora. To the best of our knowledge, no such work has been done for the Armenian language, and in this work we address several problems, including the creation of a corpus for training machine learning models, the development of gold-standard test corpus and evaluation of the effectiveness of established approaches for the Armenian language.
+
+Considering the cost of creating manually annotated named entity corpus, we focused on alternative approaches. Lack of named entity corpora is a common problem for many languages, thus bringing the attention of many researchers around the globe. Projection based transfer schemes have been shown to be very effective (e.g. BIBREF0 , BIBREF1 , BIBREF2 ), using resource-rich language's corpora to generate annotated data for the low-resource language. In this approach, the annotations of high-resource language are projected over the corresponding tokens of the parallel low-resource language's texts. This strategy can be applied for language pairs that have parallel corpora. However, that approach would not work for Armenian as we did not have access to sufficiently large parallel corpus with a resource-rich language.
+
+Another popular approach is using Wikipedia. Klesti Hoxha and Artur Baxhaku employ gazetteers extracted from Wikipedia to generate an annotated corpus for Albanian BIBREF3 , and Weber and Pötzl propose a rule-based system for German that leverages the information from Wikipedia BIBREF4 . However, the latter relies on external tools such as part-of-speech taggers, making it nonviable for the Armenian language.
+
+Nothman et al. generated a silver-standard corpus for 9 languages by extracting Wikipedia article texts with outgoing links and turning those links into named entity annotations based on the target article's type BIBREF5 . Sysoev and Andrianov used a similar approach for the Russian language BIBREF6 BIBREF7 . Based on its success for a wide range of languages, our choice fell on this model to tackle automated data generation and annotation for the Armenian language.
+
+Aside from the lack of training data, we also address the absence of a benchmark dataset of Armenian texts for named entity recognition. We propose a gold-standard corpus with manual annotation of CoNLL named entity categories: person, location, and organization BIBREF8 BIBREF9 , hoping it will be used to evaluate future named entity recognition models.
+
+Furthermore, popular entity recognition models were applied to the mentioned data in order to obtain baseline results for future research in the area. Along with the datasets, we developed GloVe BIBREF10 word embeddings to train and evaluate the deep learning models in our experiments.
+
+The contributions of this work are (i) the silver-standard training corpus, (ii) the gold-standard test corpus, (iii) GloVe word embeddings, (iv) baseline results for 3 different models on the proposed benchmark data set. All aforementioned resources are available on GitHub.
+
+Automated training corpus generation
+
+We used Sysoev and Andrianov's modification of the Nothman et al. approach to automatically generate data for training a named entity recognizer. This approach uses links between Wikipedia articles to generate sequences of named-entity annotated tokens.
+
+Dataset extraction
+
+The main steps of the dataset extraction system are described in Figure FIGREF3 .
+
+First, each Wikipedia article is assigned a named entity class (e.g. the article Քիմ Քաշքաշյան (Kim Kashkashian) is classified as PER (person), Ազգերի լիգա(League of Nations) as ORG (organization), Սիրիա(Syria) as LOC etc). One of the core differences between our approach and Nothman's system is that we do not rely on manual classification of articles and do not use inter-language links to project article classifications across languages. Instead, our classification algorithm uses only an article's Wikidata entry's first instance of label's parent subclass of labels, which are, incidentally, language independent and thus can be used for any language.
+
+Then, outgoing links in articles are assigned the article's type they are leading to. Sentences are included in the training corpus only if they contain at least one named entity and all contained capitalized words have an outgoing link to an article of known type. Since in Wikipedia articles only the first mention of each entity is linked, this approach becomes very restrictive and in order to include more sentences, additional links are inferred. This is accomplished by compiling a list of common aliases for articles corresponding to named entities, and then finding text fragments matching those aliases to assign a named entity label. An article's aliases include its title, titles of disambiguation pages with the article, and texts of links leading to the article (e.g. Լենինգրադ (Leningrad), Պետրոգրադ (Petrograd), Պետերբուրգ (Peterburg) are aliases for Սանկտ Պետերբուրգ (Saint Petersburg)). The list of aliases is compiled for all PER, ORG, LOC articles.
+
+After that, link boundaries are adjusted by removing the labels for expressions in parentheses, the text after a comma, and in some cases breaking into separate named entities if the linked text contains a comma. For example, [LOC Աբովյան (քաղաք)] (Abovyan (town)) is reworked into [LOC Աբովյան] (քաղաք).
+
+Using Wikidata to classify Wikipedia
+
+Instead of manually classifying Wikipedia articles as it was done in Nothman et al., we developed a rule-based classifier that used an article's Wikidata instance of and subclass of attributes to find the corresponding named entity type.
+
+The classification could be done using solely instance of labels, but these labels are unnecessarily specific for the task and building a mapping on it would require a more time-consuming and meticulous work. Therefore, we classified articles based on their first instance of attribute's subclass of values. Table TABREF4 displays the mapping between these values and named entity types. Using higher-level subclass of values was not an option as their values often were too general, making it impossible to derive the correct named entity category.
+
+Generated data
+
+Using the algorithm described above, we generated 7455 annotated sentences with 163247 tokens based on 20 February 2018 dump of Armenian Wikipedia.
+
+The generated data is still significantly smaller than the manually annotated corpora from CoNLL 2002 and 2003. For comparison, the train set of English CoNLL 2003 corpus contains 203621 tokens and the German one 206931, while the Spanish and Dutch corpora from CoNLL 2002 respectively 273037 and 218737 lines. The smaller size of our generated data can be attributed to the strict selection of candidate sentences as well as simply to the relatively small size of Armenian Wikipedia.
+
+The accuracy of annotation in the generated corpus heavily relies on the quality of links in Wikipedia articles. During generation, we assumed that first mentions of all named entities have an outgoing link to their article, however this was not always the case in actual source data and as a result the train set contained sentences where not all named entities are labeled. Annotation inaccuracies also stemmed from wrongly assigned link boundaries (for example, in Wikipedia article Արթուր Ուելսլի Վելինգթոն (Arthur Wellesley) there is a link to the Napoleon article with the text "է Նապոլեոնը" ("Napoleon is"), when it should be "Նապոլեոնը" ("Napoleon")). Another kind of common annotation errors occurred when a named entity appeared inside a link not targeting a LOC, ORG, or PER article (e.g. "ԱՄՆ նախագահական ընտրություններում" ("USA presidential elections") is linked to the article ԱՄՆ նախագահական ընտրություններ 2016 (United States presidential election, 2016) and as a result [LOC ԱՄՆ] (USA) is lost).
+
+Test dataset
+
+In order to evaluate the models trained on generated data, we manually annotated a named entities dataset comprising 53453 tokens and 2566 sentences selected from over 250 news texts from ilur.am. This dataset is comparable in size with the test sets of other languages (Table TABREF10 ). Included sentences are from political, sports, local and world news (Figures FIGREF8 , FIGREF9 ), covering the period between August 2012 and July 2018. The dataset provides annotations for 3 popular named entity classes: people (PER), organizations (ORG), and locations (LOC), and is released in CoNLL03 format with IOB tagging scheme. Tokens and sentences were segmented according to the UD standards for the Armenian language BIBREF11 .
+
+During annotation, we generally relied on categories and guidelines assembled by BBN Technologies for TREC 2002 question answering track. Only named entities corresponding to BBN's person name category were tagged as PER. Those include proper names of people, including fictional people, first and last names, family names, unique nicknames. Similarly, organization name categories, including company names, government agencies, educational and academic institutions, sports clubs, musical ensembles and other groups, hospitals, museums, newspaper names, were marked as ORG. However, unlike BBN, we did not mark adjectival forms of organization names as named entities. BBN's gpe name, facility name, location name categories were combined and annotated as LOC.
+
+We ignored entities of other categories (e.g. works of art, law, or events), including those cases where an ORG, LOC or PER entity was inside an entity of extraneous type (e.g. ՀՀ (RA) in ՀՀ Քրեական Օրենսգիրք (RA Criminal Code) was not annotated as LOC).
+
+Quotation marks around a named entity were not annotated unless those quotations were a part of that entity's full official name (e.g. «Նաիրիտ գործարան» ՓԲԸ ("Nairit Plant" CJSC)).
+
+Depending on context, metonyms such as Կրեմլ (Kremlin), Բաղրամյան 26 (Baghramyan 26) were annotated as ORG when referring to respective government agencies. Likewise, country or city names were also tagged as ORG when referring to sports teams representing them.
+
+Word embeddings
+
+Apart from the datasets, we also developed word embeddings for the Armenian language, which we used in our experiments to train and evaluate named entity recognition algorithms. Considering their ability to capture semantic regularities, we used GloVe to train word embeddings. We assembled a dataset of Armenian texts containing 79 million tokens from the articles of Armenian Wikipedia, The Armenian Soviet Encyclopedia, a subcorpus of Eastern Armenian National Corpus BIBREF12 , over a dozen Armenian news websites and blogs. Included texts covered topics such as economics, politics, weather forecast, IT, law, society and politics, coming from non-fiction as well as fiction genres.
+
+Similar to the original embeddings published for the English language, we release 50-, 100-, 200- and 300-dimensional word vectors for Armenian with a vocabulary size of 400000. Before training, all the words in the dataset were lowercased. For the final models we used the following training hyperparameters: 15 window size and 20 training epochs.
+
+Experiments
+
+In this section we describe a number of experiments targeted to compare the performance of popular named entity recognition algorithms on our data. We trained and evaluated Stanford NER, spaCy 2.0, and a recurrent model similar to BIBREF13 , BIBREF14 that uses bidirectional LSTM cells for character-based feature extraction and CRF, described in Guillaume Genthial's Sequence Tagging with Tensorflow blog post BIBREF15 .
+
+Models
+
+Stanford NER is conditional random fields (CRF) classifier based on lexical and contextual features such as the current word, character-level n-grams of up to length 6 at its beginning and the end, previous and next words, word shape and sequence features BIBREF16 .
+
+spaCy 2.0 uses a CNN-based transition system for named entity recognition. For each token, a Bloom embedding is calculated based on its lowercase form, prefix, suffix and shape, then using residual CNNs, a contextual representation of that token is extracted that potentially draws information from up to 4 tokens from each side BIBREF17 . Each update of the transition system's configuration is a classification task that uses the contextual representation of the top token on the stack, preceding and succeeding tokens, first two tokens of the buffer, and their leftmost, second leftmost, rightmost, second rightmost children. The valid transition with the highest score is applied to the system. This approach reportedly performs within 1% of the current state-of-the-art for English . In our experiments, we tried out 50-, 100-, 200- and 300-dimensional pre-trained GloVe embeddings. Due to time constraints, we did not tune the rest of hyperparameters and used their default values.
+
+The main model that we focused on was the recurrent model with a CRF top layer, and the above-mentioned methods served mostly as baselines. The distinctive feature of this approach is the way contextual word embeddings are formed. For each token separately, to capture its word shape features, character-based representation is extracted using a bidirectional LSTM BIBREF18 . This representation gets concatenated with a distributional word vector such as GloVe, forming an intermediate word embedding. Using another bidirectional LSTM cell on these intermediate word embeddings, the contextual representation of tokens is obtained (Figure FIGREF17 ). Finally, a CRF layer labels the sequence of these contextual representations. In our experiments, we used Guillaume Genthial's implementation of the algorithm. We set the size of character-based biLSTM to 100 and the size of second biLSTM network to 300.
+
+Evaluation
+
+Experiments were carried out using IOB tagging scheme, with a total of 7 class tags: O, B-PER, I-PER, B-LOC, I-LOC, B-ORG, I-ORG.
+
+We randomly selected 80% of generated annotated sentences for training and used the other 20% as a development set. The models with the best F1 score on the development set were tested on the manually annotated gold dataset.
+
+Discussion
+
+Table TABREF19 shows the average scores of evaluated models. The highest F1 score was achieved by the recurrent model using a batch size of 8 and Adam optimizer with an initial learning rate of 0.001. Updating word embeddings during training also noticeably improved the performance. GloVe word vector models of four different sizes (50, 100, 200, and 300) were tested, with vectors of size 50 producing the best results (Table TABREF20 ).
+
+For spaCy 2.0 named entity recognizer, the same word embedding models were tested. However, in this case the performance of 200-dimensional embeddings was highest (Table TABREF21 ). Unsurprisingly, both deep learning models outperformed the feature-based Stanford recognizer in recall, the latter however demonstrated noticeably higher precision.
+
+It is clear that the development set of automatically generated examples was not an ideal indicator of models' performance on gold-standard test set. Higher development set scores often led to lower test scores as seen in the evaluation results for spaCy 2.0 and Char-biLSTM+biLSTM+CRF (Tables TABREF21 and TABREF20 ). Analysis of errors on the development set revealed that many were caused by the incompleteness of annotations, when named entity recognizers correctly predicted entities that were absent from annotations (e.g. [ԽՍՀՄ-ի LOC] (USSR's), [Դինամոն ORG] (the_Dinamo), [Պիրենեյան թերակղզու LOC] (Iberian Peninsula's) etc). Similarly, the recognizers often correctly ignored non-entities that are incorrectly labeled in data (e.g. [օսմանների PER], [կոնսերվատորիան ORG] etc).
+
+Generally, tested models demonstrated relatively high precision of recognizing tokens that started named entities, but failed to do so with descriptor words for organizations and, to a certain degree, locations. The confusion matrix for one of the trained recurrent models illustrates that difference (Table TABREF22 ). This can be partly attributed to the quality of generated data: descriptor words are sometimes superfluously labeled (e.g. [Հավայան կղզիների տեղաբնիկները LOC] (the indigenous people of Hawaii)), which is likely caused by the inconsistent style of linking in Armenian Wikipedia (in the article ԱՄՆ մշակույթ (Culture of the United States), its linked text fragment "Հավայան կղզիների տեղաբնիկները" ("the indigenous people of Hawaii") leads to the article Հավայան կղզիներ(Hawaii)).
+
+Conclusion
+
+We release two named-entity annotated datasets for the Armenian language: a silver-standard corpus for training NER models, and a gold-standard corpus for testing. It is worth to underline the importance of the latter corpus, as we aim it to serve as a benchmark for future named entity recognition systems designed for the Armenian language. Along with the corpora, we publish GloVe word vector models trained on a collection of Armenian texts.
+
+Additionally, to establish the applicability of Wikipedia-based approaches for the Armenian language, we provide evaluation results for 3 different named entity recognition systems trained and tested on our datasets. The results reinforce the ability of deep learning approaches in achieving relatively high recall values for this specific task, as well as the power of using character-extracted embeddings alongside conventional word embeddings.
+
+There are several avenues of future work. Since Nothman et al. 2013, more efficient methods of exploiting Wikipedia have been proposed, namely WiNER BIBREF19 , which could help increase both the quantity and quality of the training corpus. Another potential area of work is the further enrichment of the benchmark test set with additional annotation of other classes such as MISC or more fine-grained types (e.g. CITY, COUNTRY, REGION etc instead of LOC).

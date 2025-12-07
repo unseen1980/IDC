@@ -1,0 +1,103 @@
+Introduction
+
+Simplified language is a variety of standard language characterized by reduced lexical and syntactic complexity, the addition of explanations for difficult concepts, and clearly structured layout. Among the target groups of simplified language commonly mentioned are persons with cognitive impairment or learning disabilities, prelingually deaf persons, functionally illiterate persons, and foreign language learners BIBREF0.
+
+Two natural language processing tasks deal with the concept of simplified language: automatic readability assessment and automatic text simplification. Readability assessment refers to the process of determining the level of difficulty of a text, e.g., along readability measures, school grades, or levels of the Common European Framework of Reference for Languages (CEFR) BIBREF1. Readability measures, in their traditional form, take into account only surface features. For example, the Flesch Reading Ease Score BIBREF2 measures the length of words (in syllables) and sentences (in words). While readability has been shown to correlate with such features to some extent BIBREF3, a consensus has emerged according to which they are not sufficient to account for all of the complexity inherent in a text. As [p. 2618]kauchak-et-al-2014 state, “the usability of readability formulas is limited and there is little evidence that the output of these tools directly results in improved understanding by readers”. Recently, more sophisticated models employing (deeper) linguistic features such as lexical, semantic, morphological, morphosyntactic, syntactic, pragmatic, discourse, psycholinguistic, and language model features have been proposed BIBREF4, BIBREF5, BIBREF6, BIBREF7, BIBREF8.
+
+Automatic text simplification was initiated in the late 1990s BIBREF9, BIBREF10 and since then has been approached by means of rule-based and statistical methods. As part of a rule-based approach, the operations carried out typically include replacing complex lexical and syntactic units by simpler ones. A statistical approach generally conceptualizes the simplification task as one of converting a standard-language into a simplified-language text using machine translation. nisioi-et-al-2017 introduced neural machine translation to automatic text simplification. Research on automatic text simplification is comparatively widespread for languages such as English, Swedish, Spanish, and Brazilian Portuguese. To the authors' knowledge, no productive system exists for German. suter-2015, suter-et-al-2016 presented a prototype of a rule-based system for German.
+
+Machine learning approaches to both readability assessment and text simplification rely on data systematically prepared in the form of corpora. Specifically, for automatic text simplification via machine translation, pairs of standard-language/simplified-language texts aligned at the sentence level (i.e., parallel corpora) are needed.
+
+The paper at hand introduces a corpus developed for use in automatic readability assessment and automatic text simplification of German. The focus of this publication is on representing information that is valuable for these tasks but that hitherto has largely been ignored in machine learning approaches centering around simplified language, specifically, text structure (e.g., paragraphs, lines), typography (e.g., font type, font style), and image (content, position, and dimensions) information. The importance of considering such information has repeatedly been asserted theoretically BIBREF11, BIBREF12, BIBREF0. The remainder of this paper is structured as follows: Section SECREF2 presents previous corpora used for automatic readability assessment and text simplification. Section SECREF3 describes our corpus, introducing its novel aspects and presenting the primary data (Section SECREF7), the metadata (Section SECREF10), the secondary data (Section SECREF28), the profile (Section SECREF35), and the results of machine learning experiments carried out on the corpus (Section SECREF37).
+
+Previous Corpora for Automatic Readability Assessment and Automatic Text Simplification
+
+A number of corpora for use in automatic readability assessment and automatic text simplification exist. The most well-known example is the Parallel Wikipedia Simplification Corpus (PWKP) compiled from parallel articles of the English Wikipedia and Simple English Wikipedia BIBREF13 and consisting of around 108,000 sentence pairs. The corpus profile is shown in Table TABREF2. While the corpus represents the largest dataset involving simplified language to date, its application has been criticized for various reasons BIBREF15, BIBREF14, BIBREF16; among these, the fact that Simple English Wikipedia articles are not necessarily direct translations of articles from the English Wikipedia stands out. hwang-et-al-2015 provided an updated version of the corpus that includes a total of 280,000 full and partial matches between the two Wikipedia versions. Another frequently used data collection for English is the Newsela Corpus BIBREF14 consisting of 1,130 news articles, each simplified into four school grade levels by professional editors. Table TABREF3 shows the profile of the Newsela Corpus. The table obviates that the difference in vocabulary size between the English and the simplified English side of the PWKP Corpus amounts to only 18%, while the corresponding number for the English side and the level representing the highest amount of simplification in the Newsela Corpus (Simple-4) is 50.8%. Vocabulary size as an indicator of lexical richness is generally taken to correlate positively with complexity BIBREF17.
+
+gasperin-et-al-2010 compiled the PorSimples Corpus consisting of Brazilian Portuguese texts (2,116 sentences), each with a natural and a strong simplification, resulting in around 4,500 aligned sentences. drndarevic-saggion-2012, bott-et-al-2012, bott-saggion-2012 produced the Simplext Corpus consisting of 200 Spanish/simplified Spanish document pairs, amounting to a total of 1,149 (Spanish)/1,808 (simplified Spanish) sentences (approximately 1,000 aligned sentences).
+
+klaper-ebling-volk-2013 created the first parallel corpus for German/simplified German, consisting of 256 parallel texts downloaded from the web (approximately 70,000 tokens).
+
+Building a Corpus for Automatic Readability Assessment and Automatic Text Simplification of German
+
+Section SECREF2 demonstrated that the only corpus containing simplified German available is that of klaper-ebling-volk-2013. Since its creation, a number of legal and political developments have spurred the availability of data in simplified German. Among these developments is the introduction of a set of regulations for accessible information technology (Barrierefreie-Informationstechnik-Verordnung, BITV 2.0) in Germany and the ratification of the United Nations Convention on the Rights of Persons with Disabilities (CRPD) in Switzerland. The paper at hand introduces a corpus that represents an enhancement of the corpus of klaper-ebling-volk-2013 in the following ways:
+
+The corpus contains more parallel data.
+
+The corpus additionally contains monolingual-only data (simplified German).
+
+The corpus newly contains information on text structure, typography, and images.
+
+The simplified German side of the parallel data together with the monolingual-only data can be used for automatic readability assessment. The parallel data in the corpus is useful both for deriving rules for a rule-based text simplification system in a data-driven manner and for training a data-driven machine translation system. A data augmentation technique such as back-translation BIBREF18 can be applied to the monolingual-only data to arrive at additional (synthetic) parallel data.
+
+Building a Corpus for Automatic Readability Assessment and Automatic Text Simplification of German ::: Primary Data
+
+The corpus contains PDFs and webpages collected from web sources in Germany, Austria, and Switzerland at the end of 2018/beginning of 2019. The web sources mostly consist of websites of governments, specialised institutions, translation agencies, and non-profit organisations (92 different domains). The documents cover a range of topics, such as politics (e.g., instructions for voting), health (e.g., what to do in case of pregnancy), and culture (e.g., introduction to art museums).
+
+For the webpages, a static dump of all documents was created. Following this, the documents were manually checked to verify the language. The main content was subsequently extracted, i.e., HTML markup and boilerplate removed using the Beautiful Soup library for Python. Information on text structure (e.g., paragraphs, lines) and typography (e.g., boldface, italics) was retained. Similarly, image information (content, position, and dimensions of an image) was preserved.
+
+For PDFs, the PDFlib Text and Image Extraction Toolkit (TET) was used to extract the plain text and record information on text structure, typography, and images. The toolkit produces output in an XML format (TETML).
+
+Building a Corpus for Automatic Readability Assessment and Automatic Text Simplification of German ::: Metadata
+
+Metadata was collected automatically from the HTML (webpages) and TETML (PDFs) files, complemented manually, and recorded in the Open Language Archives Community (OLAC) Standard. OLAC is based on a reduced version of the Dublin Core Metadata Element Set (DCMES). Of the 15 elements of this “Simple Dublin Core” set, the following 12 were actively used along with controlled vocabularies of OLAC and Dublin Core:
+
+title: title of the document, with the language specified as the value of an xml:lang attribute and alternatives to the original title (e.g., translations) stored as dcterms:alternative (cf. Figure FIGREF11 for an example)
+
+contributor: all person entities linked to the creation of a document, with an olac:code attribute with values from the OLAC role vocabulary used to further specify the role of the contributor, e.g., author, editor, publisher, or translator
+
+date: date mentioned in the metadata of the HTML or PDF source or, for news and blog articles, date mentioned in the body of the text, in W3C date and time format
+
+description: value of the description in the metadata of an HTML document or list of sections of a PDF document, using the Dublin Core qualifier TableOfContents
+
+format: distinction between the Internet Media Types (MIME types) text/html (for webpages) and application/pdf (for PDFs)
+
+identifier: URL of the document or International Standard Book Number (ISBN) for books or brochures
+
+language: language of the document as value of the attribute olac:code (i.e., de, as conforming to ISO 639), with the CEFR level as optional element content
+
+publisher: organization or person that made the document available
+
+relation: used to establish a link between documents in German and simplified German for the parallel part of the corpus, using the Dublin Core qualifiers hasVersion (for the German text) and isVersionOf (for the simplified German text)
+
+rights: any piece of information about the rights of a document, as far as available in the source
+
+source: source document, i.e., HTML for web documents and TETML for PDFs
+
+type: nature or genre of the content of the document, which, in accordance with the DCMI Type Vocabulary, is Text in all cases and additionally StillImage in cases where a document also contains images. Additionally, the linguistic type is specified according to the OLAC Linguistic Data Type Vocabulary, as either primary_text (applies to most documents) or lexicon in cases where a document represents an entry of a simplified language vocabulary
+
+The elements coverage (to denote the spatial or temporal scope of the content of a resource), creator (to denote the author of a text, see contributor above), and subject (to denote the topic of the document content) were not used.
+
+Figure FIGREF11 shows an example of OLAC metadata. The source document described with this metadata record is a PDF structured into chapters, with text corresponding to the CEFR level A2 and images. Metadata in OLAC can be converted into the metadata standard of CLARIN (a European research infrastructure for language resources and technology), the Component MetaData Infrastructure (CMDI). The CMDI standard was chosen since it is the supported metadata version of CLARIN, which is specifically popular in German-speaking countries.
+
+Information on the language level of a simplified German text (typically A1, A2, or B1) is particularly valuable, as it allows for conducting automatic readability assessment and graded automatic text simplification experiments on the data. 52 websites and 233 PDFs (amounting to approximately 26,000 sentences) have an explicit language level label.
+
+Building a Corpus for Automatic Readability Assessment and Automatic Text Simplification of German ::: Secondary Data
+
+Annotations were added in the Text Corpus Format by WebLicht (TCF) developed as part of CLARIN. TCF supports standoff annotation, which allows for representation of annotations with conflicting hierarchies. TCF does not assign a separate file for each annotation layer; instead, the source text and all annotation layers are stored jointly in a single file. A token layer acts as the key element to which all other annotation layers are linked.
+
+The following types of annotations were added: text structure, fonts, images, tokens, parts of speech, morphological units, lemmas, sentences, and dependency parses. TCF does not readily accommodate the incorporation of all of these types of information. We therefore extended the format in the following ways:
+
+Information on the font type and font style (e.g., italics, bold print) of a token and its position on the physical page (for PDFs only) was specified as attributes to the token elements of the tokens layer (cf. Figure FIGREF34 for an example)
+
+Information on physical page segmentation (for PDFs only), paragraph segmentation, and line segmentation was added as part of a textspan element in the textstructure layer
+
+A separate images layer was introduced to hold image elements that take as attributes the x and y coordinates of the images, their dimensions (width and height), and the number of the page on which they occur
+
+A separate fonts layer was introduced to preserve detailed information on the font configurations referenced in the tokens layer
+
+Linguistic annotation was added automatically using the ParZu dependency parser for German BIBREF19 (for tokens and dependency parses), the NLTK toolkit BIBREF20 (for sentences), the TreeTagger BIBREF21 (for part-of-speech tags and lemmas), and Zmorge BIBREF22 (for morphological units). Figure FIGREF34 shows a sample corpus annotation. Together, the metadata shown in Figure FIGREF11 and the annotations presented in Figure FIGREF34 constitute a complete TCF file.
+
+Building a Corpus for Automatic Readability Assessment and Automatic Text Simplification of German ::: Corpus Profile
+
+The resulting corpus contains 6,217 documents (5,461 monolingual documents plus 378 documents for each side of the parallel data). Table TABREF36 shows the corpus profile. The monolingual-only documents on average contain fewer sentences than the simplified German side of the parallel data (average document length in sentences 31.64 vs. 55.75). The average sentence length is almost equal (approx. 11 tokens). Hence, the monolingual-only texts are shorter than the simplified German texts in the parallel data. Compared to their German counterparts, the simplified German texts in the parallel data have clearly undergone a process of lexical simplification: The vocabulary is smaller by 51% (33,384 vs. 16,352 types), which is comparable to the rate of reduction reported in Section SECREF2 for the Newsela Corpus (50.8%).
+
+Building a Corpus for Automatic Readability Assessment and Automatic Text Simplification of German ::: Empirical validation of the corpus
+
+battisti-2019 applied unsupervised machine learning techniques to the simplified German texts of the corpus presented in this paper with the aim of investigating evidence of multiple complexity levels. While the detailed results are beyond the scope of this paper, the author found features based on the structural information that is a unique property of this corpus (e.g., number of images, number of paragraphs, number of lines, number of words of a specific font type, and adherence to a one-sentence-per-line rule) to be predictive of the level of difficulty of a simplified German text. To our knowledge, this is the first study to deliver empirical proof of the relevance of such features.
+
+Conclusion and Outlook
+
+We have introduced a corpus compiled for use in automatic readability assessment and automatic text simplification of German. While such tasks have been addressed for other languages, research on German is still scarce. The features exploited as part of machine learning approaches to readability assessment so far typically include surface and/or (deeper) linguistic features. The corpus presented in this paper additionally contains information on text structure, typography, and images. These features have been shown to be indicative of simple vs. complex texts both theoretically and, using the corpus described in this paper, empirically.
+
+Information on text structure, typography, and images can also be leveraged as part of a neural machine translation approach to text simplification. A set of parallel documents used in machine translation additionally requires sentence alignments, which are still missing from our corpus. Hence, as a next step, we will include such information using the Customized Alignment for Text Simplification (CATS) tool BIBREF23.

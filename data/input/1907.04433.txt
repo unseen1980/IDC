@@ -1,0 +1,41 @@
+Introduction
+
+Deep learning, a sub-field of machine learning research, has driven the rapid progress in artificial intelligence research, leading to astonishing breakthroughs on long-standing problems in a plethora of fields such as computer vision and natural language processing. Tools powered by deep learning are changing the way movies are made, diseases are diagnosed, and play a growing role in understanding and communicating with humans.
+
+Such development is made possible by deep learning frameworks, such as Caffe BIBREF0 , Chainer BIBREF1 , CNTK BIBREF2 , Apache (incubating) MXNet BIBREF3 , PyTorch BIBREF4 , TensorFlow BIBREF5 , and Theano BIBREF6 . These frameworks have been crucial in disseminating ideas in the field. Specifically, imperative tools, arguably spearheaded by Chainer, are easy to learn, read, and debug. Such benefits make imperative programming interface quickly adopted by the Gluon API of MXNet (while can be seamlessly switched to symbolic programming for high performance), PyTorch, and TensorFlow Eager.
+
+Leveraging the imperative Gluon API of MXNet, we design and develop the GluonCV and GluonNLP (referred to as GluonCV/NLP hereinafter) toolkits for deep learning in computer vision and natural language processing. To the best of our knowledge, GluonCV/NLP are the first open source toolkits for deep learning in both computer vision and natural language processing that simultaneously i) provide modular APIs to allow customization by re-using efficient building blocks; ii) provide pre-trained state-of-the-art models, training scripts, and training logs to enable fast prototyping and promote reproducible research; iii) leverage the MXNet ecosystem so that models can be deployed in a wide variety of programming languages including C++, Clojure, Java, Julia, Perl, Python, R, and Scala.
+
+Design and Features
+
+In the following, we describe the design and features of GluonCV/NLP.
+
+Modular APIs
+
+GluonCV/NLP provide access to modular APIs to allow users to customize their model design, training, and inference by re-using efficient components across different models. Such common components include (but are not limited to) data processing utilities, models with individual components, initialization methods, and loss functions.
+
+To elucidate how the modular API facilitates efficient implementation, let us take the data API of GluonCV/NLP as an example, which is used to build efficient data pipelines with popular benchmark data sets or those supplied by users. In computer vision and natural language processing tasks, inputs or labels often come in with different shapes, such as images with a varying number of objects and sentences of different lengths. Thus, the data API provides a collection of utilities to sample inputs or labels then transform them into mini-batches to be efficiently computed. Besides, users can access a wide range of popular data sets via the data API, including (but are not limited to) ImageNet of image classification, VOC of object detection, COCO of instance segmentation, SQuAD of question answering, and SST of sentiment analysis.
+
+Model Zoo
+
+Building upon those modular APIs, GluonCV/NLP provide pre-trained state-of-the-art models, training scripts, and training logs via the model zoo to enable fast prototyping and promote reproducible research. As of the time of writing, GluonCV/NLP have provided over 100 models for common computer vision and natural language processing tasks, such as image classification, object detection, semantic segmentation, instance segmentation, pose estimation, word embedding, language model, machine translation, sentiment analysis, natural language inference, dependency parsing, and question answering.
+
+Leveraging the MXNet Ecosystem
+
+GluonCV/NLP have benefitted from the MXNet ecosystem through use of MXNet. At the lowest level, MXNet provides high-performance C++ implementations of operators that are leveraged by GluonCV/NLP; thus, improvements in low-level components of MXNet often result in performance gains in GluonCV/NLP. Same as any other model implemented with MXNet, GluonCV/NLP can be used to train models on CPU, GPU (single or multiple), and multiple machines. In sharp contrast to building upon other deep learning frameworks, through the unique hybridizing mechanism by MXNet BIBREF7 , usually GluonCV/NLP models can be deployed with no or minimal configuration in a wide spectrum of programming languages including C++, Clojure, Java, Julia, Perl, Python, R, and Scala. There are also ongoing efforts to bring more quantization (int8 and float16 inference) benefits from MXNet to GluonCV/NLP to further accelerate model inference.
+
+The documentation https://gluon-cv.mxnet.io/ and http://gluon-nlp.mxnet.io/ of GluonCV/NLP include installation instructions, contribution instructions, open source repositories, extensive API reference, and comprehensive tutorials. As another benefit of leveraging the MXNet ecosystem, the GluonCV/NLP documentation is supplemented by the interactive open source book Dive into Deep Learning (based on the Gluon API of MXNet) BIBREF7 , which provides sufficient background knowledge about GluonCV/NLP tasks, models, and building blocks. Notably, some users of Dive into Deep Learning have later become contributors of GluonCV/NLP.
+
+Requirement, Availability, and Community
+
+GluonCV/NLP are implemented in Python and are available for systems running Linux, macOS, and Windows since Python is platform agnostic. The minimum and open source package (e.g., MXNet) requirements are specified in the documentation. As of the time of writing, GluonCV/NLP have reached version 0.6 and 0.4 respectively, and have been open sourced under the Apache 2.0 license. Since the initial release of the source code in April 2018, GluonCV/NLP have attracted 100 contributors worldwide. Models of GluonCV/NLP have been downloaded for more than 1.6 million times in fewer than 10 months.
+
+Performance
+
+We demonstrate the performance of GluonCV/NLP models in various computer vision and natural language processing tasks. Specifically, we evaluate popular or state-of-the-art models on standard benchmark data sets. In the experiments, we compare model performance between GluonCV/NLP and other open source implementations with Caffe, Caffe2, Theano, and TensorFlow, including ResNet BIBREF8 and MobileNet BIBREF9 for image classification (ImageNet), Faster R-CNN BIBREF10 for object detection (COCO), Mask R-CNN BIBREF11 for instance segmentation, Simple Pose BIBREF12 for pose estimation (COCO), textCNN BIBREF13 for sentiment analysis (TREC), and BERT BIBREF14 for question answering (SQuAD 1.1), sentiment analysis (SST-2), natural langauge inference (MNLI-m), and paraphrasing (MRPC). Table TABREF5 shows that the GluonCV/GluonNLP implementation matches or outperforms the compared open source implementation for the same model evaluated on the same data set.
+
+Conclusion
+
+GluonCV/NLP provide modular APIs and the model zoo to allow users to rapidly try out new ideas or develop downstream applications in computer vision and natural language processing. GluonCV/NLP are in active development and our future works include further enriching the API and the model zoo, and supporting deployment in more scenarios.
+
+We would like to thank all the contributors of GluonCV and GluonNLP (the git log command can be used to list all the contributors). Specifically, we thank Xiaoting He, Heewon Jeon, Kangjian Wu, and Luyu Xia for providing part of results in Table TABREF5 . We would also like to thank the entire MXNet community for their foundational contributions.

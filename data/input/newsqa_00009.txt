@@ -1,0 +1,77 @@
+(AOL Autos) -- Automotive expert Tom Torbjornsen answers a question about how to diagnose an exhaust problem and what to do about it.
+
+Dear Tom, Smoke is coming out of the tailpipe of my 2002 Chrysler Sebring with 90,000 miles.
+
+Is this a big problem?
+
+I have to put a quart of oil a week in the engine.
+
+What should I do?
+
+-- Sally, New York Sally, Generally, engines burn oil due to a few reasons: bad valve seals, worn valve guides, pressurized crankcase (oil pan) due to a clogged PCV valve or breather system, and blow-by from worn piston rings.
+
+Bad valve seals: The valves are located in the cylinder head above the combustion chamber.
+
+Oil is pumped at 40 to 80 PSI (pounds/square inch) of pressure into the top of the head, lubricating the valve-train.
+
+The valves have seals to stop the flow of oil down into the engine when the valve is open.
+
+If the seals fail then oil is allowed to flow down into the combustion chamber and is burned.
+
+Worn valve guides: A small cylindrical chamber called a valve guide does just what its name says ... it guides the valves.
+
+These guides wear out over time causing eccentricity (slop).
+
+The excess gap that forms allows oil to flow down the valve stem into the combustion chamber to be burned.
+
+Normally the valve seal stops this flow.
+
+However, in this case the gap is too great for the seal to work.
+
+AOL Autos: Should you use synthetic motor oil?
+
+Pressurized crankcase due to clogged PCV or breather system: Your car's engine is a giant air pump, consequently it must breathe.
+
+The PCV (Positive Crankcase Ventilation) system allows the engine to exhaust the excess pressure buildup (which is a natural phenomenon of the internal combustion engine).
+
+Carbon is a by-product of an engine and can build up in the PCV system, clogging the breathing passages.
+
+This in turn pressurizes the oil pan and pushes oil up into the fuel delivery system where it is fed into the engine and burned.
+
+AOL Autos: Do I need to replace my air filter?
+
+Blow-by from worn piston rings: The pistons in your car's engine have seals around them in the form of rings.
+
+These rings have two functions: (1) they seal the combustion chamber so that the power developed from the firing of the cylinder is not lost.
+
+(2) They provide vital lubrication to the cylinder walls.
+
+When the rings wear out, the pressure from combustion reverses down into the oil pan, pressurizing it, and forcing oil into the valve covers.
+
+From there it goes through the breather system, back into the fuel delivery system, and into the engine to be burned.
+
+I have to put a quart of oil a week in the engine.
+
+Is this a big problem?
+
+It's hard to say without performing some diagnostics on the engine.
+
+A quart of oil a week is excessive.
+
+It could be due to a plugged PCV or excessive internal engine wear.
+
+Take the car into the shop for engine diagnostics.
+
+My guess is that the tech will perform a compression test along with a cylinder leak down test after he/she determines if the PCV system is open.
+
+During these tests the tech tries to determine if there is loss of engine compression, blow-by, or excessive oil consumption due to ring wear.
+
+If excessive ring wear is discovered then further engine teardown will be necessary to determine if the engine needs to be rebuilt or replaced.
+
+AOL Autos: How often should you change your oil What is the difference between blue and white smoke?
+
+The engine can emit different colors of smoke: Blue smoke: Blue typically means that engine oil is being burned in the combustion chamber.
+
+In rare cases, when a vehicle is equipped with a transmission that uses a device called a vacuum modulator valve (to soften shifts between gears according to engine vacuum) the diaphragm can break inside the valve and cause transmission fluid to be sucked into the engine via the vacuum line feeding the valve and burn.
+
+AOL

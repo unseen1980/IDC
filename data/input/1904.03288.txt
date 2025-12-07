@@ -1,0 +1,85 @@
+Introduction
+
+Conventional automatic speech recognition (ASR) systems typically consist of several independently learned components: an acoustic model to predict context-dependent sub-phoneme states (senones) from audio, a graph structure to map senones to phonemes, and a pronunciation model to map phonemes to words. Hybrid systems combine hidden Markov models to model state dependencies with neural networks to predict states BIBREF0 , BIBREF1 , BIBREF2 , BIBREF3 . Newer approaches such as end-to-end (E2E) systems reduce the overall complexity of the final system.
+
+Our research builds on prior work that has explored using time-delay neural networks (TDNN), other forms of convolutional neural networks, and Connectionist Temporal Classification (CTC) loss BIBREF4 , BIBREF5 , BIBREF6 . We took inspiration from wav2letter BIBREF6 , which uses 1D-convolution layers. Liptchinsky et al. BIBREF7 improved wav2letter by increasing the model depth to 19 convolutional layers and adding Gated Linear Units (GLU) BIBREF8 , weight normalization BIBREF9 and dropout.
+
+By building a deeper and larger capacity network, we aim to demonstrate that we can match or outperform non end-to-end models on the LibriSpeech and 2000hr Fisher+Switchboard tasks. Like wav2letter, our architecture, Jasper, uses a stack of 1D-convolution layers, but with ReLU and batch normalization BIBREF10 . We find that ReLU and batch normalization outperform other activation and normalization schemes that we tested for convolutional ASR. As a result, Jasper's architecture contains only 1D convolution, batch normalization, ReLU, and dropout layers – operators highly optimized for training and inference on GPUs.
+
+It is possible to increase the capacity of the Jasper model by stacking these operations. Our largest version uses 54 convolutional layers (333M parameters), while our small model uses 34 (201M parameters). We use residual connections to enable this level of depth. We investigate a number of residual options and propose a new residual connection topology we call Dense Residual (DR).
+
+Integrating our best acoustic model with a Transformer-XL BIBREF11 language model allows us to obtain new state-of-the-art (SOTA) results on LibriSpeech BIBREF12 test-clean of 2.95% WER and SOTA results among end-to-end models on LibriSpeech test-other. We show competitive results on Wall Street Journal (WSJ), and 2000hr Fisher+Switchboard (F+S). Using only greedy decoding without a language model we achieve 3.86% WER on LibriSpeech test-clean.
+
+This paper makes the following contributions:
+
+Jasper Architecture
+
+Jasper is a family of end-to-end ASR models that replace acoustic and pronunciation models with a convolutional neural network. Jasper uses mel-filterbank features calculated from 20ms windows with a 10ms overlap, and outputs a probability distribution over characters per frame. Jasper has a block architecture: a Jasper INLINEFORM0 x INLINEFORM1 model has INLINEFORM2 blocks, each with INLINEFORM3 sub-blocks. Each sub-block applies the following operations: a 1D-convolution, batch norm, ReLU, and dropout. All sub-blocks in a block have the same number of output channels.
+
+Each block input is connected directly into the last sub-block via a residual connection. The residual connection is first projected through a 1x1 convolution to account for different numbers of input and output channels, then through a batch norm layer. The output of this batch norm layer is added to the output of the batch norm layer in the last sub-block. The result of this sum is passed through the activation function and dropout to produce the output of the sub-block.
+
+The sub-block architecture of Jasper was designed to facilitate fast GPU inference. Each sub-block can be fused into a single GPU kernel: dropout is not used at inference-time and is eliminated, batch norm can be fused with the preceding convolution, ReLU clamps the result, and residual summation can be treated as a modified bias term in this fused operation.
+
+All Jasper models have four additional convolutional blocks: one pre-processing and three post-processing. See Figure FIGREF7 and Table TABREF8 for details.
+
+We also build a variant of Jasper, Jasper Dense Residual (DR). Jasper DR follows DenseNet BIBREF15 and DenseRNet BIBREF16 , but instead of having dense connections within a block, the output of a convolution block is added to the inputs of all the following blocks. While DenseNet and DenseRNet concatenates the outputs of different layers, Jasper DR adds them in the same way that residuals are added in ResNet. As explained below, we find addition to be as effective as concatenation.
+
+Normalization and Activation
+
+In our study, we evaluate performance of models with:
+
+3 types of normalization: batch norm BIBREF10 , weight norm BIBREF9 , and layer norm BIBREF17
+
+3 types of rectified linear units: ReLU, clipped ReLU (cReLU), and leaky ReLU (lReLU)
+
+2 types of gated units: gated linear units (GLU) BIBREF8 , and gated activation units (GAU) BIBREF18
+
+All experiment results are shown in Table TABREF15 . We first experimented with a smaller Jasper5x3 model to pick the top 3 settings before training on larger Jasper models. We found that layer norm with GAU performed the best on the smaller model. Layer norm with ReLU and batch norm with ReLU came second and third in our tests. Using these 3, we conducted further experiments on a larger Jasper10x4. For larger models, we noticed that batch norm with ReLU outperformed other choices. Thus, leading us to decide on batch normalization and ReLU for our architecture.
+
+During batching, all sequences are padded to match the longest sequence. These padded values caused issues when using layer norm. We applied a sequence mask to exclude padding values from the mean and variance calculation. Further, we computed mean and variance over both the time dimension and channels similar to the sequence-wise normalization proposed by Laurent et al. BIBREF19 . In addition to masking layer norm, we additionally applied masking prior to the convolution operation, and masking the mean and variance calculation in batch norm. These results are shown in Table TABREF16 . Interestingly, we found that while masking before convolution gives a lower WER, using masks for both convolutions and batch norm results in worse performance.
+
+As a final note, we found that training with weight norm was very unstable leading to exploding activations.
+
+Residual Connections
+
+For models deeper than Jasper 5x3, we observe consistently that residual connections are necessary for training to converge. In addition to the simple residual and dense residual model described above, we investigated DenseNet BIBREF15 and DenseRNet BIBREF16 variants of Jasper. Both connect the outputs of each sub-block to the inputs of following sub-blocks within a block. DenseRNet, similar to Dense Residual, connects the output of each output of each block to the input of all following blocks. DenseNet and DenseRNet combine residual connections using concatenation whereas Residual and Dense Residual use addition. We found that Dense Residual and DenseRNet perform similarly with each performing better on specific subsets of LibriSpeech. We decided to use Dense Residual for subsequent experiments. The main reason is that due to concatenation, the growth factor for DenseNet and DenseRNet requires tuning for deeper models whereas Dense Residual simply just repeats a sub-blocks.
+
+Language Model
+
+A language model (LM) is a probability distribution over arbitrary symbol sequences INLINEFORM0 such that more likely sequences are assigned high probabilities. LMs are frequently used to condition beam search. During decoding, candidates are evaluated using both acoustic scores and LM scores. Traditional N-gram LMs have been augmented with neural LMs in recent work BIBREF20 , BIBREF21 , BIBREF22 .
+
+We experiment with statistical N-gram language models BIBREF23 and neural Transformer-XL BIBREF11 models. Our best results use acoustic and word-level N-gram language models to generate a candidate list using beam search with a width of 2048. Next, an external Transformer-XL LM rescores the final list. All LMs were trained on datasets independently from acoustic models. We show results with the neural LM in our Results section. We observed a strong correlation between the quality of the neural LM (measured by perplexity) and WER as shown in Figure FIGREF20 .
+
+NovoGrad
+
+For training, we use either Stochastic Gradient Descent (SGD) with momentum or our own NovoGrad, an optimizer similar to Adam BIBREF14 , except that its second moments are computed per layer instead of per weight. Compared to Adam, it reduces memory consumption and we find it to be more numerically stable.
+
+At each step INLINEFORM0 , NovoGrad computes the stochastic gradient INLINEFORM1 following the regular forward-backward pass. Then the second-order moment INLINEFORM2 is computed for each layer INLINEFORM3 similar to ND-Adam BIBREF27 : DISPLAYFORM0
+
+The second-order moment INLINEFORM0 is used to re-scale gradients INLINEFORM1 before calculating the first-order moment INLINEFORM2 : DISPLAYFORM0
+
+If L2-regularization is used, a weight decay INLINEFORM0 is added to the re-scaled gradient (as in AdamW BIBREF28 ): DISPLAYFORM0
+
+Finally, new weights are computed using the learning rate INLINEFORM0 : DISPLAYFORM0
+
+Using NovoGrad instead of SGD with momentum, we decreased the WER on dev-clean LibriSpeech from 4.00% to 3.64%, a relative improvement of 9% for Jasper DR 10x5. We will further analyze NovoGrad in forthcoming work.
+
+Results
+
+We evaluate Jasper across a number of datasets in various domains. In all experiments, we use dropout and weight decay as regularization. At training time, we use speed perturbation with fixed +/-10% BIBREF29 for LibriSpeech. For WSJ and Hub5'00, we use a random speed perturbation factor between [-10%, 10%] as each utterance is fed into the model. All models have been trained on NVIDIA DGX-1 in mixed precision BIBREF30 using OpenSeq2Seq BIBREF31 . Source code, training configurations, and pretrained models are available.
+
+Read Speech
+
+We evaluated the performance of Jasper on two read speech datasets: LibriSpeech and Wall Street Journal (WSJ). For LibriSpeech, we trained Jasper DR 10x5 using our NovoGrad optimizer for 400 epochs. We achieve SOTA performance on the test-clean subset and SOTA among end-to-end speech recognition models on test-other.
+
+We trained a smaller Jasper 10x3 model with SGD with momentum optimizer for 400 epochs on a combined WSJ dataset (80 hours): LDC93S6A (WSJ0) and LDC94S13A (WSJ1). The results are provided in Table TABREF29 .
+
+Conversational Speech
+
+We also evaluate the Jasper model's performance on a conversational English corpus. The Hub5 Year 2000 (Hub5'00) evaluation (LDC2002S09, LDC2005S13) is widely used in academia. It is divided into two subsets: Switchboard (SWB) and Callhome (CHM). The training data for both the acoustic and language models consisted of the 2000hr Fisher+Switchboard training data (LDC2004S13, LDC2005S13, LDC97S62). Jasper DR 10x5 was trained using SGD with momentum for 50 epochs. We compare to other models trained using the same data and report Hub5'00 results in Table TABREF31 .
+
+We obtain good results for SWB. However, there is work to be done to improve WER on harder tasks such as CHM.
+
+Conclusions
+
+We have presented a new family of neural architectures for end-to-end speech recognition. Inspired by wav2letter's convolutional approach, we build a deep and scalable model, which requires a well-designed residual topology, effective regularization, and a strong optimizer. As our architecture studies demonstrated, a combination of standard components leads to SOTA results on LibriSpeech and competitive results on other benchmarks. Our Jasper architecture is highly efficient for training and inference, and serves as a good baseline approach on top of which to explore more sophisticated regularization, data augmentation, loss functions, language models, and optimization strategies. We are interested to see if our approach can continue to scale to deeper models and larger datasets.

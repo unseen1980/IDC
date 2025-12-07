@@ -1,0 +1,93 @@
+Introduction
+
+Neural machine translation (NMT) emerged in the last few years as a very successful paradigm BIBREF0 , BIBREF1 , BIBREF2 , BIBREF3 . While NMT is generally more fluent than previous statistical systems, adequacy is still a major concern BIBREF4 : common mistakes include dropping source words and repeating words in the generated translation.
+
+Previous work has attempted to mitigate this problem in various ways. BIBREF5 incorporate coverage and length penalties during beam search—a simple yet limited solution, since it only affects the scores of translation hypotheses that are already in the beam. Other approaches involve architectural changes: providing coverage vectors to track the attention history BIBREF6 , BIBREF7 , using gating architectures and adaptive attention to control the amount of source context provided BIBREF8 , BIBREF9 , or adding a reconstruction loss BIBREF10 . BIBREF11 also use the notion of fertility implicitly in their proposed model. Their “fertility conditioned decoder” uses a coverage vector and an “extract gate” which are incorporated in the decoding recurrent unit, increasing the number of parameters.
+
+In this paper, we propose a different solution that does not change the overall architecture, but only the attention transformation. Namely, we replace the traditional softmax by other recently proposed transformations that either promote attention sparsity BIBREF12 or upper bound the amount of attention a word can receive BIBREF13 . The bounds are determined by the fertility values of the source words. While these transformations have given encouraging results in various NLP problems, they have never been applied to NMT, to the best of our knowledge. Furthermore, we combine these two ideas and propose a novel attention transformation, constrained sparsemax, which produces both sparse and bounded attention weights, yielding a compact and interpretable set of alignments. While being in-between soft and hard alignments (Figure FIGREF20 ), the constrained sparsemax transformation is end-to-end differentiable, hence amenable for training with gradient backpropagation.
+
+To sum up, our contributions are as follows:
+
+Preliminaries
+
+Our underlying model architecture is a standard attentional encoder-decoder BIBREF1 . Let INLINEFORM0 and INLINEFORM1 denote the source and target sentences, respectively. We use a Bi-LSTM encoder to represent the source words as a matrix INLINEFORM2 . The conditional probability of the target sentence is given as DISPLAYFORM0
+
+where INLINEFORM0 is computed by a softmax output layer that receives a decoder state INLINEFORM1 as input. This state is updated by an auto-regressive LSTM, INLINEFORM2 , where INLINEFORM3 is an input context vector. This vector is computed as INLINEFORM4 , where INLINEFORM5 is a probability distribution that represents the attention over the source words, commonly obtained as DISPLAYFORM0
+
+where INLINEFORM0 is a vector of scores. We follow BIBREF14 and define INLINEFORM1 as a bilinear transformation of encoder and decoder states, where INLINEFORM2 is a model parameter.
+
+Sparse and Constrained Attention
+
+In this work, we consider alternatives to Eq. EQREF5 . Since the softmax is strictly positive, it forces all words in the source to receive some probability mass in the resulting attention distribution, which can be wasteful. Moreover, it may happen that the decoder attends repeatedly to the same source words across time steps, causing repetitions in the generated translation, as BIBREF7 observed.
+
+With this in mind, we replace Eq. EQREF5 by INLINEFORM0 , where INLINEFORM1 is a transformation that may depend both on the scores INLINEFORM2 and on upper bounds INLINEFORM3 that limit the amount of attention that each word can receive. We consider three alternatives to softmax, described next.
+
+Fertility Bounds
+
+We experiment with three ways of setting the fertility of the source words: constant, guided, and predicted. With constant, we set the fertilities of all source words to a fixed integer value INLINEFORM0 . With guided, we train a word aligner based on IBM Model 2 (we used fast_align in our experiments, BIBREF17 ) and, for each word in the vocabulary, we set the fertilities to the maximal observed value in the training data (or 1 if no alignment was observed). With the predicted strategy, we train a separate fertility predictor model using a bi-LSTM tagger. At training time, we provide as supervision the fertility estimated by fast_align. Since our model works with fertility upper bounds and the word aligner may miss some word pairs, we found it beneficial to add a constant to this number (1 in our experiments). At test time, we use the expected fertilities according to our model.
+
+Experiments
+
+We evaluated our attention transformations on three language pairs. We focused on small datasets, as they are the most affected by coverage mistakes. We use the IWSLT 2014 corpus for De-En, the KFTT corpus for Ja-En BIBREF19 , and the WMT 2016 dataset for Ro-En. The training sets have 153,326, 329,882, and 560,767 parallel sentences, respectively. Our reason to prefer smaller datasets is that this regime is what brings more adequacy issues and demands more structural biases, hence it is a good test bed for our methods. We tokenized the data using the Moses scripts and preprocessed it with subword units BIBREF20 with a joint vocabulary and 32k merge operations. Our implementation was done on a fork of the OpenNMT-py toolkit BIBREF21 with the default parameters . We used a validation set to tune hyperparameters introduced by our model. Even though our attention implementations are CPU-based using NumPy (unlike the rest of the computation which is done on the GPU), we did not observe any noticeable slowdown using multiple devices.
+
+As baselines, we use softmax attention, as well as two recently proposed coverage models:
+
+We also experimented combining the strategies above with the sparsemax transformation.
+
+As evaluation metrics, we report tokenized BLEU, METEOR ( BIBREF22 , as well as two new metrics that we describe next to account for over and under-translation.
+
+Conclusions
+
+We proposed a new approach to address the coverage problem in NMT, by replacing the softmax attentional transformation by sparse and constrained alternatives: sparsemax, constrained softmax, and the newly proposed constrained sparsemax. For the latter, we derived efficient forward and backward propagation algorithms. By incorporating a model for fertility prediction, our attention transformations led to sparse alignments, avoiding repeated words in the translation.
+
+Acknowledgments
+
+We thank the Unbabel AI Research team for numerous discussions, and the three anonymous reviewers for their insightful comments. This work was supported by the European Research Council (ERC StG DeepSPIN 758969) and by the Fundação para a Ciência e Tecnologia through contracts UID/EEA/50008/2013, PTDC/EEI-SII/7092/2014 (LearnBig), and CMUPERI/TIC/0046/2014 (GoLocal).
+
+Proof of Proposition
+
+We provide here a detailed proof of Proposition SECREF15 .
+
+Forward Propagation
+
+The optimization problem can be written as DISPLAYFORM0
+
+The Lagrangian function is: DISPLAYFORM0
+
+To obtain the solution, we invoke the Karush-Kuhn-Tucker conditions. From the stationarity condition, we have INLINEFORM0 , which due to the primal feasibility condition implies that the solution is of the form: DISPLAYFORM0
+
+From the complementarity slackness condition, we have that INLINEFORM0 implies that INLINEFORM1 and therefore INLINEFORM2 . On the other hand, INLINEFORM3 implies INLINEFORM4 , and INLINEFORM5 implies INLINEFORM6 . Hence the solution can be written as INLINEFORM7 , where INLINEFORM8 is determined such that the distribution normalizes: DISPLAYFORM0
+
+with INLINEFORM0 and INLINEFORM1 . Note that INLINEFORM2 depends itself on the set INLINEFORM3 , a function of the solution. In § SECREF44 , we describe an algorithm that searches the value of INLINEFORM4 efficiently.
+
+Gradient Backpropagation
+
+We now turn to the problem of backpropagating the gradients through the constrained sparsemax transformation. For that, we need to compute its Jacobian matrix, i.e., the derivatives INLINEFORM0 and INLINEFORM1 for INLINEFORM2 . Let us first express INLINEFORM3 as DISPLAYFORM0
+
+with INLINEFORM0 as in Eq. EQREF37 . Note that we have INLINEFORM1 and INLINEFORM2 . Thus, we have the following: DISPLAYFORM0
+
+and DISPLAYFORM0
+
+Finally, we obtain: DISPLAYFORM0
+
+and DISPLAYFORM0
+
+where INLINEFORM0 .
+
+[t] Pardalos and Kovoor's Algorithm [1] input: INLINEFORM0 Initialize working set INLINEFORM1 Initialize set of split points: INLINEFORM2
+
+Initialize INLINEFORM0 , INLINEFORM1 , INLINEFORM2 , INLINEFORM3 . INLINEFORM4 Compute INLINEFORM5 Set INLINEFORM6 If INLINEFORM7 , set INLINEFORM8 ; if INLINEFORM9 , set INLINEFORM10 Reduce set of split points: INLINEFORM11 Update tight-sum: INLINEFORM12 Update slack-sum: INLINEFORM13 Update working set: INLINEFORM14 Define INLINEFORM15 Set INLINEFORM16 output: INLINEFORM17 .
+
+Linear-Time Evaluation
+
+Finally, we present an algorithm to solve the problem in Eq. EQREF14 in linear time.
+
+BIBREF16 describe an algorithm, reproduced here as Algorithm SECREF38 , for solving a class of singly-constrained convex quadratic problems, which can be written in the form above (where each INLINEFORM0 ): DISPLAYFORM0
+
+The solution of the problem in Eq. EQREF45 is of the form INLINEFORM0 , where INLINEFORM1 is a constant. The algorithm searches the value of this constant (which is similar to INLINEFORM2 in our problem), which lies in a particular interval of split-points (line SECREF38 ), iteratively shrinking this interval. The algorithm requires computing medians as a subroutine, which can be done in linear time BIBREF24 . The overall complexity in INLINEFORM3 BIBREF16 . The same algorithm has been used in NLP by BIBREF23 for a budgeted summarization problem.
+
+To show that this algorithm applies to the problem of evaluating INLINEFORM0 , it suffices to show that our problem in Eq. EQREF14 can be rewritten in the form of Eq. EQREF45 . This is indeed the case, if we set: DISPLAYFORM0
+
+Examples of Translations
+
+We show some examples of translations obtained for the German-English language pair with different systems. Blue highlights the parts of the reference that are correct and red highlights the corresponding problematic parts of translations, including repetitions, dropped words or mistranslations.

@@ -1,0 +1,97 @@
+Introduction
+
+Question classification (QC) deals with question analysis and question labeling based on the expected answer type. The goal of QC is to assign classes accurately to the questions based on expected answer. In modern system, there are two types of questions BIBREF0. One is Factoid question which is about providing concise facts and another one is Complex question that has a presupposition which is complex. Question Answering (QA) System is an integral part of our daily life because of the high amount of usage of Internet for information acquisition. In recent years, most of the research works related to QA are based on English language such as IBM Watson, Wolfram Alpha. Bengali speakers often fall in difficulty while communicating in English BIBREF1.
+
+In this research, we briefly discuss the steps of QA system and compare the performance of seven machine learning based classifiers (Multi-Layer Perceptron (MLP), Naive Bayes Classifier (NBC), Support Vector Machine (SVM), Gradient Boosting Classifier (GBC), Stochastic Gradient Descent (SGD), K Nearest Neighbour (K-NN) and Random Forest (RF)) in classifying Bengali questions to classes based on their anticipated answers. Bengali questions have flexible inquiring ways, so there are many difficulties associated with Bengali QC BIBREF0. As there is no rich corpus of questions in Bengali Language available, collecting questions is an additional challenge. Different difficulties in building a QA System are mentioned in the literature BIBREF2 BIBREF3. The first work on a machine learning based approach towards Bengali question classification is presented in BIBREF0 that employ the Stochastic Gradient Descent (SGD).
+
+Related Works ::: Popular Question-Answering Systems
+
+Over the years, a handful of QA systems have gained popularity around the world. One of the oldest QA system is BASEBALL (created on 1961) BIBREF4 which answers question related to baseball league in America for a particular season. LUNAR BIBREF5 system answers questions about soil samples taken from Apollo lunar exploration. Some of the most popular QA Systems are IBM Watson, Apple Siri and Wolfram Alpha. Examples of some QA systems based on different languages are: Zhang Yu Chinese question classification BIBREF6 based on Incremental Modified Bayes, Arabic QA system (AQAS) BIBREF7 by F. A. Mohammed, K. Nasser, & H. M. Harb and Syntactic open domain Arabic QA system for factoid questions BIBREF8 by Fareed et al. QA systems have been built on different analysis methods such as morphological analysis BIBREF9, syntactical analysis BIBREF10, semantic analysis BIBREF11 and expected answer Type analysis BIBREF12.
+
+Related Works ::: Research Works Related to Question Classifications
+
+Researches on question classification, question taxonomies and QA system have been undertaken in recent years. There are two types of approaches for question classification according to Banerjee et al in BIBREF13 - by rules and by machine learning approach. Rule based approaches use some hard coded grammar rules to map the question to an appropriate answer type BIBREF14 BIBREF15. Machine Learning based approaches have been used by Zhang et al and Md. Aminul Islam et al in BIBREF16 and BIBREF0. Many classifiers have been used in machine learning for QC such as Support Vector Machine (SVM) BIBREF16 BIBREF17, Support Vector Machines and Maximum Entropy Model BIBREF18, Naive Bayes (NB), Kernel Naive Bayes (KNB), Decision Tree (DT) and Rule Induction (RI) BIBREF13. In BIBREF0, they claimed to achieve average precision of 0.95562 for coarse class and 0.87646 for finer class using Stochastic Gradient Descent (SGD).
+
+Related Works ::: Research Works in Bengali Language
+
+A Bengali QC System was built by Somnath Banerjee and Sivaji Bandyopadhyay BIBREF13 BIBREF19 BIBREF20. They proposed a two-layer taxonomy classification with 9 coarse-grained classes and 69 fine-grained classes. There are other research works BIBREF0 BIBREF21 in Bengali Language. A survey was performed on text QA techniques BIBREF22 where there was an analysis conducted in Bengali Language. Syed Mehedi Hasan Nirob et al achieved 88.62% accuracy by using 380 top frequent words as the feature in their work BIBREF17.
+
+Question Answering (QA) System
+
+QA system resides within the scope of Computer Science. It deals with information retrieval and natural language processing. Its goal is to automatically answer questions asked by humans in natural language. IR-based QA, Knowledge based approaches and Hybrid approaches are the QA system types. TREC, IBM-Watson, Google are examples of IR-based QA systems. Knowledge based QA systems are Apple Siri, Wolfram Alpha. Examples of Hybrid approach systems are IBM Watson and True Knowledge Evi.
+
+Figure FIGREF4 provides an overview of QA System. The first step of QA System is Question Analysis. Question analysis has two parts - question classification and another question formulation. In question classification step, the question is classified using different classifier algorithms. In question formulation, the question is analyzed and the system creates a proper IR question by detecting the entity type of the question to provide a simple answer.
+
+The next step is documents retrieval and analysis. In this step, the system matches the query against the sources of answers where the source can be documents or Web. In the answer extraction step, the system extracts the answers from the documents of the sources collected in documents retrieval and analysis phase. The extracted answers are filtered and evaluated in answer evaluation phase as there can be multiple possible answers for a query. In the final step, an answer of the question is returned.
+
+Proposed Methodology
+
+We use different types of classifiers for QA type classification. We separate our methodology into two sections similar to BIBREF0 - one is training section and another is validation section shown in Figure FIGREF5.
+
+We use 10 fold cross validation where we have 3150 and 350 questions in our training set and validation set respectively. During training, after selecting the possible class labels, the system extracts the features of the questions and creates a model by passing through a classifier algorithm with the extracted features and class labels. During validation, the system extracts the features of the question and passes it into the model created during training and predicts the answer type.
+
+Question Collection and Categories
+
+Though Bengali is the seventh most spoken language in terms of number of native speakers BIBREF23, there is no standard corpus of questions available BIBREF0. We have collected total 3500 questions from the Internet and other sources such as books of general knowledge questions, history etc. The corpus contains the questions and the classes each question belongs to.
+
+The set of question categories is known as question taxonomy BIBREF0. We have used two layer taxonomy which was proposed by Xin Li, Dan Roth BIBREF24. This two layer taxonomy is made up of two classes which are Coarse Class and Finer Class. There are six coarse classes such as Numeric, Location, Entity, Description, Human and Abbreviation and fifty finer classes such as city, state, mountain, distance, count, definition, group, expression, substance, creative, vehicle etc as shown in the Table I BIBREF0. A coarse-grained description of a system denotes large components while a fine-grained description denotes smaller sub-components of which the larger ones are composed of.
+
+Implementation of the System ::: Feature Extraction
+
+Question word answer phrases, parts of speech tags, parse feature, named entity and semantically related words are different features from answer type detection BIBREF18. We use question word and phrases as features for answer type detection. We consider the following features:
+
+Implementation of the System ::: Feature Extraction ::: TF-IDF
+
+Term Frequency - Inverse Document Frequency (TF-IDF) is a popular method used to identify the importance of a word in a particular document. TF-IDF transforms text into meaningful numeric representation. This technique is widely used to extract features for Natural Language Processing (NLP) applications BIBREF25 BIBREF26.
+
+Implementation of the System ::: Feature Extraction ::: Word level N-Grams
+
+N-grams is n-back to back words in a text. Queries of a same class usually share word n-grams BIBREF0. In this system, we choose bi-gram for extracting features.
+
+Implementation of the System ::: Feature Extraction ::: Stop Words
+
+We use two setups (as done in BIBREF0) for our system. In the first setup, we eliminate the stop words from the text using another dataset containing only stop words. At second step, we work without eliminating the stop words from the text which gives better result than the first setup.
+
+Implementation of the System ::: Classification Algorithms ::: Multi Layer Perceptron (MLP)
+
+MLP contains three layers - an input layer, an output layer and some hidden layers. Input layer receives the signal, the output layer gives a decision or prediction about the input and the computation of the MLP is conducted in the hidden layers. In our system, we use 100 layers. For weight optimization, we use Limited-memory Broyden–Fletcher–Goldfarb–Shanno (LBFGS) optimization algorithm.
+
+Implementation of the System ::: Classification Algorithms ::: Support Vector Machine (SVM)
+
+SVM gives an optimal hyper-plane and it maximizes the margin between classes. We use Radial Basis Function (RBF) kernel in our system to make decision boundary curve-shaped. For decision function shape, we use the original one-vs-one (ovo) decision function.
+
+Implementation of the System ::: Classification Algorithms ::: Naive Bayesian Classifier (NBC)
+
+NBC is based on Bayes' Theorem which gives probability of an event occurrence based on some conditions related to that event. We use Multinomial Naive Bayes Classifier with smoothing parameter equals to 0.1. A zero probability cancels the effects of all the other probabilities.
+
+Implementation of the System ::: Classification Algorithms ::: Stochastic Gradient Descent (SGD)
+
+Stochastic gradient descent optimizes an objective function with suitable smoothness properties BIBREF27. It selects few examples randomly instead of whole data for each iteration. We use 'L2' regularization for reduction of overfitting.
+
+Implementation of the System ::: Classification Algorithms ::: Gradient Boosting Classifier (GBC)
+
+Gradient Boosting Classifier produces a prediction model consisting of weak prediction models. Gradient boosting uses decision trees. We use 100 boosting stages in this work.
+
+Implementation of the System ::: Classification Algorithms ::: K Nearest Neighbour (K-NN)
+
+K-NN is a supervised classification and regression algorithm. It uses the neighbours of the given sample to identify its class. K determines the number of neighbours needed to be considered. We set the value of K equals to 13 in this work.
+
+Implementation of the System ::: Classification Algorithms ::: Random Forest (RF)
+
+RF is an ensemble learning technique. It constructs large number of decision trees during training and then predicts the majority class. We use 500 decision trees in the forest and "entropy" function to measure the quality of a split.
+
+Implementation of the System ::: Results and Discussion
+
+Table II shows the accuracy and F1 score for different classifiers with and without eliminating stop words while extracting features. Figure FIGREF21 shows the average results of different classifiers in a bar chart with and without eliminating stop words from the questions.
+
+Overall, SGD has shown the best performance on our dataset as it introduces non-linearity and uses back-propagation for updating parameter weights using loss function calculated on training set into classification. K-NN has shown the weakest performance overall, as this algorithm has a bad reputation of not working well in high dimensional data BIBREF28. MLP and SVM have shown similar performance. MLP takes advantage of multiple hidden layers in order to take non-linearly separable samples in a linearly separable condition. SVM accomplishes this same feat by taking the samples to a higher dimensional hyperplane where the samples are linearly separable. Gradient Boosting Classifier (GBC) and Random Forest (RF) both utilize a set of decision trees and achieve similar results (RF performs slightly without eliminating stop words). Naive Bayesian Classifier (NBC) shows performance on per with GBC and RF algorithms. The overall better performance of all the algorithms when provided with stop words show the importance of stop words in Bengali QA classification.
+
+Figure FIGREF22 shows the predictions of some particular questions by each of the classifiers. The input is a full question and the output is the class of the question.
+
+Implementation of the System ::: Computational Complexity
+
+In Table TABREF24, n = No. of training sample, p = No. of features, ntrees = No. of trees (for methods based on various trees), nsv = No. of support vectors, i = No. of iterations, h = No. of nodes in each hidden layer, k = No. of hidden layers and $\overline{m}$ = the average no. of non-zero attributes per sample.
+
+Conclusion
+
+By implementing different machine learning based classifiers on our Bengali question corpus, we perform a comparative analysis among them. The question classification impacts the QA system. So, it is important to classify the question more precisely. This work will help the research community to choose a proper classification model for smart Bengali QA system development. Future work should aim at developing a richer corpus of Bengali questions which will help in getting better vector representation of words and thus will facilitate deep learning based automatic feature extraction.

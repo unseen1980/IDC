@@ -1,0 +1,131 @@
+Introduction
+
+The ability of semantic reasoning is essential for advanced natural language understanding (NLU) systems. Many NLU tasks that take sentence pairs as input, such as natural language inference (NLI) and machine reading comprehension (MRC), heavily rely on the ability of sophisticated semantic reasoning. For instance, the NLI task aims to determine whether the hypothesis sentence (e.g., a woman is sleeping) can be inferred from the premise sentence (e.g., a woman is talking on the phone). This requires the model to read and understand sentence pairs to make the specific semantic inference.
+
+Bidirectional Encoder Representations from Transformer (BERT) BIBREF1 has shown strong ability in semantic reasoning. It was recently proposed and obtained impressive results on many tasks, ranging from text classification, natural language inference, and machine reading comprehension. BERT achieves this by employing two objectives in the pre-training, i.e., the masked language modeling (Masked LM) and the next sentence prediction (NSP). Intuitively, the Masked LM task concerns word-level knowledge, and the NSP task captures the global document-level information. The goal of NSP is to identify whether an input sentence is next to another input sentence. From the ablation study BIBREF1, the NSP task is quite useful for the downstream NLI and MRC tasks (e.g., +3.5% absolute gain on the Question NLI (QNLI) BIBREF2 task).
+
+Despite its usefulness, we suggest that BERT has not made full use of the document-level knowledge. The sentences in the negative samples used in NSP are randomly drawn from other documents. Therefore, to discriminate against these sentences, BERT is prone to aggregating the shallow semantic, e.g., topic, neglecting context clues useful for detailed reasoning. In other words, the canonical NSP task would encourage the model to recognize the correlation between sentences, rather than obtaining the ability of semantic entailment. This setting weakens the BERT model from learning specific semantic for inference. Another issue that renders NSP less effective is that BERT is order-sensitive. Performance degradation was observed on typical NLI tasks when the order of two input sentences are reversed during the BERT fine-tuning phase. It is reasonable as the NSP task can be roughly analogy to the NLI task when the input comes as (premise, hypothesis), considering the causal order among sentences. However, this identity between NSP and NLI is compromised when the sentences are swapped.
+
+Based on these considerations, we propose a simple yet effective method, i.e., introducing a IsPrev category to the classification task, which is a symmetric label of IsNext of NSP. The input of samples with IsPrev is the reverse of those with IsNext label. The advantages of using this previous sentence prediction (PSP) are three folds. (1) Learning the contrast between NSP and PSP forces the model to extract more detailed semantic, thereby the model is more capable of discriminating the correlation and entailment. (2) NSP and PSP are symmetric. This symmetric regularization alleviates the influence of the order of the input pair. (3) Empirical results indicate that our method is beneficial for all the semantic reasoning tasks that take sentence pair as input.
+
+In addition, to further incorporating the document-level knowledge, NSP and PSP are extended with non-successive sentences, where the label smoothing technique is adopted. The proposed method yields a considerable improvement in our experiments. We evaluate the ability of semantic reasoning on standard NLI and MRC benchmarks, including the challenging HANS dataset BIBREF0. Analytical work on the HANS dataset provides a more comprehensible perspective towards the proposed method. Furthermore, the results on the Chinese benchmarks are provided to demonstrate its generality.
+
+In summary, this work makes the following contributions:
+
+The supervision signal from the original NSP task is weak for semantic inference. Therefore, a novel method is proposed to remedy the asymmetric issue and enhance the reasoning ability.
+
+Both empirical and analytical evaluations are provided on the NLI and MRC datasets, which verifies the effectiveness of using more document-level knowledge.
+
+Related Work ::: Pair-wise semantic reasoning
+
+Many NLU tasks seek to model the relationship between two sentences. Semantic reasoning is performed on the sentence pair for the task-specific inference. Pair-wise semantic reasoning tasks have drawn a lot of attention from the NLP community as they largely require the comprehension ability of the learning systems. Recently, the significant improvement on these benchmarks comes from the pre-training models, e.g., BERT, StructBERT BIBREF3, ERNIE BIBREF4, BIBREF5, RoBERTa BIBREF6 and XLNet BIBREF7. These models learn from unsupervised/self-supervised objectives and perform excellently in the downstream tasks. Among these models, BERT adopts NSP as one of the objectives in the pre-training and shows that the NSP task has a positive effect on the NLI and MRC tasks. Although the primary study of XLNet and RoBERTa suggests that NSP is ineffective when the model is trained with a large sequence length of 512, the effect of NSP on the NLI problems should still be emphasized. The inefficiency of NSP is likely because the expected context length will be halved for Masked LM when taking a sentence pair as the input. The models derived from BERT, e.g., StructBERT and ERNIE 1.0/2.0, aim to incorporating more knowledge by elaborating pre-training objectives. This work aims to enhance the NSP task and verifies whether document-level information is helpful for the pre-training. To probe whether our method achieves a better regularization ability, our approach is also evaluated on the HANS BIBREF0 dataset, which contains hard data samples constructed by three heuristics. Previous advanced models such as BERT fail on the HANS dataset, and the test accuracy can barely exceed 0% in the subset of test examples.
+
+Related Work ::: Unsupervised learning from document
+
+In recent years, many unsupervised pre-training methods have been proposed in the NLP fields to extract knowledge among sentences DBLP:conf/nips/KirosZSZUTF15,DBLP:conf/emnlp/ConneauKSBB17,DBLP:conf/iclr/LogeswaranL18,DBLP:journals/corr/abs-1903-09424. The prediction of surrounding sentences endows the model with the ability to model the sentence-level coherence. Skip-Thought BIBREF8 consists of an encoder and two decoders. When a sentence is given and encoded into a vector by the encoder, the decoders are trained to predict the next sentence and the previous sentence. The goal is to obtain a better sentence representation that is useful for reconstructing the surrounding context. Considering that the estimation of the likelihood of sequences is computationally expensive and time-consuming, the Quick-Thought method BIBREF9 simplifies this in a manner similar to sampled softmax BIBREF10, which classifies the input sentences between surrounding sentences and the other. Note that Quick-Thought does not distinguish between the previous and next sentence as it is functionally rotation invariant. However, BERT is order-dependent, and the discrimination can provide more supervision signal for semantic learning. InferSent BIBREF11 instead pre-trains the model in a manner of supervised learning. It uses a large-scale NLI dataset as the pre-training task to learn the sentence representation. In our work, we focus on designing a more effective document-level objective, extended from the NSP task. The proposed method will be described in the following section and validated by providing extensive experimental results in the experiment part.
+
+Method
+
+Our method follows the same input format and the model architecture with original BERT. The proposed method solely concerns the NSP task. The NSP task is a binary classification task, which takes two sentences (A and B) as input and determines whether B is the next sentence of A. Although it has been proven to be very effective for BERT, there are two major deficiencies. (1) Discrimination between IsNext and DiffDoc (the label of the sentences drawn from different documents via negative sampling) is semantically shallow as the signal of sentence order is absent. The correlation between two successive sentences could be obvious, due to, for example, lexical overlap or the conjunction used at the beginning of the second sentence. As reported BIBREF1, the final pre-trained model is able to achieve 97%-98% accuracy on the NSP task. (2) BERT is order-sensitive, i.e., $f_{\text{BERT}}( \texttt {A}, \texttt {B}) \ne f_{\text{BERT}}(\texttt {B}, \texttt {A})$, while NSP is uni-directional. When the order of the input NLI pair is reversed, the performance will degrade. For instance, the accuracy decreases by about 0.5% on MNLI BIBREF12 and 0.4% on QNLI after swapping the sentences in our experiments .
+
+Motivated by these problems, we propose to extend the NSP task with previous sentence prediction (PSP). Despite its simplicity, empirical results show that this is beneficial for downstream tasks, including both NLI and MRC tasks. To further incorporate the document-level information, the scope is also expanded to include more surrounding sentences, not just the adjacent. The method is briefly illustrated in Fig. FIGREF6.
+
+Method ::: Previous Sentence Prediction
+
+Learning to recognize the previous sentence enables the model to capture more compact context information. One would argue that IsPrev (the label of PSP) is redundant as it plays a similar role of IsNext (the label of NSP). In fact, Quick-Thought uses the sampled softmax to approximate the sentence likelihood estimation of Skip-Thought, and it actually does not differentiate between the previous and next sentences. However, we suggest the order discrimination is essential for BERT pre-training. Quick-Thought aims at extracting sentence embedding, and it uses a rotating symmetric function, which makes IsPrev redundant in Quick-Thought. In contrast, BERT is order-sensitive, and learning the symmetric regularization is rather necessary. Another advantage of PSP is to enhance document-level supervision. In order to tell the difference between NSP and PSP, the model has to extract the detailed semantic for inference.
+
+Method ::: Gathering More Document-level Information
+
+Beyond NSP and PSP, which enable the model to learn the short-term dependency between sentences, we also propose to expand the scope of discrimination task to further incorporate the document-level information.
+
+Specifically, we also include the in-adjacent sentences in the sentence-pair classification task. The in-adjacent sentences next to the IsPrev and IsNext sentences are sampled, labeled as IsPrevInadj and IsNextInadj (cf. the bottom of Fig. FIGREF6). Note that these in-adjacent sentences will introduce much more training noise to the model. Therefore, the label smoothing technique is adopted to reduce the noise of these additional samples. It achieves this by relaxing our confidence on the labels, e.g., transforming the target probability from (1.0, 0.0) to (0.8, 0.2) in a binary classification problem.
+
+In summary, when A is given, the pre-training example for each label is constructed as follows:
+
+IsNext: Choosing the adjacent following sentence as B.
+
+IsPrev: Choosing the adjacent previous sentence as B.
+
+IsNextInadj: Choosing the in-adjacent following sentence as B. There is a sentence between A and B.
+
+IsPrevInadj: Choosing the in-adjacent previous sentence as B. There is a sentence between A and B.
+
+DiffDoc: Drawing B randomly from a different document.
+
+Experiment Settings
+
+This section gives detailed experiment settings. The method is evaluated on the BERTbase model, which has 12 layers, 12 self-attention heads with a hidden size of 768.
+
+To accelerate the training speed, two-phase training BIBREF1 is adopted. The first phase uses a maximal sentence length of 128, and 512 for the second phase. The numbers of training steps of two phases are 50K and 40K for the BERTBase model. We used AdamW BIBREF13 optimizer with a learning rate of 1e-4, a $\beta _1$ of 0.9, a $\beta _2$ of 0.999 and a L2 weight decay rate of $0.01$. The first 10% of the total steps are used for learning rate warming up, followed by the linear decay schema. We used a dropout probability of 0.1 on all layers. The data used for pre-training is the same as BERT, i.e., English Wikipedia (2500M words) and BookCorpus (800M words) BIBREF14. For the Masked LM task, we followed the same masking rate and settings as in BERT.
+
+We explore three method settings for comparison.
+
+BERT-PN: The NSP task in BERT is replaced by a 3-class task with IsNext, IsPrev and DiffDoc. The label distribution is 1:1:1.
+
+BERT-PN5cls: The NSP task in BERT is replaced by a 5-class task with two additional labels IsNextInadj, IsPrevInadj. The label distribution is 1:1:1:1:1.
+
+BERT-PNsmth: It uses the same data with BERT-PN5cls, except that the IsPrevInadj (IsNextInadj) label is mapped to IsPrev (IsNext) with a label smoothing factor of 0.8.
+
+BERT-PN is used to verify the feasibility of PSP. The comparison with BERT-PN5cls illustrates whether more document-level information helps. BERT-PNsmth, which is the label-smoothed version of BERT-PN5cls, is used to compare with BERT-PN5cls to see whether the noise reduction is necessary.
+
+In the following, we first show that BERT is order-sensitive and the use of PSP remedies this problem. Then we provide experimental results on the NLI and MRC tasks to verify the effectiveness of the proposed method. At last, the proposed method is evaluated on several Chinese datasets.
+
+Order-invariant with PSP
+
+NSP in the pre-training is useful for NLI and MRC task BIBREF1. However, we suggested that BERT trained with NSP is order-sensitive, i.e., the performance of BERT depends on the order of the input sentence pair. To verify our assumption, a primary experiment was conducted. The order of the input pair of NLI samples is reversed in the fine-tuning phase, and other hyper-parameters and settings keep the same with the BERT paper. Table TABREF19 shows the accuracy on the validation set of the MNLI and QNLI datasets. For the BERTBase model, when the sentences are swapped, the accuracy decreases by 0.5% on the MNLI task and 0.4% on the QNLI task. These results confirm that BERT trained with NSP only is indeed affected by the input order. This phenomenon motivates us to make the NSP task symmetric. The results of BERT-PN verify that BERT-PN is order-invariant. When the input order is reversed, the performance of BERT-PN remains stable. These results indicate that our method is able to remedy the order-sensitivity problem.
+
+Results of NLI Tasks ::: GLUE
+
+A popular benchmark for evaluation of language understanding is GLUE BIBREF2, which is a collection of three NLI tasks (MNLI, QNLI and RTE), three semantic textual similarity (STS) tasks (QQP, STS-B and MRPC), two text classification (TC) tasks (SST-2 and CoLA). Although the method is motivated for pair-wise reasoning, the results of other problems are also listed.
+
+Our implementation follows the same way that BERT performs in these tasks. The fine-tuning was conducted for 3 epochs for all the tasks, with a learning rate of 2e-5. The predictions were obtained by evaluating the training checkpoint with the best validation performance.
+
+Table TABREF21 illustrates the experimental results, showing that our method is beneficial for all of NLI tasks. The improvement on the RTE dataset is significant, i.e., 4% absolute gain over the BERTBase. Besides NLI, our model also performs better than BERTBase in the STS task. The STS tasks are semantically similar to the NLI tasks, and hence able to take advantage of PSP as well. Actually, the proposed method has a positive effect whenever the input is a sentence pair. The improvements suggest that the PSP task encourages the model to learn more detailed semantics in the pre-training, which improves the model on the downstream learning tasks. Moreover, our method is surprisingly able to achieve slightly better results in the single-sentence problem. The improvement should be attributed to better semantic representation.
+
+When comparing between PN and PN5cls, PN5cls achieves better results than PN. This indicates that including a broader range of the context is effective for improving inference ability. Considering that the representation of IsNext and IsNextInadj should be coherent, we propose BERTBase-PNsmth to mitigate this problem. PNsmth further improves the performance and obtains an averaged score of 81.0.
+
+Results of NLI Tasks ::: HANS
+
+Although BERT has shown its effectiveness in the NLI tasks. BIBREF0 pointed out that BERT is still vulnerable in the NLI task as it is prone to adopting fallible heuristics. Therefore, they released a dataset, called The Heuristic Analysis for NLI Systems (HANS), to probe whether the model learns inappropriate inductive bias from the training set. It is constructed by three heuristics, i.e., lexical overlap heuristic, sub-sequence heuristic, and constituent heuristic. The first heuristic assumes that a premise entails all hypotheses constructed from words in the premise, the second assumes that a premise entails all of its contiguous sub-sequences and the third assumes that a premise entails all complete sub-trees in its parse tree. BERT and other advanced models fail on this dataset and barely exceeds 0% accuracy in most cases BIBREF0.
+
+Fig. FIGREF23 illustrates the accuracy of BERTBase and BERTBase-PNsmth on the HANS dataset. The evaluation is made upon the model trained on the MNLI dataset and the predicted neutral and contradiction labels are mapped into non-entailment. The BERTBase-PNsmth evidently outperforms the BERTBase with the non-entailment examples. For the non-entailment samples constructed using the lexical overlap heuristic, our model achieves 160% relative improvement over the BERTBase model. Some samples are constructed by swapping the entities in the sentence (e.g., The doctor saw the lawyer $\nrightarrow $ The lawyer saw the doctor) and our method outperforms BERTBase by 20% in accuracy. We suggest that the Masked LM task can hardly model the relationship between two entities and NSP only is too semantically shallow to capture the precise meaning. However, the discrimination between NSP and PSP enhances the model to realize the role of entities in a given sentence. For example, to determine that A (X is beautiful) rather than $\bar{\texttt {A}}$ (Y is beautiful) is the previous sentence of B (Y loves X), the model have to recognize the relationship between X and Y. In contrast, when PSP is absent, NSP can be probably inferred by learning the occurrence between beautiful and loves, regardless of the sentence structure. The detailed performance of the proposed method on the HANS dataset is illustrated in Fig. FIGREF24. The definition of each heuristic rules can be found in BIBREF0.
+
+Results of MRC Tasks ::: SQuAD v1.1 and v2.0
+
+We also evaluate our method on the MRC tasks. The Stanford Question Answering Dataset (SQuAD v1.1) is a question answering (QA) dataset, which consists of 100K samples BIBREF15. Each data sample has a question and a corresponding Wikipedia passage that contains the answer. The goal is to extract the answer from the passage for the given question.
+
+In the fine-tuning procedure, we follow the exact way the BERT performed. The output vectors are used to compute the score of tokens being start and end of the answer span. The valid span that has the maximum score is selected as the prediction. And similarly, the fine-tuning training was performed for 3 epochs with a learning rate of 3e-5.
+
+Table TABREF26 demonstrates the results on the SQuAD v1.1 dataset. The comparison between BERTBase-PN and BERTBase indicates that the inclusion of the PSP subtask is beneficial (2.4% absolute improvement). When using BERTBase-PNsmth, another 0.3% increase in EM can be obtained. The experimental results on the SQuAD v2.0 BIBREF16 are also shown in Table. TABREF26. The SQuAD v2.0 differs from SQuAD v1.1 by allowing the question-paragraph pairs that have no answer. For SQuAD v2.0, our method also achieved about 4% absolute improvement in both EM and F1 against BERTBase.
+
+Results of MRC Tasks ::: RACE
+
+The ReAding Comprehension from Examinations (RACE) dataset BIBREF17 consists of 100K questions taken from English exams, and the answers are generated by human experts. This is one of the most challenging MRC datasets that require sophisticated reasoning.
+
+In our implementation, the question, document, and option are concatenated as a single sequence, separated by [SEP] token. And each part is truncated by a maximal length of 40/432/40, respectively. The model computes for a concatenation a scalar as the score, which is then used in a softmax layer for the final prediction. The fine-tuning was conducted for 5 epochs, with a batch size of 32 and a learning rate of 5e-5. As shown in Table TABREF28, the proposed method significantly improve the performance on the RACE dataset. BERTBase-PN obtains 2.6% accuracy improvement, and BERTBase-PN5cls further brings 0.4% absolute gain.
+
+The comparisons on the SQuAD v1.1, SQuAD v2.0, and RACE dataset demonstrate that the involvement of additional sentence and discourse information is not only beneficial for the NLI task but also the MRC task. This is reasonable as these tasks heavily rely on the global semantic understanding and sophisticated reasoning among sentences. And this ability can be effectively enhanced by our method.
+
+Results of Chinese NLP Tasks
+
+The experiments are also conducted on Chinese NLP tasks:
+
+XNLI BIBREF19 a multi-lingual dataset. The data sample in XNLI is a sentence pair annotated with textual entailment. The Chinese part is used.
+
+LCQMC BIBREF20 is a dataset for sequence matching. A binary label is annotated for a sentence pair in the dataset to indicate whether these two sentences have the same intention.
+
+NLPCC-DBQA BIBREF21 formulates the domain-based question answering as a binary classification task. Each data sample is a question-sentence pair. The goal is to identify whether the sentence contains the answer to the question.
+
+CMRC-2018 is the Chinese Machine Reading Comprehension dataset. Similar to SQuAD, the system needs to extract fragments from the text as the answer.
+
+DRCD BIBREF22 is also a Chinese MRC data set. The data follows the format of SQuAD.
+
+For Chinese NLP tasks, we pre-train the model using Chinese corpus. We collected textual data (10879M tokens in total) from the website, consisting of Hudong Baike data (6084M tokens) , Zhihu data(465M tokens) , Sohu News(3937M tokens) and Wikipedia data (393M tokens).
+
+For the first 3 Chinese tasks, we follow the settings as in ERNIE BIBREF4. The experimental results are given in Table TABREF29. The proposed method is compared with four models, i.e., BERTBase BIBREF1, BERTBase with whole word masking BIBREF18, ERNIE BIBREF4 and ERNIE 2.0 BIBREF5. Our method achieves comparable or even better results against ERNIE 2.0 BIBREF5. Note that the Chinese ERNIE 2.0 is equipped with 5 different objectives and it uses more training data (14988M tokens in total) than ours. The results indicate that the proposed method is quite effective for the pair-wise semantic reasoning as simply including PSP can achieve the results on par with multiple objectives.
+
+The results of CMRC-2018 and DRCD datasets are given in Table TABREF30. Since the CMRC-2018 competition does not release the test set, the comparison on the test set is absent. Our results are obtained using the open-sourced code of BERT-wwm . We keep the hyper-parameters the same with that in ERNIE BIBREF4, except that the batch size is 12 instead of 64 due to the memory limit. Under this setting, we achieved similar results of BERTBase in the BERT-wwm paper BIBREF18. However, this is worse than the results of BERTBase reported in the ERNIE 2.0 paper BIBREF5 by about 1% in F1. This suggests that our results are currently incomparable with ERNIE 2.0. Overall, the results in Table TABREF30 illustrate that our method is also effective for the Chinese QA tasks.
+
+Conclusion
+
+This paper aims to enrich the NSP task to provide more document-level information in the pre-training. Motivated by the in-symmetric property of NSP, we propose to differentiate between different sentence orders by including PSP. Despite the simplicity, extensive experiments demonstrate that the model obtains a better ability in pair-wise semantic reasoning. Our work suggests that the document-level objective is effective, at least for the BERTbase model. In the future, we will investigate the way to take advantages of both large-scale training and our method.

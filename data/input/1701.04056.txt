@@ -1,0 +1,118 @@
+Introduction
+
+Language model plays an important role in many natural language processing systems, such as in automatic speech recognition BIBREF0 , BIBREF1 and machine translation systems BIBREF2 , BIBREF3 . Recurrent neural network (RNN) based models BIBREF4 , BIBREF5 have recently shown success in language modeling, outperforming conventional n-gram based models. Long short-term memory BIBREF6 , BIBREF7 is a widely used RNN variant for language modeling due to its superior performance in capturing longer term dependencies.
+
+Conventional RNN based language model uses a hidden state to represent the summary of the preceding words in a sentence without considering context signals. Mikolov et al. proposed a context dependent RNN language model BIBREF8 by connecting a contextual vector to the RNN hidden state. This contextual vector is produced by applying Latent Dirichlet Allocation BIBREF9 on preceding text. Several other contextual language models were later proposed by using bag-of-word BIBREF10 and RNN methods BIBREF11 to learn larger context representation that beyond the target sentence.
+
+The previously proposed contextual language models treat preceding sentences as a sequence of inputs, and they are suitable for document level context modeling. In dialog modeling, however, dialog interactions between speakers play an important role. Modeling utterances in a dialog as a sequence of inputs might not well capture the pauses, turn-taking, and grounding phenomena BIBREF12 in a dialog. In this work, we propose contextual RNN language models that specially track the interactions between speakers. We expect such models to generate better representations of the dialog context.
+
+The remainder of the paper is organized as follows. In section 2, we introduce the background on contextual language modeling. In section 3, we describe the proposed dialog context language models. Section 4 discusses the evaluation procedures and results. Section 5 concludes the work.
+
+RNN Language Model
+
+A language model assigns a probability to a sequence of words $\mathbf {w}=(w_1, w_2, ..., w_{T})$ following probability distribution. Using the chain rule, the likelihood of the word sequence $\mathbf {w}$ can be factorized as:
+
+$$P(\mathbf {w}) = P(w_1, w_2, ..., w_{T}) = \prod _{t=1}^{T}P(w_{t}|w_{< t}) \\$$   (Eq. 2)
+
+At time step $t$ , the system input is the embedding of the word at index $t$ , and the system output is the probability distribution of the word at index $t+1$ . The RNN hidden state $h_t$ encodes the information of the word sequence up till current step:
+
+$$&h_t = \operatorname{RNN}(h_{t-1}, w_t) \\
+&P(w_{t+1}|w_{< t+1}) = \operatorname{softmax}(W_{o}h_{t} + b_{o})$$   (Eq. 3)
+
+where $W_{o}$ and $b_{o}$ are the output layer weights and biases.
+
+Contextual RNN Language Model
+
+A number of methods have been proposed to introduce contextual information to the language model. Mikolov and Zweig BIBREF8 proposed a topic-conditioned RNNLM by introducing a contextual real-valued vector to RNN hidden state. The contextual vector was created by performing LDA BIBREF9 on preceding text. Wang and Cho BIBREF10 studied introducing corpus-level discourse information into language modeling. A number of context representation methods were explored, including bag-of-words, sequence of bag-of-words, and sequence of bag-of-words with attention. Lin et al. BIBREF13 proposed using hierarchical RNN for document modeling. Comparing to using bag-of-words and sequence of bag-of-words for document context representation, using hierarchical RNN can better model the order of words in preceding text, at the cost of the increased computational complexity. These contextual language models focused on contextual information at the document level. Tran et al. BIBREF14 further proposed a contextual language model that consider information at inter-document level. They claimed that by utilizing the structural information from a tree-structured document set, language modeling performance was largely improved.
+
+Methods
+
+The previously proposed contextual language models focus on applying context by encoding preceding text, without considering interactions in dialogs. These models may not be well suited for dialog language modeling, as they are not designed to capture dialog interactions, such as clarifications and confirmations. By making special design in learning dialog interactions, we expect the models to generate better representations of the dialog context, and thus lower perplexity of the target dialog turn or utterance.
+
+In this section, we first explain the context dependent RNN language model that operates on utterance or turn level. Following that, we describe the two proposed contextual language models that utilize the dialog level context.
+
+Context Dependent RNNLM
+
+Let $\mathbf {D} = (\mathbf {U}_1, \mathbf {U}_2, ..., \mathbf {U}_K)$ be a dialog that has $K$ turns and involves two speakers. Each turn may have one or more utterances. The $k$ th turn $\mathbf {U}_k = (w_1, w_2, ..., w_{T_k})$ is represented as a sequence of $T_k$ words. Conditioning on information of the preceding text in the dialog, probability of the target turn $\mathbf {U}_k$ can be calculated as:
+
+$$P(\mathbf {U}_k|\mathbf {U}_{<k}) = \prod _{t=1}^{T_k}P(w^{\mathbf {U}_{k}}_{t}|w^{\mathbf {U}_{k}}_{< t}, \mathbf {U}_{<k}) \\$$   (Eq. 6)
+
+where $\mathbf {U}_{<k}$ denotes all previous turns before $\mathbf {U}_k$ , and $w^{\mathbf {U}_{k}}_{< t}$ denotes all previous words before the $t$ th word in turn $\mathbf {U}_k$ .
+
+In context dependent RNN language model, the context vector $c$ is connected to the RNN hidden state together with the input word embedding at each time step (Figure 1 ). This is similar to the context dependent RNN language model proposed in BIBREF8 , other than that the context vector is not connected directly to the RNN output layer. With the additional context vector input $c$ , the RNN state $h_t$ is updated as:
+
+$$h_t = \operatorname{RNN}(h_{t-1}, [w_t, c])$$   (Eq. 8)
+
+Context Representations
+
+In neural network based language models, the dialog context can be represented as a dense continuous vector. This context vector can be produced in a number of ways.
+
+One simple approach is to use bag of word embeddings. However, bag of word embedding context representation does not take word order into consideration. An alternative approach is to use an RNN to read the preceding text. The last hidden state of the RNN encoder can be seen as the representation of the text and be used as the context vector for the next turn. To generate document level context representation, one may cascade all sentences in a document by removing the sentence boundaries. The last RNN hidden state of the previous utterance serves as the initial RNN state of the next utterance. As in BIBREF11 , we refer to this model as DRNNLM. Alternatively, in the CCDCLM model proposed in BIBREF11 , the last RNN hidden state of the previous utterance is fed to the RNN hidden state of the target utterance at each time step.
+
+Interactive Dialog Context LM
+
+The previously proposed contextual language models, such as DRNNLM and CCDCLM, treat dialog history as a sequence of inputs, without modeling dialog interactions. A dialog turn from one speaker may not only be a direct response to the other speaker's query, but also likely to be a continuation of his own previous statement. Thus, when modeling turn $k$ in a dialog, we propose to connect the last RNN state of turn $k-2$ directly to the starting RNN state of turn $k$ , instead of letting it to propagate through the RNN for turn $k-1$ . The last RNN state of turn $k-1$ serves as the context vector to turn $k$ , which is fed to turn $k$ 's RNN hidden state at each time step together with the word input. The model architecture is as shown in Figure 2 . The context vector $c$ and the initial RNN hidden state for the $k$ th turn $h^{\mathbf {U}_k}_{0}$ are defined as:
+
+$$c = h^{\mathbf {U}_{k-1}}_{T_{k-1}}, \; h^{\mathbf {U}_k}_{0} = h^{\mathbf {U}_{k-2}}_{T_{k-2}}$$   (Eq. 11)
+
+where $h^{\mathbf {U}_{k-1}}_{T_{k-1}}$ represents the last RNN hidden state of turn $k-1$ . This model also allows the context signal from previous turns to propagate through the network in fewer steps, which helps to reduce information loss along the propagation. We refer to this model as Interactive Dialog Context Language Model (IDCLM).
+
+External State Interactive Dialog Context LM
+
+The propagation of dialog context can be seen as a series of updates of a hidden dialog context state along the growing dialog. IDCLM models this hidden dialog context state changes implicitly in the turn level RNN state. Such dialog context state updates can also be modeled in a separated RNN. As shown in the architecture in Figure 3 , we use an external RNN to model the context changes explicitly. Input to the external state RNN is the vector representation of the previous dialog turns. The external state RNN output serves as the dialog context for next turn:
+
+$$s_{k-1} = \operatorname{RNN}_{ES}(s_{k-2}, h^{\mathbf {U}_{k-1}}_{T_{k-1}})$$   (Eq. 14)
+
+where $s_{k-1}$ is the output of the external state RNN after the processing of turn $k-1$ . The context vector $c$ and the initial RNN hidden state for the $k$ th turn $h^{\mathbf {U}_k}_{0}$ are then defined as:
+
+$$c = s_{k-1}, \; h^{\mathbf {U}_k}_{0} = h^{\mathbf {U}_{k-2}}_{T_{k-2}}$$   (Eq. 15)
+
+We refer to this model as External State Interactive Dialog Context Language Model (ESIDCLM).
+
+Comparing to IDCLM, ESIDCLM releases the burden of turn level RNN by using an external RNN to model dialog context state changes. One drawback of ESIDCLM is that there are additional RNN model parameters to be learned during model training, which may make the model more prone to overfitting when training data size is limited.
+
+Data Set
+
+We use the Switchboard Dialog Act Corpus (SwDA) in evaluating our contextual langauge models. The SwDA corpus extends the Switchboard-1 Telephone Speech Corpus with turn and utterance-level dialog act tags. The utterances are also tagged with part-of-speech (POS) tags. We split the data in folder sw00 to sw09 as training set, folder sw10 as test set, and folder sw11 to sw13 as validation set. The training, validation, and test sets contain 98.7K turns (190.0K utterances), 5.7K turns (11.3K utterances), and 11.9K turns (22.2K utterances) respectively. Maximum turn length is set to 160. The vocabulary is defined with the top frequent 10K words.
+
+Baselines
+
+We compare IDCLM and ESIDCLM to several baseline methods, including n-gram based model, single turn RNNLM, and various context dependent RNNLMs.
+
+5-gram KN A 5-gram language model with modified Kneser-Ney smoothing BIBREF15 .
+
+Single-Turn-RNNLM Conventional RNNLM that operates on single turn level with no context information.
+
+BoW-Context-RNNLM Contextual RNNLM with BoW representation of preceding text as context.
+
+DRNNLM Contextual RNNLM with turn level context vector connected to initial RNN state of the target turn.
+
+CCDCLM Contextual RNNLM with turn level context vector connected to RNN hidden state of the target turn at each time step. We implement this model following the design in BIBREF11 .
+
+In order to investigate the potential performance gain that can be achieved by introducing context, we also compare the proposed methods to RNNLMs that use true dialog act tags as context. Although human labeled dialog act might not be the best option for modeling the dialog context state, it provides a reasonable estimation of the best gain that can be achieved by introducing linguistic context. The dialog act sequence is modeled by a separated RNN, similar to the external state RNN used in ESIDCLM. We refer to this model as Dialog Act Context Language Model (DACLM).
+
+DACLM RNNLM with true dialog act context vector connected to RNN state of the target turn at each time step.
+
+Model Configuration and Training
+
+In this work, we use LSTM cell BIBREF6 as the basic RNN unit for its stronger capability in capturing long-range dependencies in a word sequence comparing to simple RNN. We use pre-trained word vectors BIBREF16 that are trained on Google News dataset to initialize the word embeddings. These word embeddings are fine-tuned during model training. We conduct mini-batch training using Adam optimization method following the suggested parameter setup in BIBREF17 . Maximum norm is set to 5 for gradient clipping . For regularization, we apply dropout ( $p=0.8$ ) on the non-recurrent connections BIBREF18 of LSTM. In addition, we apply $L_2$ regularization ( $\lambda = 10^{-4}$ ) on the weights and biases of the RNN output layer.
+
+Results and Analysis
+
+The experiment results on language modeling perplexity for models using different dialog turn size are shown in Table 1 . $K$ value indicates the number of turns in the dialog. Perplexity is calculated on the last turn, with preceding turns used as context to the model.
+
+As can be seen from the results, all RNN based models outperform the n-gram model by large margin. The BoW-Context-RNNLM and DRNNLM beat the Single-Turn-RNNLM consistently. Our implementation of the context dependent CCDCLM performs worse than Single-Turn-RNNLM. This might due to fact that the target turn word prediction depends too much on the previous turn context vector, which connects directly to the hidden state of current turn RNN at each time step. The model performance on training set might not generalize well during inference given the limited size of the training set.
+
+The proposed IDCLM and ESIDCLM beat the single turn RNNLM consistently under different context turn sizes. ESIDCLM shows the best language modeling performance under dialog turn size of 3 and 5, outperforming IDCLM by a small margin. IDCLM beats all baseline models when using dialog turn size of 5, and produces slightly worse perplexity than DRNNLM when using dialog turn size of 3.
+
+To analyze the best potential gain that may be achieved by introducing linguistic context, we compare the proposed contextual models to DACLM, the model that uses true dialog act history for dialog context modeling. As shown in Table 1 , the gap between our proposed models and DACLM is not wide. This gives a positive hint that the proposed contextual models may implicitly capture the dialog context state changes.
+
+For fine-grained analyses of the model performance, we further compute the test set perplexity per POS tag and per dialog act tag. We selected the most frequent POS tags and dialog act tags in SwDA corpus, and report the tag based perplexity relative changes ( $\%$ ) of the proposed models comparing to Single-Turn-RNNLM. A negative number indicates performance gain.
+
+Table 2 shows the model perplexity per POS tag. All the three context dependent models produce consistent performance gain over the Single-Turn-RNNLM for pronouns, prepositions, and adverbs, with pronouns having the largest perplexity improvement. However, the proposed contextual models are less effective in capturing nouns. This suggests that the proposed contextual RNN language models exploit the context to achieve superior prediction on certain but not all POS types. Further exploration on the model design is required if we want to better capture words of a specific type.
+
+For the dialog act tag based results in Table 3 , the three contextual models show consistent performance gain on Statement-non-opinion type utterances. The perplexity changes for other dialog act tags vary for different models.
+
+Conclusions
+
+In this work, we propose two dialog context language models that with special design to model dialog interactions. Our evaluation results on Switchboard Dialog Act Corpus show that the proposed model outperform conventional RNN language model by 3.3%. The proposed models also illustrate advantageous performance over several competitive contextual language models. Perplexity of the proposed dialog context language models is higher than that of the model using true dialog act tags as context by a small margin. This indicates that the proposed model may implicitly capture the dialog context state for language modeling.

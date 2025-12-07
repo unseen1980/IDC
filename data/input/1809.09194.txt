@@ -1,0 +1,67 @@
+Background
+
+Teaching machine to read and comprehend a given passage/paragraph and answer its corresponding questions is a challenging task. It is also one of the long-term goals of natural language understanding, and has important applications in e.g., building intelligent agents for conversation and customer service support. In a real world setting, it is necessary to judge whether the given questions are answerable given the available knowledge, and then generate correct answers for the ones which are able to infer an answer in the passage or an empty answer (as an unanswerable question) otherwise.
+
+In comparison with many existing MRC systems BIBREF0 , BIBREF1 , BIBREF2 , BIBREF3 , BIBREF4 , which extract answers by finding a sub-string in the passages/paragraphs, we propose a model that not only extracts answers but also predicts whether such an answer should exist. Using a multi-task learning approach (c.f. BIBREF5 ), we extend the Stochastic Answer Network (SAN) BIBREF1 for MRC answer span detector to include a classifier that whether the question is unanswerable. The unanswerable classifier is a pair-wise classification model BIBREF6 which predicts a label indicating whether the given pair of a passage and a question is unanswerable. The two models share the same lower layer to save the number of parameters, and separate the top layers for different tasks (the span detector and binary classifier).
+
+Our model is pretty simple and intuitive, yet efficient. Without relying on the large pre-trained language models (ELMo) BIBREF7 , the proposed model achieves competitive results to the state-of-the-art on Stanford Question Answering Dataset (SQuAD) 2.0.
+
+The contribution of this work is summarized as follows. First, we propose a simple yet efficient model for MRC that handles unanswerable questions and is optimized jointly. Second, our model achieves competitive results on SQuAD v2.0.
+
+Model
+
+The Machine Reading Comprehension is a task which takes a question INLINEFORM0 and a passage/paragraph INLINEFORM1 as inputs, and aims to find an answer span INLINEFORM2 in INLINEFORM3 . We assume that if the question is answerable, the answer INLINEFORM4 exists in INLINEFORM5 as a contiguous text string; otherwise, INLINEFORM6 is an empty string indicating an unanswerable question. Note that to handle the unanswerable questions, we manually append a dumpy text string NULL at the end of each corresponding passage/paragraph. Formally, the answer is formulated as INLINEFORM7 . In case of unanswerable questions, INLINEFORM8 points to the last token of the passage.
+
+Our model is a variation of SAN BIBREF1 , as shown in Figure FIGREF2 . The main difference is the additional binary classifier added in the model justifying whether the question is unanswerable. Roughly, the model includes two different layers: the shared layer and task specific layer. The shared layer is almost identical to the lower layers of SAN, which has a lexicon encoding layer, a contextual layer and a memory generation layer. On top of it, there are different answer modules for different tasks. We employ the SAN answer module for the span detector and a one-layer feed forward neural network for the binary classification task. It can also be viewed as a multi-task learning BIBREF8 , BIBREF5 , BIBREF9 . We will briefly describe the model from ground up as follows. Detailed descriptions can be found in BIBREF1 .
+
+Lexicon Encoding Layer. We map the symbolic/surface feature of INLINEFORM0 and INLINEFORM1 into neural space via word embeddings , 16-dim part-of-speech (POS) tagging embeddings, 8-dim named-entity embeddings and 4-dim hard-rule features. Note that we use small embedding size of POS and NER to reduce model size and they mainly serve the role of coarse-grained word clusters. Additionally, we use question enhanced passages word embeddings which can viewwed as soft matching between questions and passages. At last, we use two separate two-layer position-wise Feed-Forward Networks (FFN) BIBREF11 , BIBREF1 to map both question and passage encodings into the same dimension. As results, we obtain the final lexicon embeddings for the tokens for INLINEFORM2 as a matrix INLINEFORM3 , and tokens in INLINEFORM4 as INLINEFORM5 .
+
+Contextual Encoding Layer. A shared two-layers BiLSTM is used on the top to encode the contextual information of both passages and questions. To avoid overfitting, we concatenate a pre-trained 600-dimensional CoVe vectors BIBREF12 trained on German-English machine translation dataset, with the aforementioned lexicon embeddings as the final input of the contextual encoding layer, and also with the output of the first contextual encoding layer as the input of its second encoding layer. Thus, we obtain the final representation of the contextual encoding layer by a concatenation of the outputs of two BiLSTM: INLINEFORM0 for questions and INLINEFORM1 for passages.
+
+Memory Generation Layer. In this layer, we generate a working memory by fusing information from both passages INLINEFORM0 and questions INLINEFORM1 . The attention function BIBREF11 is used to compute the similarity score between passages and questions as: INLINEFORM2
+
+Note that INLINEFORM0 and INLINEFORM1 is transformed from INLINEFORM2 and INLINEFORM3 by one layer neural network INLINEFORM4 , respectively. A question-aware passage representation is computed as INLINEFORM5 . After that, we use the method of BIBREF13 to apply self attention to the passage: INLINEFORM6
+
+where INLINEFORM0 means that we only drop diagonal elements on the similarity matrix (i.e., attention with itself). At last, INLINEFORM1 and INLINEFORM2 are concatenated and are passed through a BiLSTM to form the final memory: INLINEFORM3 .
+
+Span detector. We adopt a multi-turn answer module for the span detector BIBREF1 . Formally, at time step INLINEFORM0 in the range of INLINEFORM1 , the state is defined by INLINEFORM2 . The initial state INLINEFORM3 is the summary of the INLINEFORM4 : INLINEFORM5 , where INLINEFORM6 . Here, INLINEFORM7 is computed from the previous state INLINEFORM8 and memory INLINEFORM9 : INLINEFORM10 and INLINEFORM11 . Finally, a bilinear function is used to find the begin and end point of answer spans at each reasoning step INLINEFORM12 : DISPLAYFORM0 DISPLAYFORM1
+
+The final prediction is the average of each time step: INLINEFORM0 . We randomly apply dropout on the step level in each time step during training, as done in BIBREF1 .
+
+Unanswerable classifier. We adopt a one-layer neural network as our unanswerable binary classifier: DISPLAYFORM0
+
+, where INLINEFORM0 is the summary of the memory: INLINEFORM1 , where INLINEFORM2 . INLINEFORM3 denotes the probability of the question which is unanswerable.
+
+Objective The objective function of the joint model has two parts: DISPLAYFORM0
+
+Following BIBREF0 , the span loss function is defined: DISPLAYFORM0
+
+The objective function of the binary classifier is defined: DISPLAYFORM0
+
+where INLINEFORM0 is a binary variable: INLINEFORM1 indicates the question is unanswerable and INLINEFORM2 denotes the question is answerable.
+
+Setup
+
+We evaluate our system on SQuAD 2.0 dataset BIBREF14 , a new MRC dataset which is a combination of Stanford Question Answering Dataset (SQuAD) 1.0 BIBREF15 and additional unanswerable question-answer pairs. The answerable pairs are around 100K; while the unanswerable questions are around 53K. This dataset contains about 23K passages and they come from approximately 500 Wikipedia articles. All the questions and answers are obtained by crowd-sourcing. Two evaluation metrics are used: Exact Match (EM) and Macro-averaged F1 score (F1) BIBREF14 .
+
+Implementation details
+
+We utilize spaCy tool to tokenize the both passages and questions, and generate lemma, part-of-speech and named entity tags. The word embeddings are initialized with pre-trained 300-dimensional GloVe BIBREF10 . A 2-layer BiLSTM is used encoding the contextual information of both questions and passages. Regarding the hidden size of our model, we search greedily among INLINEFORM0 . During training, Adamax BIBREF16 is used as our optimizer. The min-batch size is set to 32. The learning rate is initialized to 0.002 and it is halved after every 10 epochs. The dropout rate is set to 0.1. To prevent overfitting, we also randomly set 0.5% words in both passages and questions as unknown words during the training. Here, we use a special token unk to indicate a word which doesn't appear in GloVe. INLINEFORM1 in Eq EQREF9 is set to 1.
+
+Results
+
+We would like to investigate effectiveness the proposed joint model. To do so, the same shared layer/architecture is employed in the following variants of the proposed model:
+
+The results in terms of EM and F1 is summarized in Table TABREF20 . We observe that Joint SAN outperforms the SAN baseline with a large margin, e.g., 67.89 vs 69.27 (+1.38) and 70.68 vs 72.20 (+1.52) in terms of EM and F1 scores respectively, so it demonstrates the effectiveness of the joint optimization. By incorporating the output information of classifier into Joint SAN, it obtains a slight improvement, e.g., 72.2 vs 72.66 (+0.46) in terms of F1 score. By analyzing the results, we found that in most cases when our model extract an NULL string answer, the classifier also predicts it as an unanswerable question with a high probability.
+
+Table TABREF21 reports comparison results in literature published . Our model achieves state-of-the-art on development dataset in setting without pre-trained large language model (ELMo). Comparing with the much complicated model R.M.-Reader + Verifier, which includes several components, our model still outperforms by 0.7 in terms of F1 score. Furthermore, we observe that ELMo gives a great boosting on the performance, e.g., 2.8 points in terms of F1 for DocQA. This encourages us to incorporate ELMo into our model in future.
+
+Analysis. To better understand our model, we analyze the accuracy of the classifier in our joint model. We obtain 75.3 classification accuracy on the development with the threshold 0.5. By increasing value of INLINEFORM0 in Eq EQREF9 , the classification accuracy reached to 76.8 ( INLINEFORM1 ), however the final results of our model only have a small improvement (+0.2 in terms of F1 score). It shows that it is important to make balance between these two components: the span detector and unanswerable classifier.
+
+Conclusion
+
+To sum up, we proposed a simple yet efficient model based on SAN. It showed that the joint learning algorithm boosted the performance on SQuAD 2.0. We also would like to incorporate ELMo into our model in future.
+
+Acknowledgments
+
+We thank Yichong Xu, Shuohang Wang and Sheng Zhang for valuable discussions and comments. We also thank Robin Jia for the help on SQuAD evaluations.

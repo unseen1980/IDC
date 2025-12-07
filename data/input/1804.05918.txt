@@ -1,0 +1,154 @@
+Introduction
+
+PDTB-style discourse relations, mostly defined between two adjacent text spans (i.e., discourse units, either clauses or sentences), specify how two discourse units are logically connected (e.g., causal, contrast). Recognizing discourse relations is one crucial step in discourse analysis and can be beneficial for many downstream NLP applications such as information extraction, machine translation and natural language generation.
+
+Commonly, explicit discourse relations were distinguished from implicit ones, depending on whether a discourse connective (e.g., “because” and “after”) appears between two discourse units BIBREF0 . While explicit discourse relation detection can be framed as a discourse connective disambiguation problem BIBREF1 , BIBREF2 and has achieved reasonable performance (F1 score $>$ 90%), implicit discourse relations have no discourse connective and are especially difficult to identify BIBREF3 , BIBREF2 , BIBREF4 . To fill the gap, implicit discourse relation prediction has drawn significant research interest recently and progress has been made BIBREF5 , BIBREF6 by modeling compositional meanings of two discourse units and exploiting word interactions between discourse units using neural tensor networks or attention mechanisms in neural nets. However, most of existing approaches ignore wider paragraph-level contexts beyond the two discourse units that are examined for predicting a discourse relation in between.
+
+To further improve implicit discourse relation prediction, we aim to improve discourse unit representations by positioning a discourse unit (DU) in its wider context of a paragraph. The key observation is that semantic meaning of a DU can not be interpreted independently from the rest of the paragraph that contains it, or independently from the overall paragraph-level discourse structure that involve the DU. Considering the following paragraph with four discourse relations, one relation between each two adjacent DUs:
+
+(1): [The Butler, Wis., manufacturer went public at $15.75 a share in August 1987,] $_{DU1}$ and (Explicit-Expansion) [Mr. Sim's goal then was a $29 per-share price by 1992.] $_{DU2}$ (Implicit-Expansion) [Strong earnings growth helped achieve that price far ahead of schedule, in August 1988.] $_{DU3}$ (Implicit-Comparison) [The stock has since softened, trading around $25 a share last week and closing yesterday at $23 in national over-the-counter trading.] $_{DU4}$ But (Explicit-Comparison) [Mr. Sim has set a fresh target of $50 a share by the end of reaching that goal.] $_{DU5}$
+
+Clearly, each DU is an integral part of the paragraph and not independent from other units. First, predicting a discourse relation may require understanding wider paragraph-level contexts beyond two relevant DUs and the overall discourse structure of a paragraph. For example, the implicit “Comparison” discourse relation between DU3 and DU4 is difficult to identify without the background information (the history of per-share price) introduced in DU1 and DU2. Second, a DU may be involved in multiple discourse relations (e.g., DU4 is connected with both DU3 and DU5 with a “Comparison” relation), therefore the pragmatic meaning representation of a DU should reflect all the discourse relations the unit was involved in. Third, implicit discourse relation prediction should benefit from modeling discourse relation continuity and patterns in a paragraph that involve easy-to-identify explicit discourse relations (e.g., “Implicit-Comparison” relation is followed by “Explicit-Comparison” in the above example).
+
+Following these observations, we construct a neural net model to process a paragraph each time and jointly build meaning representations for all DUs in the paragraph. The learned DU representations are used to predict a sequence of discourse relations in the paragraph, including both implicit and explicit relations. Although explicit relations are not our focus, predicting an explicit relation will help to reveal the pragmatic roles of its two DUs and reconstruct their representations, which will facilitate predicting neighboring implicit discourse relations that involve one of the DUs.
+
+In addition, we introduce two novel designs to further improve discourse relation classification performance of our paragraph-level neural net model. First, previous work has indicated that recognizing explicit and implicit discourse relations requires different strategies, we therefore untie parameters in the discourse relation prediction layer of the neural networks and train two separate classifiers for predicting explicit and implicit discourse relations respectively. This unique design has improved both implicit and explicit discourse relation identification performance. Second, we add a CRF layer on top of the discourse relation prediction layer to fine-tune a sequence of predicted discourse relations by modeling discourse relation continuity and patterns in a paragraph.
+
+Experimental results show that the intuitive paragraph-level discourse relation prediction model achieves improved performance on PDTB for both implicit discourse relation classification and explicit discourse relation classification.
+
+Implicit Discourse Relation Recognition
+
+Since the PDTB BIBREF7 corpus was created, a surge of studies BIBREF8 , BIBREF3 , BIBREF9 , BIBREF10 have been conducted for predicting discourse relations, primarily focusing on the challenging task of implicit discourse relation classification when no explicit discourse connective phrase was presented. Early studies BIBREF11 , BIBREF3 , BIBREF2 , BIBREF12 focused on extracting linguistic and semantic features from two discourse units. Recent research BIBREF13 , BIBREF14 , BIBREF15 , BIBREF16 tried to model compositional meanings of two discourse units by exploiting interactions between words in two units with more and more complicated neural network models, including the ones using neural tensor BIBREF5 , BIBREF17 , BIBREF18 and attention mechanisms BIBREF6 , BIBREF19 , BIBREF20 . Another trend is to alleviate the shortage of annotated data by leveraging related external data, such as explicit discourse relations in PDTB BIBREF9 , BIBREF19 , BIBREF21 and unlabeled data obtained elsewhere BIBREF12 , BIBREF19 , often in a multi-task joint learning framework.
+
+However, nearly all the previous works assume that a pair of discourse units is independent from its wider paragraph-level contexts and build their discourse relation prediction models based on only two relevant discourse units. In contrast, we model inter-dependencies of discourse units in a paragraph when building discourse unit representations; in addition, we model global continuity and patterns in a sequence of discourse relations, including both implicit and explicit relations.
+
+Hierarchical neural network models BIBREF22 , BIBREF23 have been applied to RST-style discourse parsing BIBREF24 mainly for the purpose of generating text-level hierarchical discourse structures. In contrast, we use hierarchical neural network models to build context-aware sentence representations in order to improve implicit discourse relation prediction.
+
+Paragraph Encoding
+
+Abstracting latent representations from a long sequence of words, such as a paragraph, is a challenging task. While several novel neural network models BIBREF25 , BIBREF26 have been introduced in recent years for encoding a paragraph, Recurrent Neural Network (RNN)-based methods remain the most effective approaches. RNNs, especially the long-short term memory (LSTM) BIBREF27 models, have been widely used to encode a paragraph for machine translation BIBREF28 , dialogue systems BIBREF29 and text summarization BIBREF30 because of its ability in modeling long-distance dependencies between words. In addition, among four typical pooling methods (sum, mean, last and max) for calculating sentence representations from RNN-encoded hidden states for individual words, max-pooling along with bidirectional LSTM (Bi-LSTM) BIBREF31 yields the current best universal sentence representation method BIBREF32 . We adopted a similar neural network architecture for paragraph encoding.
+
+The Basic Model Architecture
+
+Figure 1 illustrates the overall architecture of the discourse-level neural network model that consists of two Bi-LSTM layers, one max-pooling layer in between and one softmax prediction layer. The input of the neural network model is a paragraph containing a sequence of discourse units, while the output is a sequence of discourse relations with one relation between each pair of adjacent discourse units.
+
+Given the words sequence of one paragraph as input, the lower Bi-LSTM layer will read the whole paragraph and calculate hidden states as word representations, and a max-pooling layer will be applied to abstract the representation of each discourse unit based on individual word representations. Then another Bi-LSTM layer will run over the sequence of discourse unit representations and compute new representations by further modeling semantic dependencies between discourse units within paragraph. The final softmax prediction layer will concatenate representations of two adjacent discourse units and predict the discourse relation between them.
+
+Word Vectors as Input: The input of the paragraph-level discourse relation prediction model is a sequence of word vectors, one vector per word in the paragraph. In this work, we used the pre-trained 300-dimension Google English word2vec embeddings. For each word that is not in the vocabulary of Google word2vec, we will randomly initialize a vector with each dimension sampled from the range $[-0.25, 0.25]$ . In addition, recognizing key entities and discourse connective phrases is important for discourse relation recognition, therefore, we concatenate the raw word embeddings with extra linguistic features, specifically one-hot Part-Of-Speech tag embeddings and one-hot named entity tag embeddings.
+
+Building Discourse Unit Representations: We aim to build discourse unit (DU) representations that sufficiently leverage cues for discourse relation prediction from paragraph-wide contexts, including the preceding and following discourse units in a paragraph. To process long paragraph-wide contexts, we take a bottom-up two-level abstraction approach and progressively generate a compositional representation of each word first (low level) and then generate a compositional representation of each discourse unit (high level), with a max-pooling operation in between. At both word-level and DU-level, we choose Bi-LSTM as our basic component for generating compositional representations, mainly considering its capability to capture long-distance dependencies between words (discourse units) and to incorporate influences of context words (discourse units) in each side.
+
+Given a variable-length words sequence $X = (x_1,x_2,...,x_L)$ in a paragraph, the word-level Bi-LSTM will process the input sequence by using two separate LSTMs, one process the word sequence from the left to right while the other follows the reversed direction. Therefore, at each word position $t$ , we obtain two hidden states $\overrightarrow{h_t}, \overleftarrow{h_t}$ . We concatenate them to get the word representation $h_t = [\overrightarrow{h_t}, \overleftarrow{h_t}]$ . Then we apply max-pooling over the sequence of word representations for words in a discourse unit in order to get the discourse unit embedding:
+
+$$MP_{DU}[j] = \max _{i=DU\_start}^{DU\_end}h_i[j]\quad \\
+where, 1 \le j \le hidden\_node\_size$$   (Eq. 8)
+
+Next, the DU-level Bi-LSTM will process the sequence of discourse unit embeddings in a paragraph and generate two hidden states $\overrightarrow{hDU_t}$ and $\overleftarrow{hDU_t}$ at each discourse unit position. We concatenate them to get the discourse unit representation $hDU_t = [\overrightarrow{hDU_t}, \overleftarrow{hDU_t}]$ .
+
+The Softmax Prediction Layer: Finally, we concatenate two adjacent discourse unit representations $hDU_{t-1}$ and $hDU_t$ and predict the discourse relation between them using a softmax function:
+
+$$y_{t-1} = softmax(W_y*[hDU_{t-1},hDU_t]+b_y)$$   (Eq. 9)
+
+Untie Parameters in the Softmax Prediction Layer (Implicit vs. Explicit)
+
+Previous work BIBREF1 , BIBREF2 , BIBREF10 has revealed that recognizing explicit vs. implicit discourse relations requires different strategies. Note that in the PDTB dataset, explicit discourse relations were distinguished from implicit ones, depending on whether a discourse connective exists between two discourse units. Therefore, explicit discourse relation detection can be simplified as a discourse connective phrase disambiguation problem BIBREF1 , BIBREF2 . On the contrary, predicting an implicit discourse relation should rely on understanding the overall contents of its two discourse units BIBREF2 , BIBREF10 .
+
+Considering the different natures of explicit vs. implicit discourse relation prediction, we decide to untie parameters at the final discourse relation prediction layer and train two softmax classifiers, as illustrated in Figure 2 . The two classifiers have different sets of parameters, with one classifier for only implicit discourse relations and the other for only explicit discourse relations.
+
+$$y_{t-1} =
+{\left\lbrace \begin{array}{ll}
+softmax(W_{exp}[hDU_{t-1},hDU_t]+b_{exp}),&exp\\
+softmax(W_{imp}[hDU_{t-1},hDU_t]+b_{imp}),&imp
+\end{array}\right.}$$   (Eq. 12)
+
+The loss function used for the neural network training considers loss induced by both implicit relation prediction and explicit relation prediction:
+
+$$Loss = Loss_{imp} + \alpha *Loss_{exp}$$   (Eq. 13)
+
+The $\alpha $ , in the full system, is set to be 1, which means that minimizing the loss in predicting either type of discourse relations is equally important. In the evaluation, we will also evaluate a system variant, where we will set $\alpha = 0$ , which means that the neural network will not attempt to predict explicit discourse relations and implicit discourse relation prediction will not be influenced by predicting neighboring explicit discourse relations.
+
+Fine-tune Discourse Relation Predictions Using a CRF Layer
+
+Data analysis and many linguistic studies BIBREF11 , BIBREF33 , BIBREF34 , BIBREF35 have repeatedly shown that discourse relations feature continuity and patterns (e.g., a temporal relation is likely to be followed by another temporal relation). Especially, BIBREF11 firstly reported that patterns exist between implicit discourse relations and their neighboring explicit discourse relations.
+
+Motivated by these observations, we aim to improve implicit discourse relation detection by making use of easily identifiable explicit discourse relations and taking into account global patterns of discourse relation distributions. Specifically, we add an extra CRF layer at the top of the softmax prediction layer (shown in figure 3 ) to fine-tune predicted discourse relations by considering their inter-dependencies.
+
+The Conditional Random Fields BIBREF36 (CRF) layer updates a state transition matrix, which can effectively adjust the current label depending on proceeding and following labels. Both training and decoding of the CRF layer can be solved efficiently by using the Viterbi algorithm. With the CRF layer, the model jointly assigns a sequence of discourse relations between each two adjacent discourse units in a paragraph, including both implicit and explicit relations, by considering relevant discourse unit representations as well as global discourse relation patterns.
+
+Dataset and Preprocessing
+
+The Penn Discourse Treebank (PDTB): We experimented with PDTB v2.0 BIBREF7 which is the largest annotated corpus containing 36k discourse relations in 2,159 Wall Street Journal (WSJ) articles. In this work, we focus on the top-level discourse relation senses which are consist of four major semantic classes: Comparison (Comp), Contingency (Cont), Expansion (Exp) and Temporal (Temp). We followed the same PDTB section partition BIBREF12 as previous work and used sections 2-20 as training set, sections 21-22 as test set, and sections 0-1 as development set. Table 1 presents the data distributions we collected from PDTB.
+
+Preprocessing: The PDTB dataset documents its annotations as a list of discourse relations, with each relation associated with its two discourse units. To recover the paragraph context for a discourse relation, we match contents of its two annotated discourse units with all paragraphs in corresponding raw WSJ article. When all the matching was completed, each paragraph was split into a sequence of discourse units, with one discourse relation (implicit or explicit) between each two adjacent discourse units. Following this method, we obtained 14,309 paragraphs in total, each contains 3.2 discourse units on average. Table 2 shows the distribution of paragraphs based on the number of discourse units in a paragraph.
+
+Parameter Settings and Model Training
+
+We tuned the parameters based on the best performance on the development set. We fixed the weights of word embeddings during training. All the LSTMs in our neural network use the hidden state size of 300. To avoid overfitting, we applied dropout BIBREF37 with dropout ratio of 0.5 to both input and output of LSTM layers. To prevent the exploding gradient problem in training LSTMs, we adopt gradient clipping with gradient L2-norm threshold of 5.0. These parameters remain the same for all our proposed models as well as our own baseline models.
+
+We chose the standard cross-entropy loss function for training our neural network model and adopted Adam BIBREF38 optimizer with the initial learning rate of 5e-4 and a mini-batch size of 128. If one instance is annotated with two labels (4% of all instances), we use both of them in loss calculation and regard the prediction as correct if model predicts one of the annotated labels. All the proposed models were implemented with Pytorch and converged to the best performance within 20-40 epochs.
+
+To alleviate the influence of randomness in neural network model training and obtain stable experimental results, we ran each of the proposed models and our own baseline models ten times and report the average performance of each model instead of the best performance as reported in many previous works.
+
+Baseline Models and Systems
+
+We compare the performance of our neural network model with several recent discourse relation recognition systems that only consider two relevant discourse units.
+
+BIBREF12 : improves implicit discourse relation prediction by creating more training instances from the Gigaword corpus utilizing explicitly mentioned discourse connective phrases.
+
+BIBREF5 : a gated relevance network (GRN) model with tensors to capture semantic interactions between words from two discourse units.
+
+BIBREF9 : a convolutional neural network model that leverages relations between different styles of discourse relations annotations (PDTB and RST BIBREF24 ) in a multi-task joint learning framework.
+
+BIBREF6 : a multi-level attention-over-attention model to dynamically exploit features from two discourse units for recognizing an implicit discourse relation.
+
+BIBREF21 : a novel pipelined adversarial framework to enable an adaptive imitation competition between the implicit network and a rival feature discriminator with access to connectives.
+
+BIBREF18 : a Simple Word Interaction Model (SWIM) with tensors that captures both linear and quadratic relations between words from two discourse units.
+
+BIBREF19 : an attention-based LSTM neural network that leverages explicit discourse relations in PDTB and unannotated external data in a multi-task joint learning framework.
+
+Evaluation Settings
+
+On the PDTB corpus, both binary classification and multi-way classification settings are commonly used to evaluate the implicit discourse relation recognition performance. We noticed that all the recent works report class-wise implicit relation prediction performance in the binary classification setting, while none of them report detailed performance in the multi-way classification setting. In the binary classification setting, separate “one-versus-all” binary classifiers were trained, and each classifier is to identify one class of discourse relations. Although separate classifiers are generally more flexible in combating with imbalanced distributions of discourse relation classes and obtain higher class-wise prediction performance, one pair of discourse units may be tagged with all four discourse relations without proper conflict resolution. Therefore, the multi-way classification setting is more appropriate and natural in evaluating a practical end-to-end discourse parser, and we mainly evaluate our proposed models using the four-way multi-class classification setting.
+
+Since none of the recent previous work reported class-wise implicit relation classification performance in the multi-way classification setting, for better comparisons, we re-implemented the neural tensor network architecture (so-called SWIM in BIBREF18 ) which is essentially a Bi-LSTM model with tensors and report its detailed evaluation result in the multi-way classification setting. As another baseline, we report the performance of a Bi-LSTM model without tensors as well. Both baseline models take two relevant discourse units as the only input.
+
+For additional comparisons, We also report the performance of our proposed models in the binary classification setting.
+
+Experimental Results
+
+Multi-way Classification: The first section of table 3 shows macro average F1-scores and accuracies of previous works. The second section of table 3 shows the multi-class classification results of our implemented baseline systems. Consistent with results of previous works, neural tensors, when applied to Bi-LSTMs, improved implicit discourse relation prediction performance. However, the performance on the three small classes (Comp, Cont and Temp) remains low.
+
+The third section of table 3 shows the multi-class classification results of our proposed paragraph-level neural network models that capture inter-dependencies among discourse units. The first row shows the performance of a variant of our basic model, where we only identify implicit relations and ignore identifying explicit relations by setting the $\alpha $ in equation (5) to be 0. Compared with the baseline Bi-LSTM model, the only difference is that this model considers paragraph-wide contexts and model inter-dependencies among discourse units when building representation for individual DU. We can see that this model has greatly improved implicit relation classification performance across all the four relations and improved the macro-average F1-score by over 7 percents. In addition, compared with the baseline Bi-LSTM model with tensor, this model improved implicit relation classification performance across the three small classes, with clear performance gains of around 2 and 8 percents on contingency and temporal relations respectively, and overall improved the macro-average F1-score by 2.2 percents.
+
+The second row shows the performance of our basic paragraph-level model which predicts both implicit and explicit discourse relations in a paragraph. Compared to the variant system (the first row), the basic model further improved the classification performance on the first three implicit relations. Especially on the contingency relation, the classification performance was improved by another 1.42 percents. Moreover, the basic model yields good performance for recognizing explicit discourse relations as well, which is comparable with previous best result (92.05% macro F1-score and 93.09% accuracy as reported in BIBREF11 ).
+
+After untying parameters in the softmax prediction layer, implicit discourse relation classification performance was improved across all four relations, meanwhile, the explicit discourse relation classification performance was also improved. The CRF layer further improved implicit discourse relation recognition performance on the three small classes. In summary, our full paragraph-level neural network model achieves the best macro-average F1-score of 48.82% in predicting implicit discourse relations, which outperforms previous neural tensor network models (e.g., BIBREF18 ) by more than 2 percents and outperforms the best previous system BIBREF19 by 1 percent.
+
+Binary Classification: From table 4 , we can see that compared against the best previous systems, our paragraph-level model with untied parameters in the prediction layer achieves F1-score improvements of 6 points on Comparison and 7 points on Temporal, which demonstrates that paragraph-wide contexts are important in detecting minority discourse relations. Note that the CRF layer of the model is not suitable for binary classification.
+
+Ensemble Model
+
+As we explained in section 4.2, we ran our models for 10 times to obtain stable average performance. Then we also created ensemble models by applying majority voting to combine results of ten runs. From table 5 , each ensemble model obtains performance improvements compared with single model. The full model achieves performance boosting of (51.84 - 48.82 = 3.02) and (94.17 - 93.21 = 0.96) in macro F1-scores for predicting implicit and explicit discourse relations respectively. Furthermore, the ensemble model achieves the best performance for predicting both implicit and explicit discourse relations simultaneously.
+
+Impact of Paragraph Length
+
+To understand the influence of paragraph lengths to our paragraph-level models, we divide paragraphs in the PDTB test set into several subsets based on the number of DUs in a paragraph, and then evaluate our proposed models on each subset separately. From Figure 4 , we can see that our paragraph-level models (the latter three) overall outperform DU-pair baselines across all the subsets. As expected, the paragraph-level models achieve clear performance gains on long paragraphs (with more than 5 DUs) by extensively modeling mutual influences of DUs in a paragraph. But somewhat surprisingly, the paragraph-level models achieve noticeable performance gains on short paragraphs (with 2 or 3 DUs) as well. We hypothesize that by learning more appropriate discourse-aware DU representations in long paragraphs, our paragraph-level models reduce bias of using DU representations in predicting discourse relations, which benefits discourse relation prediction in short paragraphs as well.
+
+Example Analysis
+
+For the example ( "Implicit Discourse Relation Recognition" ), the baseline neural tensor model predicted both implicit relations wrongly (“Implicit-Contingency” between DU2 and DU3; “Implicit-Expansion” between DU3 and DU4), while our paragraph-level model predicted all the four discourse relations correctly, which indicates that paragraph-wide contexts play a key role in implicit discourse relation prediction.
+
+For another example:
+
+(2): [Marshall came clanking in like Marley's ghost dragging those chains of brigades and air wings and links with Arab despots.] $_{DU1}$ (Implicit-Temporal) [He wouldn't leave] $_{DU2}$ until (Explicit-Temporal) [Mr. Cheney promised to do whatever the Pentagon systems analysts told him.] $_{DU3}$
+
+Our basic paragraph-level model wrongly predicted the implicit discourse relation between DU1 and DU2 to be “Implicit-Comparison”, without being able to effectively use the succeeding “Explicit-Temporal” relation. On the contrary, the full model corrected this mistake by modeling discourse relation patterns with the CRF layer.
+
+Conclusion
+
+We have presented a paragraph-level neural network model that takes a sequence of discourse units as input, models inter-dependencies between discourse units as well as discourse relation continuity and patterns, and predicts a sequence of discourse relations in a paragraph. By building wider-context informed discourse unit representations and capturing the overall discourse structure, the paragraph-level neural network model outperforms the best previous models for implicit discourse relation recognition on the PDTB dataset.
+
+Acknowledgments
+
+We acknowledge the support of NVIDIA Corporation for their donation of one GeForce GTX TITAN X GPU used for this research.

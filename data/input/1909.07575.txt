@@ -1,0 +1,165 @@
+Introduction
+
+Speech-to-Text translation (ST) is essential for a wide range of scenarios: for example in emergency calls, where agents have to respond emergent requests in a foreign language BIBREF0; or in online courses, where audiences and speakers use different languages BIBREF1. To tackle this problem, existing approaches can be categorized into cascaded method BIBREF2, BIBREF3, where a machine translation (MT) model translates outputs of an automatic speech recognition (ASR) system into target language, and end-to-end method BIBREF4, BIBREF5, where a single model learns acoustic frames to target word sequence mappings in one step towards the final objective of interest. Although the cascaded model remains the dominant approach due to its better performance, the end-to-end method becomes more and more popular because it has lower latency by avoiding inferences with two models and rectifies the error propagation in theory.
+
+Since it is hard to obtain a large-scale ST dataset, multi-task learning BIBREF5, BIBREF6 and pre-training techniques BIBREF7 have been applied to end-to-end ST model to leverage large-scale datasets of ASR and MT. A common practice is to pre-train two encoder-decoder models for ASR and MT respectively, and then initialize the ST model with the encoder of the ASR model and the decoder of the MT model. Subsequently, the ST model is optimized with the multi-task learning by weighing the losses of ASR, MT, and ST. This approach, however, causes a huge gap between pre-training and fine-tuning, which are summarized into three folds:
+
+Subnet Waste: The ST system just reuses the ASR encoder and the MT decoder, while discards other pre-trained subnets, such as the MT encoder. Consequently, valuable semantic information captured by the MT encoder cannot be inherited by the final ST system.
+
+Role Mismatch: The speech encoder plays different roles in pre-training and fine-tuning. The encoder is a pure acoustic model in pre-training, while it has to extract semantic and linguistic features additionally in fine-tuning, which significantly increases the learning difficulty.
+
+Non-pre-trained Attention Module: Previous work BIBREF6 trains attention modules for ASR, MT and ST respectively, hence, the attention module of ST does not benefit from the pre-training.
+
+To address these issues, we propose a Tandem Connectionist Encoding Network (TCEN), which is able to reuse all subnets in pre-training, keep the roles of subnets consistent, and pre-train the attention module. Concretely, the TCEN consists of three components, a speech encoder, a text encoder, and a target text decoder. Different from the previous work that pre-trains an encoder-decoder based ASR model, we only pre-train an ASR encoder by optimizing the Connectionist Temporal Classification (CTC) BIBREF8 objective function. In this way, the additional decoder of ASR is not required while keeping the ability to read acoustic features into the source language space by the speech encoder. Besides, the text encoder and decoder can be pre-trained on a large MT dataset. After that, we employ common used multi-task learning method to jointly learn ASR, MT and ST tasks.
+
+Compared to prior works, the encoder of TCEN is a concatenation of an ASR encoder and an MT encoder and our model does not have an ASR decoder, so the subnet waste issue is solved. Furthermore, the two encoders work at tandem, disentangling acoustic feature extraction and linguistic feature extraction, ensuring the role consistency between pre-training and fine-tuning. Moreover, we reuse the pre-trained MT attention module in ST, so we can leverage the alignment information learned in pre-training.
+
+Since the text encoder consumes word embeddings of plausible texts in MT task but uses speech encoder outputs in ST task, another question is how one guarantees the speech encoder outputs are consistent with the word embeddings. We further modify our model to achieve semantic consistency and length consistency. Specifically, (1) the projection matrix at the CTC classification layer for ASR is shared with the word embedding matrix, ensuring that they are mapped to the same latent space, and (2) the length of the speech encoder output is proportional to the length of the input frame, so it is much longer than a natural sentence. To bridge the length gap, source sentences in MT are lengthened by adding word repetitions and blank tokens to mimic the CTC output sequences.
+
+We conduct comprehensive experiments on the IWSLT18 speech translation benchmark BIBREF1, demonstrating the effectiveness of each component. Our model is significantly better than previous methods by 3.6 and 2.2 BLEU scores for the subword-level decoding and character-level decoding strategies, respectively.
+
+Our contributions are three-folds: 1) we shed light on why previous ST models cannot sufficiently utilize the knowledge learned from the pre-training process; 2) we propose a new ST model, which alleviates shortcomings in existing methods; and 3) we empirically evaluate the proposed model on a large-scale public dataset.
+
+Background ::: Problem Formulation
+
+End-to-end speech translation aims to translate a piece of audio into a target-language translation in one step. The raw speech signals are usually converted to sequences of acoustic features, e.g. Mel filterbank features. Here, we define the speech feature sequence as $\mathbf {x} = (x_1, \cdots , x_{T_x})$.The transcription and translation sequences are denoted as $\mathbf {y^{s}} = (y_1^{s}, \cdots , y_{T_s}^{s})$, and $\mathbf {y^{t}} = (y_1^{t}, \cdots , y_{T_t}^{t})$ repectively. Each symbol in $\mathbf {y^{s}}$ or $\mathbf {y^{t}}$ is an integer index of the symbol in a vocabulary $V_{src}$ or $V_{trg}$ respectively (e.g. $y^s_i=k, k\in [0, |V_{src}|-1]$). In this work, we suppose that an ASR dataset, an MT dataset, and a ST dataset are available, denoted as $\mathcal {A} = \lbrace (\mathbf {x_i}, \mathbf {y^{s}_i})\rbrace _{i=0}^I$, $\mathcal {M} =\lbrace (\mathbf {y^{s}_j}, \mathbf {y^{t}_j})\rbrace _{j=0}^J$ and $ \mathcal {S} =\lbrace (\mathbf {x_l}, \mathbf {y^{t}_l})\rbrace _{l=0}^L$ respectively. Given a new piece of audio $\mathbf {x}$, our goal is to learn an end to end model to generate a translation sentence $\mathbf {y^{t}}$ without generating an intermediate result $\mathbf {y^{s}}$.
+
+Background ::: Multi-Task Learning and Pre-training for ST
+
+To leverage large scale ASR and MT data, multi-task learning and pre-training techniques are widely employed to improve the ST system. As shown in Figure FIGREF4, there are three popular multi-task strategies for ST, including 1) one-to-many setting, in which a speech encoder is shared between ASR and ST tasks; 2) many-to-one setting in which a decoder is shared between MT and ST tasks; and 3) many-to-many setting where both the encoder and decoder are shared.
+
+A many-to-many multi-task model contains two encoders as well as two decoders. It can be jointly trained on ASR, MT, and ST tasks. As the attention module is task-specific, three attentions are defined.
+
+Usually, the size of $\mathcal {A}$ and $\mathcal {M}$ is much larger than $\mathcal {S}$. Therefore, the common training practice is to pre-train the model on ASR and MT tasks and then fine-tune it with a multi-task learning manner. However, as aforementioned, this method suffers from subnet waste, role mismatch and non-pre-trained attention issues, which severely limits the end-to-end ST performance.
+
+Our method
+
+In this section, we first introduce the architecture of TCEN, which consists of two encoders connected in tandem, and one decoder with an attention module. Then we give the pre-training and fine-tuning strategy for TCEN. Finally, we propose our solutions for semantic and length inconsistency problems, which are caused by multi-task learning.
+
+Our method ::: TCEN Architecture
+
+Figure FIGREF5 sketches the overall architecture of TCEN, including a speech encoder $enc_s$, a text encoder $enc_t$ and a decoder $dec$ with an attention module $att$. During training, the $enc_s$ acts like an acoustic model which reads the input $\mathbf {x}$ to word or subword representations $\mathbf {h^s}$, then $enc_t$ learns high-level linguistic knowledge into hidden representations $\mathbf {h^t}$. Finally, the $dec$ defines a distribution probability over target words. The advantage of our architecture is that two encoders disentangle acoustic feature extraction and linguistic feature extraction, making sure that valuable knowledge learned from ASR and MT tasks can be effectively leveraged for ST training. Besides, every module in pre-training can be utilized in fine-tuning, alleviating the subnet waste problem.
+
+Follow BIBREF9 inaguma2018speech, we use CNN-BiLSTM architecture to build our model. Specifically, the input features $\mathbf {x}$ are organized as a sequence of feature vectors in length $T_x$. Then, $\mathbf {x}$ is passed into a stack of two convolutional layers followed by max-pooling:
+
+where $\mathbf {v}^{(l-1)}$ is feature maps in last layer and $\mathbf {W}^{(l)}$ is the filter. The max-pooling layers downsample the sequence in length by a total factor of four. The down-sampled feature sequence is further fed into a stack of five bidirectional $d$-dimensional LSTM layers:
+
+where $[;]$ denotes the vector concatenation. The final output representation from the speech encoder is denoted as $\mathbf {h^s}=(h^s_1, \cdots , h^s_{\frac{T_x}{4}})$, where $h_i^s \in \mathbb {R}^d$.
+
+The text encoder $enc_t$ consists of two bidirectional LSTM layers. In ST task, $enc_t$ accepts speech encoder output $\mathbf {h}^s$ as input. While in MT, $enc_t$ consumes the word embedding representation $\mathbf {e^s}$ derived from $\mathbf {y^s}$, where each element $e^s_i$ is computed by choosing the $y_i^s$-th vector from the source embedding matrix $W_{E^s}$. The goal of $enc_t$ is to extract high-level linguistic features like syntactic features or semantic features from lower level subword representations $\mathbf {h}^s$ or $\mathbf {e}^s$. Since $\mathbf {h}^s$ and $\mathbf {e}^s$ belong to different latent space and have different lengths, there remain semantic and length inconsistency problems. We will provide our solutions in Section SECREF21. The output sequence of $enc_t$ is denoted as $\mathbf {h}^t$.
+
+The decoder is defined as two unidirectional LSTM layers with an additive attention $att$. It predicts target sequence $\mathbf {y^{t}}$ by estimating conditional probability $P(\mathbf {y^{t}}|\mathbf {x})$:
+
+Here, $z_k$ is the the hidden state of the deocder RNN at $k$ step and $c_k$ is a time-dependent context vector computed by the attention $att$.
+
+Our method ::: Training Procedure
+
+Following previous work, we split the training procedure to pre-training and fine-tuning stages. In pre-training stage, the speech encoder $enc_s$ is trained towards CTC objective using dataset $\mathcal {A}$, while the text encoder $enc_t$ and the decoder $dec$ are trained on MT dataset $\mathcal {M}$. In fine-tuning stage, we jointly train the model on ASR, MT, and ST tasks.
+
+Our method ::: Training Procedure ::: Pre-training
+
+To sufficiently utilize the large dataset $\mathcal {A}$ and $\mathcal {M}$, the model is pre-trained on CTC-based ASR task and MT task in the pre-training stage.
+
+For ASR task, in order to get rid of the requirement for decoder and enable the $enc_s$ to generate subword representation, we leverage connectionist temporal classification (CTC) BIBREF8 loss to train the speech encoder.
+
+Given an input $\mathbf {x}$, $enc_s$ emits a sequence of hidden vectors $\mathbf {h^s}$, then a softmax classification layer predicts a CTC path $\mathbf {\pi }$, where $\pi _t \in V_{src} \cup $ {`-'} is the observing label at particular RNN step $t$, and `-' is the blank token representing no observed labels:
+
+where $W_{ctc} \in \mathbb {R}^{d \times (|V_{src}|+1)}$ is the weight matrix in the classification layer and $T$ is the total length of encoder RNN.
+
+A legal CTC path $\mathbf {\pi }$ is a variation of the source transcription $\mathbf {y}^s$ by allowing occurrences of blank tokens and repetitions, as shown in Table TABREF14. For each transcription $\mathbf {y}$, there exist many legal CTC paths in length $T$. The CTC objective trains the model to maximize the probability of observing the golden sequence $\mathbf {y}^s$, which is calculated by summing the probabilities of all possible legal paths:
+
+where $\Phi _T(y)$ is the set of all legal CTC paths for sequence $\mathbf {y}$ with length $T$. The loss can be easily computed using forward-backward algorithm. More details about CTC are provided in supplementary material.
+
+For MT task, we use the cross-entropy loss as the training objective. During training, $\mathbf {y^s}$ is converted to embedding vectors $\mathbf {e^s}$ through embedding layer $W_{E^s}$, then $enc_t$ consumes $\mathbf {e^s}$ and pass the output $\mathbf {h^t}$ to decoder. The objective function is defined as:
+
+Our method ::: Training Procedure ::: Fine-tune
+
+In fine-tune stage, we jointly update the model on ASR, MT, and ST tasks. The training for ASR and MT follows the same process as it was in pre-training stage.
+
+For ST task, the $enc_s$ reads the input $\mathbf {x}$ and generates $\mathbf {h^s}$, then $enc_t$ learns high-level linguistic knowledge into $\mathbf {h^t}$. Finally, the $dec$ predicts the target sentence. The ST loss function is defined as:
+
+Following the update strategy proposed by BIBREF11 luong2015multi, we allocate a different training ratio $\alpha _i$ for each task. When switching between tasks, we select randomly a new task $i$ with probability $\frac{\alpha _i}{\sum _{j}\alpha _{j}}$.
+
+Our method ::: Subnet-Consistency
+
+Our model keeps role consistency between pre-training and fine-tuning by connecting two encoders for ST task. However, this leads to some new problems: 1) The text encoder consumes $\mathbf {e^s}$ during MT training, while it accepts $\mathbf {h^s}$ during ST training. However, $\mathbf {e^s}$ and $\mathbf {h^s}$ may not follow the same distribution, resulting in the semantic inconsistency. 2) Besides, the length of $\mathbf {h^s}$ is not the same order of magnitude with the length of $\mathbf {e^s}$, resulting in the length inconsistency.
+
+In response to the above two challenges, we propose two countermeasures: 1) We share weights between CTC classification layer and source-end word embedding layer during training of ASR and MT, encouraging $\mathbf {e^s}$ and $\mathbf {h^s}$ in the same space. 2)We feed the text encoder source sentences in the format of CTC path, which are generated from a seq2seq model, making it more robust toward long inputs.
+
+Our method ::: Subnet-Consistency ::: Semantic Consistency
+
+As shown in Figure FIGREF5, during multi-task training, two different hidden features will be fed into the text encoder $enc_t$: the embedding representation $\mathbf {e}^s$ in MT task, and the $enc_s$ output $\mathbf {h^s}$ in ST task. Without any regularization, they may belong to different latent spaces. Due to the space gap, the $enc_t$ has to compromise between two tasks, limiting its performance on individual tasks.
+
+To bridge the space gap, our idea is to pull $\mathbf {h^s}$ into the latent space where $\mathbf {e}^s$ belong. Specifically, we share the weight $W_{ctc}$ in CTC classification layer with the source embedding weights $W_{E^s}$, which means $W_{ctc} = W_{E^s}$. In this way, when predicting the CTC path $\mathbf {\pi }$, the probability of observing the particular label $w_i \in V_{src}\cup ${`-'} at time step $t$, $p(\pi _t=w_i|\mathbf {x})$, is computed by normalizing the product of hidden vector $h_t^s$ and the $i$-th vector in $W_{E^s}$:
+
+The loss function closes the distance between $h^s_t$ and golden embedding vector, encouraging $\mathbf {h}^s$ have the same distribution with $\mathbf {e}^s$.
+
+Our method ::: Subnet-Consistency ::: Length Consistency
+
+Another existing problem is length inconsistency. The length of the sequence $\mathbf {h^s}$ is proportional to the length of the input frame $\mathbf {x}$, which is much longer than the length of $\mathbf {e^s}$. To solve this problem, we train an RNN-based seq2seq model to transform normal source sentences to noisy sentences in CTC path format, and replace standard MT with denoising MT for multi-tasking.
+
+Specifically, we first train a CTC ASR model based on dataset $\mathcal {A} = \lbrace (\mathbf {x}_i, \mathbf {y}^s_i)\rbrace _{i=0}^{I}$, and generate a CTC-path $\mathbf {\pi }_i$ for each audio $\mathbf {x}_i$ by greedy decoding. Then we define an operation $S(\cdot )$, which converts a CTC path $\mathbf {\pi }$ to a sequence of the unique tokens $\mathbf {u}$ and a sequence of repetition times for each token $\mathbf {l}$, denoted as $S(\mathbf {\pi }) = (\mathbf {u}, \mathbf {l})$. Notably, the operation is reversible, meaning that $S^{-1} (\mathbf {u}, \mathbf {l})=\mathbf {\pi }$. We use the example $\mathbf {\pi _1}$ in Table TABREF14 and show the corresponding $\mathbf {u}$ and $\mathbf {l}$ in Table TABREF24.
+
+Then we build a dataset $\mathcal {P} = \lbrace (\mathbf {y^s}_i, \mathbf {u}_i, \mathbf {l}_i)\rbrace _{i=0}^{I}$ by decoding all the audio pieces in $\mathcal {A}$ and transform the resulting path by the operation $S(\cdot )$. After that, we train a seq2seq model, as shown in Figure FIGREF25, which takes $ \mathbf {y^s}_i$ as input and decodes $\mathbf {u}_i, \mathbf {l}_i$ as outputs. With the seq2seq model, a noisy MT dataset $\mathcal {M}^{\prime }=\lbrace (\mathbf {\pi }_l, \mathbf {y^t}_l)\rbrace _{l=0}^{L}$ is obtained by converting every source sentence $\mathbf {y^s}_i \in \mathcal {M}$ to $\mathbf {\pi _i}$, where $\mathbf {\pi }_i = S^{-1}(\mathbf {u}_i, \mathbf {l}_i)$. We did not use the standard seq2seq model which takes $\mathbf {y^s}$ as input and generates $\mathbf {\pi }$ directly, since there are too many blank tokens `-' in $\mathbf {\pi }$ and the model tends to generate a long sequence with only blank tokens. During MT training, we randomly sample text pairs from $\mathcal {M}^{\prime }$ and $\mathcal {M}$ according to a hyper-parameter $k$. After tuning on the validation set, about $30\%$ pairs are sampled from $\mathcal {M}^{\prime }$. In this way, the $enc_t$ is more robust toward the longer inputs given by the $enc_s$.
+
+Experiments
+
+We conduct experiments on the IWSLT18 speech translation task BIBREF1. Since IWSLT participators use different data pre-processing methods, we reproduce several competitive baselines based on the ESPnet BIBREF12 for a fair comparison.
+
+Experiments ::: Dataset ::: Speech translation data:
+
+The organizer provides a speech translation corpus extracting from the TED talk (ST-TED), which consists of raw English wave files, English transcriptions, and aligned German translations. The corpus contains 272 hours of English speech with 171k segments. We split 2k segments from the corpus as dev set and tst2010, tst2013, tst2014, tst2015 are used as test sets.
+
+Speech recognition data: Aside from ST-TED, TED-LIUM2 corpus BIBREF13 is provided as speech recognition data, which contains 207 hours of English speech and 93k transcript sentences.
+
+Text translation data: We use transcription and translation pairs in the ST-TED corpus and WIT3 as in-domain MT data, which contains 130k and 200k sentence pairs respectively. WMT2018 is used as out-of-domain training data which consists of 41M sentence pairs.
+
+Data preprocessing: For speech data, the utterances are segmented into multiple frames with a 25 ms window size and a 10 ms step size. Then we extract 80-channel log-Mel filter bank and 3-dimensional pitch features using Kaldi BIBREF14, resulting in 83-dimensional input features. We normalize them by the mean and the standard deviation on the whole training set. The utterances with more than 3000 frames are discarded. The transcripts in ST-TED are in true-case with punctuation while in TED-LIUM2, transcripts are in lower-case and unpunctuated. Thus, we lowercase all the sentences and remove the punctuation to keep consistent. To increase the amount of training data, we perform speed perturbation on the raw signals with speed factors 0.9 and 1.1. For the text translation data, sentences longer than 80 words or shorter than 10 words are removed. Besides, we discard pairs whose length ratio between source and target sentence is smaller than 0.5 or larger than 2.0. Word tokenization is performed using the Moses scripts and both English and German words are in lower-case.
+
+We use two different sets of vocabulary for our experiments. For the subword experiments, both English and German vocabularies are generated using sentencepiece BIBREF15 with a fixed size of 5k tokens. BIBREF9 inaguma2018speech show that increasing the vocabulary size is not helpful for ST task. For the character experiments, both English and German sentences are represented in the character level.
+
+For evaluation, we segment each audio with the LIUM SpkDiarization tool BIBREF16 and then perform MWER segmentation with RWTH toolkit BIBREF17. We use lowercase BLEU as evaluation metric.
+
+Experiments ::: Baseline Models and Implementation
+
+We compare our method with following baselines.
+
+Vanilla ST baseline: The vanilla ST BIBREF9 has only a speech encoder and a decoder. It is trained from scratch on the ST-TED corpus.
+
+Pre-training baselines: We conduct three pre-training baseline experiments: 1) encoder pre-training, in which the ST encoder is initialized from an ASR model; 2) decoder pre-training, in which the ST decoder is initialized from an MT model; and 3) encoder-decoder pre-training, where both the encoder and decoder are pre-trained. The ASR model has the same architecture with vanilla ST model, trained on the mixture of ST-TED and TED-LIUM2 corpus. The MT model has a text encoder and decoder with the same architecture of which in TCEN. It is first trained on WMT data (out-of-domain) and then fine-tuned on in-domain data.
+
+Multi-task baselines: We also conduct three multi-task baseline experiments including one-to-many setting, many-to-one setting, and many-to-many setting. In the first two settings, we train the model with $\alpha _{st}=0.75$ while $\alpha _{asr}=0.25$ or $\alpha _{mt}=0.25$. For many-to-many setting, we use $\alpha _{st}=0.6, \alpha _{asr}=0.2$ and $\alpha _{mt}=0.2$.. For MT task, we use only in-domain data.
+
+Many-to-many+pre-training: We train a many-to-many multi-task model where the encoders and decoders are derived from pre-trained ASR and MT models. Triangle+pre-train: BIBREF18 DBLP:conf/naacl/AnastasopoulosC18 proposed a triangle multi-task strategy for speech translation. Their model solves the subnet waste issue by concatenating an ST decoder to an ASR encoder-decoder model. Notably, their ST decoder can consume representations from the speech encoder as well as the ASR decoder. For a fair comparison, the speech encoder and the ASR decoder are initialized from the pre-trained ASR model. The Triangle model is fine-tuned under their multi-task manner.
+
+All our baselines as well as TCEN are implemented based on ESPnet BIBREF12, the RNN size is set as $d=1024$ for all models. We use a dropout of 0.3 for embeddings and encoders, and train using Adadelta with initial learning rate of 1.0 for a maximum of 10 epochs.
+
+For training of TCEN, we set $\alpha _{asr}=0.2$ and $\alpha _{mt}=0.8$ in the pre-training stage, since the MT dataset is much larger than ASR dataset. For fine-tune, we use $\alpha _{st}=0.6, \alpha _{asr}=0.2$ and $\alpha _{mt}=0.2$, same as the `many-to-many' baseline.
+
+For testing, we select the model with the best accuracy on speech translation task on dev set. At inference time, we use a beam size of 10, and the beam scores include length normalization with a weight of 0.2.
+
+Experiments ::: Experimental Results
+
+Table TABREF29 shows the results on four test sets as well as the average performance. Our method significantly outperforms the strong `many-to-many+pretrain' baseline by 3.6 and 2.2 BLEU scores respectively, indicating the proposed method is very effective that substantially improves the translation quality. Besides, both pre-training and multi-task learning can improve translation quality, and the pre-training settings (2nd-4th rows) are more effective compared to multi-task settings (5th-8th rows). We observe a performance degradation in the `triangle+pretrain' baseline. Compared to our method, where the decoder receives higher-level syntactic and semantic linguistic knowledge extracted from text encoder, their ASR decoder can only provide lower word-level linguistic information. Besides, since their model lacks text encoder and the architecture of ST decoder is different from MT decoder, their model cannot utilize the large-scale MT data in all the training stages. Interestingly, we find that the char-level models outperform the subword-level models in all settings, especially in vanilla baseline. A similar phenomenon is observed by BIBREF6 berard2018end. A possible explanation is that learning the alignments between speech frames and subword units in another language is notoriously difficult. Our method can bring more gains in the subword setting since our model is good at learning the text-to-text alignment and the subword-level alignment is more helpful to the translation quality.
+
+Experiments ::: Discussion ::: Ablation Study
+
+To better understand the contribution of each component, we perform an ablation study on subword-level experiments. The results are shown in Table TABREF37. In `-MT noise' setting, we do not add noise to source sentences for MT. In `-weight sharing' setting, we use different parameters in CTC classification layer and source embedding layer. These two experiments prove that both weight sharing and using noisy MT input benefit to the final translation quality. Performance degrades more in `-weight sharing', indicating the semantic consistency contributes more to our model. In the `-pretrain' experiment, we remove the pre-training stage and directly update the model on three tasks, leading to a dramatic decrease on BLEU score, indicating the pre-training is an indispensable step for end-to-end ST.
+
+Experiments ::: Discussion ::: Learning Curve
+
+It is interesting to investigate why our method is superior to baselines. We find that TCEN achieves a higher final result owing to a better start-point in fine-tuning. Figure FIGREF39 provides learning curves of subword accuracy on validation set. The x-axis denotes the fine-tuning training steps. The vanilla model starts at a low accuracy, because its networks are not pre-trained on the ASR and MT data. The trends of our model and `many-to-many+pretrain' are similar, but our model outperforms it about five points in the whole fine-tuning process. It indicates that the gain comes from bridging the gap between pre-training and fine-tuning rather than a better fine-tuning process.
+
+Experiments ::: Discussion ::: Compared with a Cascaded System
+
+Table TABREF29 compares our model with end-to-end baselines. Here, we compare our model with cascaded systems. We build a cascaded system by combining the ASR model and MT model used in pre-training baseline. Word error rate (WER) of the ASR system and BLEU score of the MT system are reported in the supplementary material. In addition to a simple combination of the ASR and MT systems, we also re-segment the ASR outputs before feeding to the MT system, denoted as cascaded+re-seg. Specifically, we train a seq2seq model BIBREF19 on the MT dataset, where the source side is a no punctuation sentence and the target side is a natural sentence. After that, we use the seq2seq model to add sentence boundaries and punctuation on ASR outputs. Experimental results are shown in Table TABREF41. Our end-to-end model outperforms the simple cascaded model over 2 BLEU scores, and it achieves a comparable performance with the cascaded model combining with a sentence re-segment model.
+
+Related Work
+
+Early works conduct speech translation in a pipeline manner BIBREF2, BIBREF20, where the ASR output lattices are fed into an MT system to generate target sentences. HMM BIBREF21, DenseNet BIBREF22, TDNN BIBREF23 are commonly used ASR systems, while RNN with attention BIBREF19 and Transformer BIBREF10 are top choices for MT. To enhance the robustness of the NMT model towards ASR errors, BIBREF24 DBLP:conf/eacl/TsvetkovMD14 and BIBREF25 DBLP:conf/asru/ChenHHL17 propose to simulate the noise in training and inference.
+
+To avoid error propagation and high latency issues, recent works propose translating the acoustic speech into text in target language without yielding the source transcription BIBREF4. Since ST data is scarce, pre-training BIBREF7, multi-task learning BIBREF4, BIBREF6, curriculum learning BIBREF26, attention-passing BIBREF27, and knowledge distillation BIBREF28, BIBREF29 strategies have been explored to utilize ASR data and MT data. Specifically, BIBREF5 DBLP:conf/interspeech/WeissCJWC17 show improvements of performance by training the ST model jointly with the ASR and the MT model. BIBREF6 berard2018end observe faster convergence and better results due to pre-training and multi-task learning on a larger dataset. BIBREF7 DBLP:conf/naacl/BansalKLLG19 show that pre-training a speech encoder on one language can improve ST quality on a different source language. All of them follow the traditional multi-task training strategies. BIBREF26 DBLP:journals/corr/abs-1802-06003 propose to use curriculum learning to improve ST performance on syntactically distant language pairs. To effectively leverage transcriptions in ST data, BIBREF18 DBLP:conf/naacl/AnastasopoulosC18 augment the multi-task model where the target decoder receives information from the source decoder and they show improvements on low-resource speech translation. Their model just consumes ASR and ST data, in contrast, our work sufficiently utilizes the large-scale MT data to capture the rich semantic knowledge. BIBREF30 DBLP:conf/icassp/JiaJMWCCALW19 use pre-trained MT and text-to-speech (TTS) synthesis models to convert weakly supervised data into ST pairs and demonstrate that an end-to-end MT model can be trained using only synthesised data.
+
+Conclusion
+
+This paper has investigated the end-to-end method for ST. It has discussed why there is a huge gap between pre-training and fine-tuning in previous methods. To alleviate these issues, we have proposed a method, which is capable of reusing every sub-net and keeping the role of sub-net consistent between pre-training and fine-tuning. Empirical studies have demonstrated that our model significantly outperforms baselines.

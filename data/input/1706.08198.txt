@@ -1,0 +1,117 @@
+Introduction
+
+Recently, neural machine translation (NMT) has gained popularity in the field of machine translation. The conventional encoder-decoder NMT proposed by Cho2014 uses two recurrent neural networks (RNN): one is an encoder, which encodes a source sequence into a fixed-length vector, and the other is a decoder, which decodes the vector into a target sequence. A newly proposed attention-based NMT by DzmitryBahdana2014 can predict output words using the weights of each hidden state of the encoder by the attention mechanism, improving the adequacy of translation.
+
+Even with the success of attention-based models, a number of open questions remain in NMT. Tu2016 argued two of the common problems are over-translation: some words are repeatedly translated unnecessary and under-translation: some words are mistakenly untranslated. This is due to the fact that NMT can not completely convert the information from the source sentence to the target sentence. Mi2016a and Feng2016 pointed out that NMT lacks the notion of coverage vector in phrase-based statistical machine translation (PBSMT), so unless otherwise specified, there is no way to prevent missing translations.
+
+Another problem in NMT is an objective function. NMT is optimized by cross-entropy; therefore, it does not directly maximize the translation accuracy. Shen2016 pointed out that optimization by cross-entropy is not appropriate and proposed a method of optimization based on a translation accuracy score, such as expected BLEU, which led to improvement of translation accuracy. However, BLEU is an evaluation metric based on n-gram precision; therefore, repetition of some words may be present in the translation even though the BLEU score is improved.
+
+To address to problem of repeating and missing words in the translation, tu2016neural introduce an encoder-decoder-reconstructor framework that optimizes NMT by back-translation from the output sentences into the original source sentences. In their method, after training the forward translation in a manner similar to the conventional attention-based NMT, they train a back-translation model from the hidden state of the decoder into the source sequence by a new decoder to enforce agreement between source and target sentences.
+
+In order to confirm the language independence of the framework, we experiment on two parallel corpora of English-Japanese and Japanese-English translation tasks using encode-decoder-reconstructor. Our experiments show that their method offers significant improvement in BLEU scores and alleviates the problem of repeating and missing words in the translation on English-Japanese translation task, though the difference is not significant on Japanese-English translation task.
+
+In addition, we jointly train a model of forward translation and back-translation without pre-training, and then evaluate this model. As a result, the encoder-decoder-reconstructor can not be trained well without pre-training, so it proves that we have to train the forward translation model in a manner similar to the conventional attention-based NMT as pre-training.
+
+The main contributions of this paper are as follows:
+
+Related Works
+
+Several studies have addressed the NMT-specific problem of missing or repeating words. Niehues2016 optimized NMT by adding the outputs of PBSMT to the input of NMT. Mi2016a and Feng2016 introduced a distributed version of coverage vector taken from PBSMT to consider which words have been already translated. All these methods, including ours, employ information of the source sentence to improve the quality of translation, but our method uses back-translation to ensure that there is no inconsistency. Unlike other methods, once learned, our method is identical to the conventional NMT model, so it does not need any additional parameters such as coverage vector or a PBSMT system for testing.
+
+The attention mechanism proposed by Meng2016 considers not only the hidden states of the encoder but also the hidden states of the decoder so that over-translation can be relaxed. In addition, the attention mechanism proposed by Feng2016 computes a context vector by considering the previous context vector to prevent over-translation. These works indirectly reduce repeating and missing words, while we directly penalize translation mismatch by considering back-translation.
+
+The encoder-decoder-reconstructor framework for NMT proposed by tu2016neural optimizes NMT by reconstructor using back-translation. They consider likelihood of both of forward translation and back-translation, and then this framework offers significant improvement in BLEU scores and alleviates the problem of repeating and missing words in the translation on a Chinese-English translation task.
+
+Neural Machine Translation
+
+Here, we describe the attention-based NMT proposed by DzmitryBahdana2014 as shown in Figure FIGREF1 .
+
+The input sequence ( INLINEFORM0 ) is converted into a fixed-length vector by the encoder using an RNN. At each time step INLINEFORM1 , the hidden state INLINEFORM2 of the encoder is presented as DISPLAYFORM0
+
+using a bidirectional RNN. The forward state INLINEFORM0 and the backward state INLINEFORM1 are computed by DISPLAYFORM0
+
+and DISPLAYFORM0
+
+where INLINEFORM0 and INLINEFORM1 are nonlinear functions. The hidden states INLINEFORM2 are converted into a fixed-length vector INLINEFORM3 as DISPLAYFORM0
+
+where INLINEFORM0 is a nonlinear function.
+
+The fixed-length vector INLINEFORM0 generated by the encoder is converted into the target sequence ( INLINEFORM1 ) by the decoder using an RNN. At each time step INLINEFORM2 , the conditional probability of the output word INLINEFORM3 is computed by DISPLAYFORM0
+
+where INLINEFORM0 is a nonlinear function. The hidden state INLINEFORM1 of the decoder is presented as DISPLAYFORM0
+
+using the hidden state INLINEFORM0 and the target word INLINEFORM1 at the previous time step and the context vector INLINEFORM2 .
+
+The context vector INLINEFORM0 is a weighted sum of each hidden state INLINEFORM1 of the encoder. It is presented as DISPLAYFORM0
+
+and its weight INLINEFORM0 is a normalized probability distribution. It is computed by DISPLAYFORM0
+
+and DISPLAYFORM0
+
+where INLINEFORM0 is a weight vector and INLINEFORM1 and INLINEFORM2 are weight matrices.
+
+The objective function is defined by DISPLAYFORM0
+
+where INLINEFORM0 is the number of data and INLINEFORM1 is a model parameter.
+
+Incidentally, as a nonlinear function, the hyperbolic tangent function or the rectified linear unit are generally used.
+
+Architecture
+
+Next, we describe the encoder-decoder-reconstructor framework for NMT proposed by tu2016neural as shown in Figure FIGREF1 . The encoder-decoder-reconstructor consists of two components: the standard encoder-decoder as an attention-based NMT proposed by DzmitryBahdana2014 and the reconstructor which back-translates from the hidden states of decoder to the source sentence.
+
+In their method, the hidden state of the decoder is back-translated into the source sequence ( INLINEFORM0 ) by the reconstructor for the back-translation. At each time step INLINEFORM1 , the conditional probability of the output word INLINEFORM2 is computed by DISPLAYFORM0
+
+where INLINEFORM0 is a nonlinear function. The hidden state INLINEFORM1 of the reconstructor is presented as DISPLAYFORM0
+
+using the hidden state INLINEFORM0 and the source word INLINEFORM1 at the previous time step and the new context vector (inverse context vector) INLINEFORM2 .
+
+The inverse context vector INLINEFORM0 is a weighted sum of each hidden state INLINEFORM1 of the decoder (on forward translation). It is presented as DISPLAYFORM0
+
+and its weight INLINEFORM0 is a normalized probability distribution. It is computed by DISPLAYFORM0
+
+and DISPLAYFORM0
+
+where INLINEFORM0 is a weight vector and INLINEFORM1 and INLINEFORM2 are weight matrices.
+
+The objective function is defined by DISPLAYFORM0
+
+where INLINEFORM0 is the number of data, INLINEFORM1 and INLINEFORM2 are model parameters and INLINEFORM3 is a hyper-parameter which can consider the weight between forward translation and back-translation.
+
+This objective function consists of two parts: forward measures translation fluency, and backward measures translation adequacy. Thus, the combined objective function is more consistent with the goal of enhancing overall translation quality, and can more effectively guide the parameter training for making better translation.
+
+Training
+
+The encoder-decoder-reconstructor is trained with likelihood of both the encoder-decoder and the reconstructor on a set of training datasets. tu2016neural trained a back-translation model from the hidden state of the decoder into the source sequence by reconstructor to enforce agreement between source and target sentences using Equation EQREF23 after training the forward translation in a manner similar to the conventional attention-based NMT using Equation EQREF13 .
+
+In addition, we experiment to jointly train a model of forward translation and back-translation without pre-training. It may learn a globally optimal model compared to locally optimal model pre-trained using the forward translation.
+
+Testing
+
+tu2016neural used a beam search to predict target sentences that approximately maximizes both of forward translation and back-translation on testing. In this paper, however, we do not use a beam search for simplicity and effectiveness.
+
+Experiments
+
+We evaluated the encoder-decoder-reconstructor framework for NMT on English-Japanese and Japanese-English translation tasks.
+
+Datasets
+
+We used two parallel corpora: Asian Scientific Paper Excerpt Corpus (ASPEC) BIBREF0 and NTCIR PatentMT Parallel Corpus BIBREF1 . Regarding the training data of ASPEC, we used only the first 1 million sentences sorted by sentence-alignment similarity. Japanese sentences were segmented by the morphological analyzer MeCab (version 0.996, IPADIC), and English sentences were tokenized by tokenizer.perl of Moses. Table TABREF14 shows the numbers of the sentences in each corpus. Note that sentences with more than 40 words were excluded from the training data.
+
+Models
+
+We used the attention-based NMT BIBREF2 as a baseline-NMT, the encoder-decoder-reconstructor BIBREF3 and the encoder-decoder-reconstructor that jointly trained forward translation and back-translation without pre-training. The RNN used in the experiments had 512 hidden units, 512 embedding units, 30,000 vocabulary size and 64 batch size. We used Adagrad (initial learning rate 0.01) for optimizing model parameters. We trained our model on GeForce GTX TITAN X GPU. Note that we set the hyper-parameter INLINEFORM0 on the encoder-decoder-reconstructor same as tu2016neural.
+
+Results
+
+Tables TABREF15 and TABREF16 show the translation accuracy in BLEU scores, the INLINEFORM0 -value of the significance test by bootstrap resampling BIBREF4 and training time in hours until convergence. The encoder-decoder-reconstructor BIBREF3 requires slightly longer time to train than the baseline NMT, but we emphasize that decoding time remains the same with the encoder-decoder-reconstructor and baseline-NMT. The results show that the encoder-decoder-reconstructor BIBREF3 significantly improves translation accuracy by 1.01 points on ASPEC and 1.37 points on NTCIR in English-Japanese translation ( INLINEFORM1 ). However, it does not significantly improve translation accuracy in Japanese-English translation. In addition, it is proved that the encoder-decoder-reconstructor without pre-training worsens rather than improves translation accuracy.
+
+Table TABREF24 shows examples of outputs of English-Japanese translations. In Example 1, “UTF8min乱 流 粘性 と 数値 粘性 の 大小 関係 により ,” (on the basis of the relation between turbulent viscosity and numerical viscosity in size) is missing in the output of baseline-NMT, but “UTF8min乱 流 粘性 と 数値 的 粘性 の 関係 を 基 に” (on the basis of the relation between turbulent viscosity and numerical viscosity) is present in the output of encoder-decoder-reconstructor. In Example 2, “UTF8min新生児” (newborn infant) and “UTF8min30歳以上の” (of 30 ‐ year ‐ old or more) are repeated in the output of baseline-NMT, but they appear only once in the output of encoder-decoder-reconstructor.
+
+In addition, Figures FIGREF25 and FIGREF25 show the attention layer on baseline-NMT and encoder-decoder-reconstructor in each example. In Figure FIGREF25 , although the attention layer of baseline NMT attends input word “turbulent”, the decoder does not output “UTF8min乱流” (turbulent) but “UTF8min検討” (examined) at the 13th word. Thus, under-translation may be resulted from the hidden layer or the embedding layer instead of the attention layer. In Figure FIGREF25 , it is found that the attention layer of baseline-NMT repeatedly attends input words “newborn infant” and “30 ‐ year ‐ old or more”. Consequently, the decoder repeatedly outputs “UTF8min新生児” (newborn infant) and “UTF8min30歳以上の” (of 30 ‐ year ‐ old or more). On the other hand, the attention layer of encoder-decoder-reconstructor almost correctly attends input words.
+
+Table TABREF28 shows a comparison of the number of word occurrences for each corpus and model. The columns show (i) the number of words that appear more frequently than the counterparts in the reference, and (ii) the number of words that appear more than once but are not included in the reference. Note that these numbers do not include unknown words, so (iii) shows the number of unknown words. In all the cases, the number of occurrence of redundant words is reduced in encoder-decoder-reconstructor. Thus, we confirmed that encoder-decoder-reconstructor achieves reduction of repeating and missing words while maintaining the quality of translation.
+
+Conclusion
+
+In this paper, we evaluated the encoder-decoder-reconstructor on English-Japanese and Japanese-English translation tasks. In addition, we evaluate the effectiveness of pre-training by comparing it with a jointly-trained model of forward translation and back-translation. Experimental results show that the encoder-decoder-reconstructor offers significant improvement in BLEU scores and alleviates the problem of repeating and missing words in the translation on English-Japanese translation task, and the encoder-decoder-reconstructor can not be trained well without pre-training, so it proves that we have to train the forward translation model in a manner similar to the conventional attention-based NMT as pre-training.

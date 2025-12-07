@@ -1,0 +1,154 @@
+Introduction
+
+In recent years, there has been an increasing interest in Machine reading comprehension (MRC), which plays a vital role in the assessment of how well a machine could understand natural language. Several datasets BIBREF0 , BIBREF1 , BIBREF2 for machine reading comprehension have been released in recent years and have driven the evolution of powerful neural models. However, much of the research up to now has been dominated by answering questions that can be well solved solved using superficial information, yet struggles to do accurate natural language understanding and reasoning. For example, BIBREF3 jia2017Adversarial show that existing machine learning systems for MRC perform poorly under adversarial evaluation. Recent developments in MRC datasets BIBREF4 , BIBREF5 , BIBREF6 have heightened the need for deep understanding.
+
+Knowledge has a pivotal role in accurately understanding and reasoning natural language in MRC. Previous research BIBREF7 , BIBREF8 has established that human reading comprehension requires both words and world knowledge. In this paper, we consider words and world knowledge in the format of triplets (subject, predicate, object). Specifically, we believe the advantages of using knowledge in MRC are three-fold. First, utilizing knowledge in MRC supports reasoning over multiple triplets because a single triplet may not cover the entire question. Multi-hop reasoning is also a long-standing goal in question answering. Second, building a question answering system based on triplet-style knowledge facilitates the interpretability of the decision making process. Triplets organize the document together with KBs as a graph, where a well-designed model such as PCNet, which we will describe in a later section, expressly reveal rationales for their predictions. Third, representing the documents as knowledge allows for ease of accessing and leveraging the knowledge from external/background knowledge because the knowledge representation of a document is easily consistent with both manually curated and automatically extracted KBs.
+
+In this paper, we present knowledge based machine reading comprehension, which requires reasoning over triplet-style knowledge involved in a document. However, we find published dataset do not sufficiently support this task. We conduct preliminary exploration on SQuAD BIBREF0 . We use a strong open IE algorithm BIBREF9 to extract triplets from the documents and observe that only 15% of instances have an answer that is exactly the same as the corresponding subject/object in the extracted triplets. To do knowledge-based MRC, We build a new dataset consisting of 40,047 examples for the knowledge based MRC task. The annotation of this dataset is designed so that successfully answering the questions requires understanding and the knowledge involved in a document. Each instance is composed of a question, a set of triplets derived from a document, and the answer.
+
+We implement a framework consisting of both a question answering model and a question generation model, both of which take the knowledge extracted from the document as well as relevant facts from an external knowledge base such as Freebase/ProBase/Reverb/NELL. The question answering model gives each candidate answer a score by measuring the semantic relevance between representation and the candidate answer representation in vector space. The question generation model provides each candidate answer with a score by measuring semantic relevance between the question and the generated question based on the semantics of the candidate answer. We implement an MRC model BiDAF BIBREF10 as a baseline for the proposed dataset. To test the scalability of our approach in leveraging external KBs, we use both manually created and automatically extracted KBs, including Freebase BIBREF11 , ProBase BIBREF12 , NELL BIBREF13 and Reverb BIBREF14 . Experiments show that incorporating evidence from external KBs improves both the matching-based and question generation-based approaches. Qualitative analysis shows the advantages and limitations of our approaches, as well as the remaining challenges.
+
+Task Definition and Dataset
+
+We formulate the task of knowledge based machine reading comprehension, which is abbreviated as KBMRC, and describe the dataset built for KBMRC and the external open KBs leveraged in this work.
+
+Approach Overview
+
+Our framework consists of a question answering model and a question generation model.
+
+We implement two question answering models, which directly measure the semantic similarity between questions and candidate answers in the semantic space. First, to make the model's prediction more explainable, we implement a path based QA model PCNet. In this model, to get candidate answers from the triplets based document for a given question. We first retrieve the an “anchor” point $arg1_i$ or $arg2_i$ in the document fact $f_i$ . These anchors are selected based on edit distance between the words in the questions and the arguments. Then we regard all arguments in the 1-hops and 2-hops fact of the anchors as answers. However, the coverage of the candidate answers can be 100% in the model. We then implement a second end-to-end neural model KVMenNet which covers all the answers but with less interpretability. Both models generate a score $f_{qa}(q, a)$ of each candidate answer.
+
+We then implement a generation-based model. The motivation to design this model is that we want to associate natural language phrases with knowledge based representation. It takes semantics of a candidate answer as the input and generates a question $\hat{q}$ . Then a paraphrasing model gives a score $f_{qg}(q,\hat{q})$ , which is computed between the generated question $\hat{q}$ and the original question $q$ , as the ranking score.
+
+We get the final scores $S(q,a)$ used for ranking as follows.
+
+$$S(q,a) = \lambda f_{qa}(q, a) + (1-\lambda ) f_{qg}(q,\hat{q})$$   (Eq. 7)
+
+Moreover, we incorporate side information from external KBs into the three models. The details of how we use external KBs to enhance the representation of elements in the document KB will be described in section Incorporating External Knowledge.
+
+The Question Answering Model
+
+In this section, we present two matching models to measure the semantic relatedness between the question and the candidate answer in the vector semantic space. Afterwards, we introduce our strategy that incorporates open KB as external knowledge to enhance both models.
+
+QA Model 1: PCNet
+
+We follow BIBREF17 , BIBREF18 bordes2014question,dong-EtAl:2015:ACL-IJCNLP1 and develop PCNet, which is short for path- and context- based neural network. In PCNet, candidate answers come from arguments of the document KB, and each candidate answer is represented with its neighboring arguments and predicates as well as its path from the anchor in the document KB. We use a rule-based approach based on string fuzzy match to detect the anchor. Each argument is measured by $\sum _{i,j}^{}\mathbb {I}(arg_i, q_j)$ , where $i$ and $j$ iterate across argument words and question words, respectively. $\mathbb {I}(x,y)$ is an indicator function whose value is 1 if the minimum edit distance between $x$ and $y$ is no more than 1, otherwise it is 0. The arguments linked to the anchor with 1-hop and 2-hop paths are regarded as candidate answers. Since an argument might include multiple words, such as “the popular angry bird game”, we use GRU based RNN to get the vector representation of each argument/predicate. The path representation $v_{p}$ is computed by averaging the vectors of elements in the path. Similarly, we use another RNN to get the vector of each neighboring argument/predicate, and average them to get the context vector $v_{c}$ .
+
+We represent the question $q$ using a bidirectional RNN layer based on the GRU unit. The concatenation of the last hidden vectors from both directions is used as the question vector $v_{q}$ . The dot product is used to measure the semantic relevance between the b b question and two types of evidence.
+
+$$f_{qa}(q, a) = v_{q}^{T}v_{p} + v_q^{T}v_{c}$$   (Eq. 10)
+
+QA Model 2: KVMemNet
+
+Despite the interpretability of PCNet, the coverage of anchor detection limits the upper bound of the approach. We implement a more powerful method based on the key-value memory network BIBREF19 , KVMemNet for short, which has proven powerful in KB-based question answering.
+
+The KVMenNet could be viewed as a “soft” matching approach, which includes a parameterized memory consisting of key-value pairs. Intuitively, keys are used for matching with the question, and values are used for matching to the candidate answer. Given a KB fact ( $subj, pred, obj$ ), We consider both directions and add two key-value pairs in the memory, namely ( $key = subj +pred, value=obj$ ) and ( $key =obj + pred, value=subj$ ). The vectors of arguments/predicates are calculated the same way as described in PCNet. The concatenation of two vectors is used as the key vector $v_{key}$ .
+
+Each memory item is assigned a relevance probability by comparing the question to each key.
+
+$$\alpha _{key_i} = {softmax}(v_q \cdot v_{key_i})$$   (Eq. 12)
+
+Afterwards, vectors in memory ( $v_{value}$ ) are weighted summed according to their addressing probabilities, and the vector $v_o$ is returned.
+
+$$v_o = \sum _i \alpha _{key_i}v_{value_i}$$   (Eq. 13)
+
+In PCNet, reasoning over two facts is achieved by incorporating 2-hop paths, while in KVMemNet this is achieved by repeating the memory access process twice. After receiving the result $v_o$ , we update the query with $q_2 = R(v_q + v_o)$ , where $R$ is model parameter. Finally, after a fixed number $n$ hops ( $n=2$ in this work), the resulting vector is used to measure the relevance to candidate answers via the dot product.
+
+Training and Inference
+
+Let $\mathcal {D} = \lbrace (q_i, a_i); i = 1,
+\ldots , |\mathcal {D}|\rbrace $ be the training data consisting of questions $q_i$ paired with their correct answer $a_i$ . We train both matching models with a margin-based ranking loss function, which is calculated as follows, where $m$ is the margin (fixed to $0.1$ ) and $\bar{a}$ is randomly sampled from a set of incorrect candidates $\bar{\mathcal {A}}$ .
+
+$$ 
+\sum _{i=1}^{|\mathcal {D}|} \sum _{\tiny {\bar{a} \in \bar{\mathcal {A}}(q_i)}}
+\max \lbrace 0, m - S(q_i,a_i) + S(q_i,\bar{a})\rbrace ,$$   (Eq. 15)
+
+For testing, given a question $q$ , the model predicts the answer based on the following equation, where $ \mathcal {A}(q)$ is the candidate answer set.
+
+$$\hat{a} = {\mbox{argmax}}_{a^{\prime } \in \mathcal {A}(q)} S(q,a^{\prime })$$   (Eq. 16)
+
+The Question Generation Model
+
+In this section, we present the generation model which generates a question based on the semantics of a candidate answer. Afterward, we introduce how our paraphrasing model, which measures the semantic relevance between the generated question and the original question, is pretrained.
+
+Hierarchical seq2seq Generation Model
+
+Our question generation model takes the path between an “anchor” and the candidate answer, and outputs a question. We adopt the sequence to sequence architecture as our basic question generation model due to its effectiveness in natural language generation tasks. The hierarchical encoder and the hierarchical attention mechanism are introduced to take into account the structure of the input facts. Facts from external KBs are conventionally integrated into the model using the same way as described in the matching model.
+
+As illustrated in Figure 3 , the question generation model contains an encoder and a decoder. We use a hierarchical encoder consisting of two layers to model the meaning of each element (subject, predicate or object) and the relationship between them. Since each element might contain multiple words, we use RNN as the word layer encoder to get the representation of each element. We define the fact level sequence as a path starting from the anchor and ending at the candidate answer. Another RNN is used as the fact level encoder. The last hidden state at the fact layer is fed to the decoder.
+
+We develop a hierarchical attention mechanism in the decoder, which first makes soft alignment over the hidden states at the fact layer, the output of which is further used to attend to hidden states at the word level. Specifically, given the decoder hidden state $h^{dec}_{t-1}$ , we use a fact-level attention model $Att_{fct}$ to calculate the contextual vector, which is further combined with the current hidden state $h^{dec}_{t}$ , resulting in $c_{fct}$ . The contextual vector is calculated through weighted averaging over hidden vectors at the fact level, which is given as follows, where $\odot $ is dot product, $h^{fld}_j$ is the $j$ -th hidden state at the fact layer from the encoder, and $l_f$ is the number of hidden states at the fact level.
+
+$$c_{fct} &= GRU(h^{dec}_{t}, \sum _{j=1}^{{l_f}} \alpha _{tj}h^{fct}_j) \\
+\alpha _{tj} &= \frac{ exp(h^{dec}_{t-1} \odot h^{fct}_j)}{\sum _{k=1}^{{l_f}}exp(h^{dec}_{t-1} \odot h^{fct}_k)}$$   (Eq. 19)
+
+Similarly, we feed $c_{fct}$ to the word-level attention function $Att_{wrd}$ and calculate over hidden vectors at the word-level. The output $c_{wrd}$ will be concatenated with $h^{dec}_{t}$ to predict the next word.
+
+Since many entity names of great importance are rare words from the input, we use the copying mechanism BIBREF20 that learns when to replicate words from the input or to predict words from the target vocabulary. The probability distribution of generating the word $y$ is calculated as follows, in which the $softmax$ function is calculated over a combined logits from both sides.
+
+$$\begin{split}
+&p(y)=\frac{exp({e_y \odot W_g[h_t^{dec};c_{wrd}]})+exp(s_c(y))}{Z}\\
+&s_c(y) = c_{wrd} \odot {tanh(W_ch_t^{wrd})}
+\end{split}$$   (Eq. 20)
+
+We train our question generation model with maximum likelihood estimation. The loss function is given as follows, where $D$ is the training corpus. We use beam search in the inference process.
+
+$$l = -\sum _{(x,y)\in D} \sum _t log p(y_t |y_{<t}, x)$$   (Eq. 21)
+
+An advantage of the model is that external knowledge could be easily incorporated with the same mechanism as we have described in section Incorporating External Knowledge. We enhance the representation of an argument or a predicate by concatenating open KB vectors into encoder hidden states.
+
+The Paraphrasing Model
+
+The paraphrasing model is used to measure the semantic relevance between the original question and the question generated from the QG model. We use bidirectional RNN with gated recurrent unit to represent two questions, and compose them with element-wise multiplication. The results are followed by a $softmax$ layer, whose output length is 2. The model is trained by minimizing the cross-entropy error, in which the supervision is provided in the training data.
+
+We collect two datasets to train the paraphrasing model. The first dataset is from Quora dataset, which is built for detecting whether or not a pair of questions are semantically equivalent. 345,989 positive question pairs and 255,027 negative pairs are included in the first dataset. The second dataset includes web queries from query logs, which are obtained by clustering the web queries that click the same web page. In this way we obtain 6,118,023 positive query pairs. We implement a heuristic rule to get 6,118,023 negative instances for the query dataset. For each pair of query text, we clamp the first query and retrieve a query that is mostly similar to the second query. To improve the efficiency of this process, we randomly sample 10,000 queries and define the “similarity” as the number of co-occurred words between two questions. During training, we initialize the values of word embeddings with $300d$ Glove vectors, which is learned on Wikipedia texts. We use a held-out data consisting of 20K query pairs to check the performance of the paraphrasing model. The accuracy of the paraphrasing model on the held-out dataset is 87.36%.
+
+Incorporating External Knowledge
+
+There are many possible ways to implement the idea of improving question answering with external KB. In this work, we use external KBs (such as NELL and ProBase) to enhance the representations of elements in the document KB. For instance, the argument “the sequence of amino acids” in Figure 1 from the document KB retrieves (“amino acids”, `is”, “protein”) from NELL. Enhanced with this additional clue, the original argument is a better match to the question.
+
+Similar to BIBREF21 khot2017answering, we use ElasticSearch to retrieve facts from open KBs. We remove stop words from tokens of each argument and predicate in a document KB and regard the remained words as ElasticSearch queries. We set different search option for arguments and predicates, namely setting arguments as the dominant searchable fields for argument queries and setting predicates as the dominant searchable fields for predicate queries. We save the top 10 hints and selectively use them in the experiment.
+
+We regard the retrieved facts from the external KB as neighbors to the arguments to be enhanced. Inspired by BIBREF22 scarselli2009graph, we update the vector of an element $v_e$ as follows, where $(e)$ and $(e)$ represent adjacent arguments from the facts retrieved by object and subject, respectively. In this work, $f(\cdot )$ is implemented by averaging the vectors of two arguments.
+
+$$v_e=v_e + \sum _{o^{\prime } \in (e)}^{}f(v_{p^{\prime }},v_{s^{\prime }})+\sum _{s^{\prime } \in (e)}^{}f(v_{p^{\prime }},v_{o^{\prime }})$$   (Eq. 26)
+
+Related Work
+
+The task of KBMRC differs from machine reading comprehension (MRC) in both input and output aspects. The input of KBMRC is the knowledge including both word knowledge extracted from the document and world knowledge retrieved from external knowledge base, while the input of MRC is the unstructured text of a document. The output of KBMRC is a subject or an argument, while the output in MRC is a text span of the document. Meanwhile, KBMRC facilitates the accessing and leveraging of knowledge from external KBs because the document KB is consistent with the representation of facts in external KBs.
+
+KBMRC also relates to knowledge-base question answering (KBQA) BIBREF23 , which aims to answer questions based on an external large-scale KB such as Freebase or ProBase. KBMRC differs from KBQA in that the original KB comes from the content of a document. External KB is used in this work to enhance the document KB. Moreover, existing benchmark datasets for KBQA such as WebQuestions BIBREF24 are typically limited to simple questions. The KBMRC task requires reasoning over two facts from the document KB.
+
+Our approach draws inspiration from two main classes in existing approaches of KBQA, namely ranking based and parsing based. Ranking based approaches BIBREF17 , BIBREF25 are bottom-up, which typically first find a set of candidate answers and then rank between the candidates with features at different levels to get the answer. Parsing-based approaches BIBREF16 are top-down, which first interpret logical form from a natural language utterance, and then do execution to yield the answer. Ranking-based approaches achieve better performances than parsing-based approaches on WebQuestions, a benchmark dataset for KBQA. We follow ranking-based approaches, and develop both a matching-based model with features at different levels and a question generation model. More references can be found at https://aclweb.org/aclwiki/Question_Answering_(State_of_the_art).
+
+Our work also relates to BIBREF21 khot2017answering, which uses open IE outputs from external text corpora to improve multi-choice question answering. However, our work differs from them in that their task does not contain document information. Furthermore, we develop a question generation approach while they regard the QA task as subgraph search based on an integer linear programming (ILP) approach. Our work also relates to BIBREF26 khashabi2018question, which focuses on multi-choice question answering based on the semantics of a document. They use semantic role labeling and shallow parsing of a document to construct a semantic graph, based on which an ILP based approach is developed to find the supporting subgraph. The difference of our approach is that predicates from our document KB form are not limited to a predefined set, so that they do not take into consideration the knowledge from external KBs, and also the difference in terms of methodology. BIBREF19 miller2016key answer questions based on KBs in the movie domain or information extraction results from Wikipedia documents. Unlike this method, our approach focuses on entities from an external KB, our doc KB is obtained via open IE, and we combine the document KB with an open KB for question answering.
+
+Experiments
+
+We describe experiment settings and report figures and analysis in this section.
+
+Settings
+
+In our experiments, we tune model parameters on the development set and report results on the test set. We design experiments from both ranking-based direction and question generation-based direction. The evaluation metric is precision @1 BIBREF17 , which indicates whether the top ranked result is the correct answer. We further report BLEU score BIBREF27 for the question generation approach.
+
+We also adapt BiDAF BIBREF10 , a top-performing reading comprehension model on the SQuAD dataset BIBREF0 as a strong baseline. As BiDAF output a span from the input document as the answer to the given question, we adapt it to KBMRC as a ranking model similarly as the approach used in previous research BIBREF28 . We use BiDAF to select an answer span from a corresponding document based on a given question and select the candidate answer that has maximum overlap with the answer span as the final answer.
+
+Analysis: Question Answering Models
+
+Table 3 shows the results of our two question answering models. It is clear that KVMemNet achieves better P@1 scores on both dev and test sets than PCNet. The reason is that candidate answers of PCNet come from the “anchor” point along 1-hop or 2-hop paths. However, the correct answer might not be connected due to the quality of anchor detection. On the dev set, we observe that only 69.6% of correct answers can be covered by the set of candidate answers in PCNet, which apparently limits the upper bound of the approach. This is addressed in KVMemNet because all the arguments are candidate answers. Both PCNet and KVMemNet outperform our implementation of BIBREF17 bordes2014question, since the latter ignores word order. We incorporate each of the four KBs separately into PCNet and KVMemNet, and find that incorporating external KBs could bring improvements.
+
+From Figure 4 , we can see that the KVMemNet model attends to the key “(st. johns, is located)” for the question “Where is st johns mi located?”. Thus, the model has higher confidence in regarding value “in clinton county” as the answer.
+
+Analysis: Generative Models
+
+Table 4 shows the results of different question generation models. Our approach is abbreviated as QGNet, which stands for the use of a paraphrasing model plus our question generation model. We can see that QGNet performs better than Seq2Seq in terms of BLEU score because many important words of low frequency from the input are replicated to the target sequence. However, the improvement is not significant for the QA task. We also incorporate each of the four KBs into QGNet, and observe slight improvements on NELL and Reverb. Despite the overall accuracy of QGNet being lower than PCNet and KVMemNet, combining outcomes with them could generates 1.5% and 0.8% absolute gains, respectively.
+
+We show examples generated by our QG model in Figure 5 , in which the paths of two candidate answers are regarded as the input to the QG model. We can see that the original question is closer to the first generated result than the second one. Accordingly, the first candidate ($ 61,300) would be assigned with a larger probability as the answer.
+
+Future Opportunities for Future Research
+
+We conduct error analysis from multiple perspectives to show the limitations and future opportunities of different components of our approach.
+
+Conclusion
+
+In this paper, we focus on knowledge based machine reading comprehension. We create a manually labeled dataset for the task, and develop a framework consisting of both question answering model and question generation model. We further incorporate four open KBs as external knowledge into both question answering and generative approaches, and demonstrate that incorporating additional evidence from open KBs improves total accuracy. We conduct extensive model analysis and error analysis to show the advantages and limitations of our approaches.

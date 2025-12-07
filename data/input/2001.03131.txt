@@ -1,0 +1,83 @@
+Introduction
+
+In this digital era, online discussions and interactions has become a vital part of daily life of which a huge part is covered by social media platforms like twitter, facebook, instagram etc. Similar to real life there exist anti-social elements in the cyberspace, who take advantage of the anonymous nature in cyber world and indulge in vulgar and offensive communications. This includes bullying, trolling, harassment BIBREF0, BIBREF1 and has become a growing concern for governments. Youth experiencing such victimization was recorded to have psychological symptoms of anxiety, depression, loneliness BIBREF1. Thus it is important to identify and remove such behaviours at the earliest. One solution to this is the automatic detection using machine learning algorithms.
+
+Detecting offensive language from social media is a challenging research problem due to the different level of ambiguities present in the natural language and noisy nature of the social media language. Moreover, social media subscribers are from linguistically diverse and varying communities. Overseeing the complication of this problem, BIBREF2 organized a task in SemEval2019, Task 6: Identifying and Categorizing Offensive Language in Social Media. The tweets were collected by the organizers using Twitter API and have annotated them in a hierarchical manner as offensive language present in the tweet, type of the offense and target of the offense. There were three sub-tasks according to the hierarchy of annotation: a) To detect if a post is offensive (OFF) or not (NOT), b) To Identify the type of offense in the post as targeted threat (TTH), targeted insult (TIN), untargeted (UNT), c) To identify if offense is targeted to organization or entity (ORG), group of people (GRP), individual (IND), or other (OTH).
+
+The dataset had the following challenges:
+
+Dataset was comparatively smaller.
+
+Dataset was biased/imbalanced BIBREF3.
+
+In this paper, we are proposing a comparative analysis for the sub-task A :Offensive language identification of the SemEval2019, Task 6. Sub-task A was the most popular sub-task among the three and had total 104 team participation. In Table TABREF19, the list of first 5 participants along with system and f1-score has been shown.
+
+Offensive language detection is one of the challenging and interesting topic for research. Recent past had multiple shared tasks and research on this topic. One of the initial work on offensive language using supervised classification was done by Yin et al. BIBREF4. They have used Ngram, TFIDF and combination of TFIDF with Sentiment and Contextual as Features. Schmidt and Wiegand BIBREF5 gave a survey on automatic hate speech detection using NLP. The authors surveyed on features like Simple Surface Features, Word Generalization, Linguistic Features, Knowledge-Based Features, Multimodal Information etc. In 2013, a study on detecting cyberbullying in YouTube comments was done by Dadvar et al. BIBREF6. They have used a combination of content-based, cyberbullying-specific and user-based features and showed that detection of cyberbullying can be improved by taking user context into account. Shared task GermEval 2018 organised by Wiegand et al.,BIBREF7 was focused on offensive language detection on German tweets. It had a dataset of over 8,500 annotated tweets and was trained for binary classification of offensive and non-offensive tweets. They obtained an overall maco-F1 score of 76.77%. Another shared task on Aggression Identification in Social Media was organised by Kumar et al., BIBREF8. The task provided a dataset with 15,000 annotated Facebook posts and comments in Hindi and English. They obtained a weighted F-score of 64% for both English and Hindi. The rest of the paper is structured as follows. Section 2 explains about the methodology with formulation. Section 3 discusses on the Proposed approach. Section 4 talks on the Experiments and discussions performed. Finally, conclusion is given in Section 5.
+
+Methodology ::: Data Pre-processing
+
+Data pre-processing is a very crucial step which needs to be done before applying any machine learning tasks, because the real time data could be very noisy and unstructured. For the two models used in this work, pre-processing of tweets is done separately:
+
+Pre-processing for Google model:
+
+It has become a common culture to use #tags across social media. So we have replaced multiple #tags with a single #tag. Mostly @ symbol id used to mention person or entities in a tweet. So we replace multiple @symbols with a single @-mention. Some tweets may contain the link to a website or some other urls. So we replace all of these with a single keyword URLS.
+
+Pre-processing for fasttext model:
+
+For applying fasttext model to get word vectors, we followed a different set of pre-processing steps. First, all the numbers, punctuation marks, urls (http:// or www.) and symbols (emoji, #tags, -mention) were removed from the tweet as it do not contain information related to sentiment. After that, tokenization and lowercasing was applied to the tweets. Tokenization was done using tokenizer from NLTK package BIBREF9. Finally, the stop word are removed. The list is obtained from NLTK package.
+
+Methodology ::: Embeddings
+
+Word embeddings are ubiquitous for any NLP problem, as algorithms cannot process the plain text or strings in its raw form. Word emeddings are vectors that captures the semantic and contextual information of words. The word embedding used for this work are:
+
+FastText: The fastText algorithm created by Facebook BIBREF10 assumes every word to be n-grams of character. It helps to give the vector representations for out of vocabuary words. For the current work, fasttext based word embedding is used for generating token vectors of dimension 300 BIBREF11. Each vector corresponding to the tweet is generated by taking the average of token vectors.
+
+Universal Sentence Encoder: Developed by Google, Universal sentence encoder BIBREF12, BIBREF13 provides embeddings at sentence level. The dimension of the embedding vector is 512, irrespective of the number of tokens in the input tweet. These vectors can capture good semantic information from the sentences. For each tweet, this model generates a 512 length embedding vector and is used as features for further classification.
+
+DMD and HODMD: DMD is a method initially used in fluid dynamics which captures spatio-temporal features BIBREF14. It has been used in background-foreground separation BIBREF15, load forecasting BIBREF16, saliency detection BIBREF17 etc. For natural language processing, DMD has been first applied for sentiment analysis BIBREF18, BIBREF19. This motivated to explore DMD based feature for the present work.
+
+Dynamic mode decomposition (DMD) is a much more powerful concept and it assumes the evolution of the function over the rectangular field is effected by the mapping of a constant matrix $A$. $A$ captures the system’s inherent dynamics and the aim of the DMD is to understand using its dominant eignevalues and eigenvectors. Assumption is that this matrix $A$ is of low rank and hence the sequence of vectors $ \mathop {{x_1}}\limits _|^| ,\mathop {{x_2}}\limits _|^| ,\mathop {{x_3}}\limits _|^| ,...\mathop {,{x_k}}\limits _|^| ,...,\mathop {{x_{m + 1}}}\limits _|^| $ finally become a linearly dependent set. That is, vector $ \mathop {{x_{m + 1}}}\limits _|^|$ become linearly dependent on previous vectors. The data matrix X in terms of eigen vectors associated with matrix $A$.
+
+where, ${\Phi ^\dag }$ is pseudo inverse of ${\Phi }$. $A$ is of rank m and ${\Phi }$ have m columns. Hence, pseudo-inverse will do the job than inverse operation. The columns of ${\Phi }$ are called DMD modes and this forms the features.
+
+Time-lagged matrices are prepared as snapshot for this approach. In Eigensent BIBREF20, the authors proposed HODMD to find embedings for sentences. The authors suggested, sentences can be represented as a signal using word embeddings by taking the average of word vectors. This is intuitive because word embeddings almost obeys the laws of linear algebra, by capturing word analogies and relationships. Therefore, by considering every sentence as a multi-dimensional signal, we can capture the important transitional dynamics of sentences. Also, for the signal representation of sentences, each word vector will act as a single point in the signal. For the present work, to generate DMD and HODMD based features, Fastext based embedding is used.
+
+Proposed Approach
+
+RKS approach proposed in BIBREF21, BIBREF22, explicitly maps data vectors to a space where linear separation is possible. It has been explored for natural language processing tasks BIBREF23, BIBREF24. The RKS method provides an approximate kernel function via explicit mapping.
+
+Here, $\phi (.)$ denotes the implicit mapping function (used to compute kernel matrix), $Z(.)$ denotes the explicit mapping function using RKS and ${\Omega _k}$ denotes random variable .
+
+Figure FIGREF15 show the block diagram of the proposed approach.
+
+Experiments and Discussions ::: Data Description
+
+OLID (Offensive Language Identification Dataset) is a collection of English tweets which are annotated using a three-level hierarchical annotation model. It was collected using Twitter API and contains 14,460 annotated tweets. The task divided the data as train, trial and test, of which train and trial was initially released as starting kit, finally test was released as Test A release. All three of these partitions were highly biased, thus making the task more challenging and real time. The train set had 13,240 tweets, out of which 8840 tweets were not offensive (NOT) and 4400 tweets were offensive (OFF). Similarly, test set had 860 tweets, which had 620 not offensive and 280 offensive tweets. TableTABREF17 show the data distribution of the entire dataset. For the current work, train and test data are taken which is 14,100 tweets in number.
+
+In Sub-task A: Offensive language identification, the goal was to discriminate offensive and not-offensive twitter posts. The target classes for each instance were a) Offensive (OFF): posts that contain any form of profanity or targeted offence. This includes threats, insults, and any form of untargeted profanity. b) Not Offensive (NOT): posts that doesn't have any profanity or offense in it. The result and discussion of the top 10 teams for the sub-task A is in section for Introduction. In that, team BIBREF3 obtained highest f1-score of 82.9%
+
+Experiments and Discussions ::: Results and Comparisons
+
+This section describes the result as three different cases. Case 1 & 2 provides baseline approach to compare with the proposed RKS approcah described in case 3. Table TABREF19 gives the results of the top 5 teams of sub-task A. Team with rank 1 achieved a maximum f1-score of 82.9%.
+
+Experiments and Discussions ::: Results and Comparisons ::: Case 1: Embeddings approach
+
+In this work, we have selected word vectors generated by Google universal encoder model, Fasttext, and DMD based features. The classification using the selected features are performed using machine learning algorithms such as Random Forest (RF), Decision Tree (DT), Naive Bayes (NB), Support vector machine (SVM) linear and RBF kernels, Logistic Regression, and Random kitchen sinks. The evaluation measures used are accuracy (Acc.), precision (Prec), recall, f1-score (F1). Table TABREF21 shows the classification result obtained for classical machine learning algorithms using the Google universal sentence encoder model features. It can be observed that svm linear classifier and Logistic regression has given maximum accuracy of 82.44% and 82.56%.
+
+Table TABREF22 shows the classification results obtained using the features generated by fasttext model for classical machine learning algorithms. For the fasttext model also, svm linear and logistic regression model have given maximum accuracies of 81.16% respectively.
+
+Experiments and Discussions ::: Results and Comparisons ::: Case 2: DMD approach
+
+In order to provide a comparison, we explore DMD based features. The Table TABREF24 shows the result obtained for normal DMD and HODMD based feature. The order for HODMD for the present work is 2 & 3. The classification is performed using SVM-linear kernel with control parameter value chosen as 1000 as the suitable one. We tried for other values such as 0.1, 1, 100, 500, and 1000. Figure FIGREF25 shows the control parameter versus accuracy plot which helped to fix the parameter value.
+
+Experiments and Discussions ::: Results and Comparisons ::: Case 3: RKS approach
+
+RKS approach has been used in the articles for NLP tasks [29,30,23]. In this work, we use RKS to imporve the evaluation scores as discussed previously. The RKS approach explicitly maps the embedding vectors to a dimension where the data becomes linearly separable. In that space, regularized least-square based classification (RLSC) is performed. The implementation of the RKS is taken from BIBREF29, BIBREF30. The feature vectors from Google universal sentence encoder and fasttext are explicitly mapped using RKS and the results are tabulated in Table TABREF27 and TABREF28.
+
+The Table TABREF27 shows the classification report on the proposed RKS method taking word vectors generated by Google universal encoder model as features with dimension 512. For this work, such vector is explicitly mapped to dimensions 100, 200, 500 and 1000 using RKS. The maximum accuracy obtained is 90.58% for higher dimension 1000.
+
+Table TABREF28 shows the classification report on the proposed RKS method taking word vectors generated by Fasttext model as features. For this model also, features are mapped to dimensions 100, 200, 500 and 1000. For Fasttext model, the proposed method gave a maximum accuracy of 99.53%, which is a bench marking result when compared to the literature. This result shows the discriminating capability of the features chosen, as when mapped to higher dimensions, they become linearly separable. From Table TABREF27 and TABREF28 it can be observed that as the mapping dimension increases, the evaluation score also improves. This shows the effectiveness of the RKS approach to obtain competing score. The capability of the RKS approach cane be explored on large datasets.
+
+Conclusion
+
+Offensive language detection is an important task related to social media data analysis. The nature of the content can vary as its provided by different people. The current work uses the data provided in SemEval 2019 shared task A for Offensive language identification. A comparative study is provided by exploring the effectiveness of Google universal sentence encoder, Fasttext based embedding, Dynamic Mode Decomposition based features and RKS based explicit mapping approach. For the experiments, we used the machine learning methods such as SVM linear, Random Forest, Logistic regression, Navie Bayes and Regularized least-square based classification. The measures used for evaluation are accuracy, precision, recall, and f1-score. We observed that RKS approach improved the results. However, as a future work, the proposed approach cane be explored on large datasets.

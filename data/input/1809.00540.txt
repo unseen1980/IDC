@@ -1,0 +1,105 @@
+Introduction
+
+Following developing news stories is imperative to making real-time decisions on important political and public safety matters. Given the abundance of media providers and languages, this endeavor is an extremely difficult task. As such, there is a strong demand for automatic clustering of news streams, so that they can be organized into stories or themes for further processing. Performing this task in an online and efficient manner is a challenging problem, not only for newswire, but also for scientific articles, online reviews, forum posts, blogs, and microblogs.
+
+A key challenge in handling document streams is that the story clusters must be generated on the fly in an online fashion: this requires handling documents one-by-one as they appear in the document stream. In this paper, we provide a treatment to the problem of online document clustering, i.e. the task of clustering a stream of documents into themes. For example, for news articles, we would want to cluster them into related news stories.
+
+To this end, we introduce a system which aggregates news articles into fine-grained story clusters across different languages in a completely online and scalable fashion from a continuous stream. Our clustering approach is part of a larger media monitoring project to solve the problem of monitoring massive text and TV/Radio streams (speech-to-text). In particular, media monitors write intelligence reports about the most relevant events, and being able to search, visualize and explore news clusters assists in gathering more insight about a particular story. Since relevant events may be spawned from any part of the world (and from many multilingual sources), it becomes imperative to cluster news across different languages.
+
+In terms of granularity, the type of story clusters we are interested in are the group of articles which, for example : (i) Narrate recent air-strikes in Eastern Ghouta (Syria); (ii) Describe the recent launch of Space X's Falcon Heavy rocket.
+
+Problem Formulation
+
+We focus on clustering of a stream of documents, where the number of clusters is not fixed and learned automatically. We denote by INLINEFORM0 a (potentially infinite) space of multilingual documents. Each document INLINEFORM1 is associated with a language in which it is written through a function INLINEFORM2 where INLINEFORM3 is a set of languages. For example, INLINEFORM4 could return English, Spanish or German. (In the rest of the paper, for an integer INLINEFORM5 , we denote by INLINEFORM6 the set INLINEFORM7 .)
+
+We are interested in associating each document with a monolingual cluster via the function INLINEFORM0 , which returns the cluster label given a document. This is done independently for each language, such that the space of indices we use for each language is separate.
+
+Furthermore, we interlace the problem of monolingual clustering with crosslingual clustering. This means that as part of our problem formulation we are also interested in a function INLINEFORM0 that associates each monolingual cluster with a crosslingual cluster, such that each crosslingual cluster only groups one monolingual cluster per different language, at a given time. The crosslingual cluster for a document INLINEFORM1 is INLINEFORM2 . As such, a crosslingual cluster groups together monolingual clusters, at most one for each different language.
+
+Intuitively, building both monolingual and crosslingual clusters allows the system to leverage high-precision monolingual features (e.g., words, named entities) to cluster documents of the same language, while simplifying the task of crosslingual clustering to the computation of similarity scores across monolingual clusters - which is a smaller problem space, since there are (by definition) less clusters than articles. We validate this choice in § SECREF5 .
+
+The Clustering Algorithm
+
+Each document INLINEFORM0 is represented by two vectors in INLINEFORM1 and INLINEFORM2 . The first vector exists in a “monolingual space” (of dimensionality INLINEFORM3 ) and is based on a bag-of-words representation of the document. The second vector exists in a “crosslingual space” (of dimensionality INLINEFORM4 ) which is common to all languages. More details about these representations are discussed in § SECREF4 .
+
+Document Representation
+
+In this section, we give more details about the way we construct the document representations in the monolingual and crosslingual spaces. In particular, we introduce the definition of the similarity functions INLINEFORM0 and INLINEFORM1 that were referred in § SECREF3 .
+
+Similarity Metrics
+
+Our similarity metric computes weighted cosine similarity on the different subvectors, both in the case of monolingual clustering and crosslingual clustering. Formally, for the monolingual case, the similarity is given by a function defined as: DISPLAYFORM0
+
+and is computed on the TF-IDF subvectors where INLINEFORM0 is the number of subvectors for the relevant document representation. For the crosslingual case, we discuss below the function INLINEFORM1 , which has a similar structure.
+
+Here, INLINEFORM0 is the INLINEFORM1 th document in the stream and INLINEFORM2 is a monolingual cluster. The function INLINEFORM3 returns the cosine similarity between the document representation of the INLINEFORM4 th document and the centroid for cluster INLINEFORM5 . The vector INLINEFORM6 denotes the weights through which each of the cosine similarity values for each subvectors are weighted, whereas INLINEFORM7 denotes the weights for the timestamp features, as detailed further. Details on learning the weights INLINEFORM8 and INLINEFORM9 are discussed in § SECREF26 .
+
+The function INLINEFORM0 that maps a pair of document and cluster to INLINEFORM1 is defined as follows. Let DISPLAYFORM0
+
+for a given INLINEFORM0 and INLINEFORM1 . For each document INLINEFORM2 and cluster INLINEFORM3 , we generate the following three-dimensional vector INLINEFORM4 :
+
+INLINEFORM0 where INLINEFORM1 is the timestamp for document INLINEFORM2 and INLINEFORM3 is the timestamp for the newest document in cluster INLINEFORM4 .
+
+INLINEFORM0 where INLINEFORM1 is the average timestamp for all documents in cluster INLINEFORM2 .
+
+INLINEFORM0 where INLINEFORM1 is the timestamp for the oldest document in cluster INLINEFORM2 .
+
+These three timestamp features model the time aspect of the online stream of news data and help disambiguate clustering decisions, since time is a valuable indicator that a news story has changed, even if a cluster representation has a reasonable match in the textual features with the incoming document. The same way a news story becomes popular and fades over time BIBREF2 , we model the probability of a document belonging to a cluster (in terms of timestamp difference) with a probability distribution.
+
+For the case of crosslingual clustering, we introduce INLINEFORM0 , which has a similar definition to INLINEFORM1 , only instead of passing document/cluster similarity feature vectors, we pass cluster/cluster similarities, across all language pairs. Furthermore, the features are the crosslingual embedding vectors of the sections title, body and both combined (similarly to the monolingual case) and the timestamp features. For denoting the cluster timestamp, we use the average timestamps of all articles in it.
+
+Learning to Rank Candidates
+
+In § SECREF19 we introduced INLINEFORM0 and INLINEFORM1 as the weight vectors for the several document representation features. We experiment with both setting these weights to just 1 ( INLINEFORM2 and INLINEFORM3 ) and also learning these weights using support vector machines (SVMs). To generate the SVM training data, we simulate the execution of the algorithm on a training data partition (which we do not get evaluated on) and in which the gold standard labels are given. We run the algorithm using only the first subvector INLINEFORM4 , which is the TF-IDF vector with the words of the document in the body and title. For each incoming document, we create a collection of positive examples, for the document and the clusters which share at least one document in the gold labeling. We then generate 20 negative examples for the document from the 20 best-matching clusters which are not correct. To find out the best-matching clusters, we rank them according to their similarity to the input document using only the first subvector INLINEFORM5 .
+
+Using this scheme we generate a collection of ranking examples (one for each document in the dataset, with the ranking of the best cluster matches), which are then trained using the SVMRank algorithm BIBREF3 . We run 5-fold cross-validation on this data to select the best model, and train both a separate model for each language according to INLINEFORM0 and a crosslingual model according to INLINEFORM1 .
+
+Experiments
+
+Our system was designed to cluster documents from a (potentially infinite) real-word data stream. The datasets typically used in the literature (TDT, Reuters) have a small number of clusters ( INLINEFORM0 20) with coarse topics (economy, society, etc.), and therefore are not relevant to the use case of media monitoring we treat - as it requires much more fine-grained story clusters about particular events. To evaluate our approach, we adapted a dataset constructed for the different purpose of binary classification of joining cluster pairs. We processed it to become a collection of articles annotated with monolingual and crosslingual cluster labels.
+
+Statistics about this dataset are given in Table TABREF30 . As described further, we tune the hyper-parameter INLINEFORM0 on the development set. As for the hyper-parameters related to the timestamp features, we fixed INLINEFORM1 and tuned INLINEFORM2 on the development set, yielding INLINEFORM3 . To compute IDF scores (which are global numbers computed across a corpus), we used a different and much larger dataset that we collected from Deutsche Welle's news website (http://www.dw.com/). The dataset consists of 77,268, 118,045 and 134,243 documents for Spanish, English and German, respectively.
+
+The conclusions from our experiments are: (a) the weighting of the similarity metric features using SVM significantly outperforms unsupervised baselines such as CluStream (Table TABREF35 ); (b) the SVM approach significantly helps to learn when to create a new cluster, compared to simple grid search for the optimal INLINEFORM0 (Table TABREF39 ); (c) separating the feature space into one for monolingual clusters in the form of keywords and the other for crosslingual clusters based on crosslingual embeddings significantly helps performance.
+
+Monolingual Results
+
+In our first set of experiments, we report results on monolingual clustering for each language separately. Monolingual clustering of a stream of documents is an important problem that has been inspected by others, such as by ahmed2011unified and by aggarwal2006framework. We compare our results to our own implementation of the online micro-clustering routine presented by aggarwal2006framework, which shall be referred to as CluStream. We note that CluStream of aggarwal2006framework has been a widely used state-of-the-art system in media monitoring companies as well as academia, and serves as a strong baseline to this day.
+
+In our preliminary experiments, we also evaluated an online latent semantic analysis method, in which the centroids we keep for the function INLINEFORM0 (see § SECREF3 ) are the average of reduced dimensional vectors of the incoming documents as generated by an incremental singular value decomposition (SVD) of a document-term matrix that is updated after each incoming document. However, we discovered that online LSA performs significantly worse than representing the documents the way is described in § SECREF4 . Furthermore, it was also significantly slower than our algorithm due to the time it took to perform singular value decomposition.
+
+Table TABREF35 gives the final monolingual results on the three datasets. For English, we see that the significant improvement we get using our algorithm over the algorithm of aggarwal2006framework is due to an increased recall score. We also note that the trained models surpass the baseline for all languages, and that the timestamp feature (denoted by TS), while not required to beat the baseline, has a very relevant contribution in all cases. Although the results for both the baseline and our models seem to differ across languages, one can verify a consistent improvement from the latter to the former, suggesting that the score differences should be mostly tied to the different difficulty found across the datasets for each language. The presented scores show that our learning framework generalizes well to different languages and enables high quality clustering results.
+
+To investigate the impact of the timestamp features, we ran an additional experiment using only the same three timestamp features as used in the best model on the English dataset. This experiment yielded scores of INLINEFORM0 , INLINEFORM1 and INLINEFORM2 , which lead us to conclude that while these features are not competitive when used alone (hence temporal information by itself is not sufficient to predict the clusters), they contribute significantly to recall with the final feature ensemble.
+
+We note that as described in § SECREF3 , the optimization of the INLINEFORM0 parameter is part of the development process. The parameter INLINEFORM1 is a similarity threshold used to decide when an incoming document should merge to the best cluster or create a new one. We tune INLINEFORM2 on the development set for each language, and the sensitivity to it is demonstrated in Figure FIGREF36 (this process is further referred to as INLINEFORM3 ). Although applying grid-search on this parameter is the most immediate approach to this problem, we experimented with a different method which yielded superior results: as described further, we discuss how to do this process with an additional classifier (denoted SVM-merge), which captures more information about the incoming documents and the existing clusters.
+
+Additionally, we also experimented with computing the monolingual clusters with the same embeddings as used in the crosslingual clustering phase, which yielded poor results. In particular, this system achieved INLINEFORM0 score of INLINEFORM1 for English, which is below the bag-of-words baseline presented in Table TABREF35 . This result supports the approach we then followed of having two separate feature spaces for the monolingual and crosslingual clustering systems, where the monolingual space is discrete and the crosslingual space is based on embeddings.
+
+To investigate the importance of each feature, we now consider in Table TABREF37 the accuracy of the SVM ranker for English as described in § SECREF19 . We note that adding features increases the accuracy of the SVM ranker, especially the timestamp features. However, the timestamp feature actually interferes with our optimization of INLINEFORM0 to identify when new clusters are needed, although they improve the SVM reranking accuracy. We speculate this is true because high accuracy in the reranking problem does not necessarily help with identifying when new clusters need to be opened.
+
+To investigate this issue, we experimented with a different technique to learn when to create a new cluster. To this end, we trained another SVM classifier just to learn this decision, this time a binary classifier using LIBLINEAR BIBREF4 , by passing the max of the similarity of each feature between the incoming document and the current clustering pool as the input feature vector. This way, the classifier learns when the current clusters, as a whole, are of a different news story than the incoming document. As presented in Table TABREF39 , this method, which we refer to as SVM-merge, solved the issue of searching for the optimal INLINEFORM0 parameter for the SVM-rank model with timestamps, by greatly improving the F INLINEFORM1 score in respect to the original grid-search approach ( INLINEFORM2 ).
+
+Crosslingual Results
+
+As mentioned in § SECREF3 , crosslingual embeddings are used for crosslingual clustering. We experimented with the crosslingual embeddings of gardner2015translation and ammar2016massively. In our preliminary experiments we found that the former worked better for our use-case than the latter.
+
+We test two different scenarios for optimizing the similarity threshold INLINEFORM0 for the crosslingual case. Table TABREF41 shows the results for these experiments. First, we consider the simpler case of adjusting a global INLINEFORM1 parameter for the crosslingual distances, as also described for the monolingual case. As shown, this method works poorly, since the INLINEFORM2 grid-search could not find a reasonable INLINEFORM3 which worked well for every possible language pair.
+
+Subsequently, we also consider the case of using English as a pivot language (see § SECREF3 ), where distances for every other language are only compared to English, and crosslingual clustering decisions are made only based on this distance. This yielded our best crosslingual score of INLINEFORM0 , confirming that crosslingual similarity is of higher quality between each language and English, for the embeddings we used. This score represents only a small degradation in respect to the monolingual results, since clustering across different languages is a harder problem.
+
+Related Work
+
+Early research efforts, such as the TDT program BIBREF5 , have studied news clustering for some time. The problem of online monolingual clustering algorithms (for English) has also received a fair amount of attention in the literature. One of the earlier papers by aggarwal2006framework introduced a two-step clustering system with both offline and online components, where the online model is based on a streaming implementation of INLINEFORM0 -means and a bag-of-words document representation. Other authors have experimented with distributed representations, such as ahmed2011unified, who cluster news into storylines using Markov chain Monte Carlo methods, rehureklrec who used incremental Singular Value Decomposition (SVD) to find relevant topics from streaming data, and sato2017distributed who used the paragraph vector model BIBREF6 in an offline clustering setting.
+
+More recently, crosslingual linking of clusters has been discussed by rupnik2016news in the context of linking existing clusters from the Event Registry BIBREF7 in a batch fashion, and by steinberger2016mediagist who also present a batch clustering linking system. However, these are not “truly” online crosslingual clustering systems since they only decide on the linking of already-built monolingual clusters. In particular, rupnik2016news compute distances of document pairs across clusters using nearest neighbors, which might not scale well in an online setting. As detailed before, we adapted the cluster-linking dataset from rupnik2016news to evaluate our online crosslingual clustering approach. Preliminary work makes use of deep learning techniques BIBREF8 , BIBREF9 to cluster documents while learning their representations, but not in an online or multilingual fashion, and with a very small number of cluster labels (4, in the case of the text benchmark).
+
+In our work, we studied the problem of monolingual and crosslingual clustering, having experimented several directions and methods and the impact they have on the final clustering quality. We described the first system which aggregates news articles into fine-grained story clusters across different languages in a completely online and scalable fashion from a continuous stream.
+
+Conclusion
+
+We described a method for monolingual and crosslingual clustering of an incoming stream of documents. The method works by maintaining centroids for the monolingual and crosslingual clusters, where a monolingual cluster groups a set of documents and a crosslingual cluster groups a set of monolingual clusters. We presented an online crosslingual clustering method which auto-corrects past decisions in an efficient way. We showed that our method gives state-of-the-art results on a multilingual news article dataset for English, Spanish and German. Finally, we discussed how to leverage different SVM training procedures for ranking and classification to improve monolingual and crosslingual clustering decisions. Our system is integrated in a larger media monitoring project BIBREF10 , BIBREF11 and solving the use-cases of monitors and journalists, having been validated with qualitative user testing.
+
+Acknowledgments
+
+We would like to thank Esma Balkır, Nikos Papasarantopoulos, Afonso Mendes, Shashi Narayan and the anonymous reviewers for their feedback. This project was supported by the European H2020 project SUMMA, grant agreement 688139 (see http://www.summa-project.eu) and by a grant from Bloomberg.

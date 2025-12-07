@@ -1,0 +1,239 @@
+Introduction
+
+Robotic Process Automation (RPA) is a type of software bots that simulates hand-operated human activities like entering data into a system, registering into accounts, and accomplishing straightforward but repetitive workflows BIBREF0. However, one of the drawbacks of RPA-bots is their susceptibility to changes in defined scenarios: being designed for a particular task, the RPA-bot is usually not adaptable to other domains or even light modifications in a workflow BIBREF0. This inability to readjust to shifting conditions gave rise to Intelligent Process Automation (IPA) systems. IPA-bots combine RPA with Artificial Intelligence (AI) and thus are able to execute more cognitively demanding tasks that require i.a. reasoning and language understanding. Hence, IPA-bots advanced beyond automating shallow “click tasks” and can perform jobs more intelligently – by means of machine learning algorithms. Such IPA-systems undertake time-consuming and routine tasks, and thus enable smart workflows and free up skilled workers to accomplish higher-value activities.
+
+One of the potential applications of Natural Language Processing (NLP) within the IPA domain are conversational interfaces that enable human-to-machine interaction. The main benefit of conversational systems is their ability to give attention to several users simultaneously while supporting natural communication. A conventional dialogue system comprises multiple stages and involves different types of NLP subtasks, starting with Natural Language Understanding (NLU) (e.g., intent classification, named entity extraction) and going towards dialogue management (i.e., determining the next possible bot action, considering the dialogue history) and response generation (e.g., converting the semantic representation of the next system action into a natural language utterance). A typical dialogue system for IPA purposes undertakes shallow customer support requests (e.g., answering of FAQs), allowing human workers to focus on more sophisticated inquiries.
+
+Recent research in the dialogue generation domain is conducted by employing AI-techniques like machine and deep learning BIBREF1, BIBREF2. However, conventional supervised methods have limitations when applied to real-world data and industrial tasks. The primary challenge here refers to a training phase since a robust model requires an extensive amount of structured and labeled data, that is often not available for domain-specific problems. Especially if it concerns dialogue data, which has to be appropriately structured as well as labeled and annotated with additional information. Therefore, despite the popularity of deep learning end-to-end models, one still needs to rely on conventional pipelines in practical dialogue engineering, especially while setting a new domain. However, with few structured data available, transfer learning methods can be used. Such algorithms enable training of the systems with less or even a minimal amount of data, and are able to transfer the knowledge obtained during the training on existing data to the unseen domain.
+
+Introduction ::: Outline and Contributions
+
+This paper addresses the challenge of implementing a dialogue system for IPA purposes within the practical e-learning domain with the initial absence of training data. Our contributions within this work are as follows:
+
+We implemented a robust dialogue system for IPA purposes within the practical e-learning domain and within the conditions of missing training (dialogue) data (see Section SECREF3 – Section SECREF4). The system is currently deployed at the e-learning platform.
+
+The system has two purposes:
+
+First, it reduces repetitive and time-consuming activities and, therefore, allows workers of the e-learning platform to focus solely on complex questions;
+
+Second, by interacting with users, it augments the resources with structured and to some extent labeled training data for further possible implementation of learnable dialogue components (see Section SECREF5);
+
+We showcased that even a small amount of structured dialogues could be successfully used for re-training of dialogue units by means of Transfer Learning techniques (see Section SECREF6).
+
+Target Domain & Task Definition
+
+OMB+ is a German e-learning platform that assists students who are preparing for an engineering or computer science study at a university. The central purpose of the course is to support students in reviving their mathematical skills so that they can follow the upcoming university courses. The platform is thematically segmented into 13 sections and includes free mathematical classes with theoretical and practical content. Besides that, OMB+ provides a possibility to get assistance from a human tutor via a chat interface. Usually, the students and tutors interact in written form, and the language of communication is German. The current problem of the OMB+ platform is that the number of students grows every year, but to hire more qualified human tutors is challenging and expensive. This results in a more extended waiting period for students until their problems can be considered.
+
+In general, student questions can be grouped into three main categories: organizational questions (e.g., course certificate), contextual questions (e.g., content, theorem) and mathematical questions (e.g., exercises, solutions). To assist a student with a mathematical question, a tutor has to know the following regular information: What kind of topic (or sub-topic) a student has a problem with. At which examination mode (i.e., quiz, chapter level training or exercise, section level training or exercise, or final examination) the student is working right now. And finally, the exact question number and exact problem formulation. This means that a tutor has to request the same information every time a new dialogue opens, which is very time consuming and could be successfully solved by means of an IPA dialogue bot.
+
+Model
+
+The main objective of the proposed system is to interact with students at the beginning of every conversation and gather information on the topic (and sub-topic), examination mode and level, question number and exact problem formulation. Therefore, the system saves time for tutors and allows them to handle solely complex mathematical questions. Besides that, the system is implemented in a way such that it accumulates labeled dialogues in the background and stores them in a structured form.
+
+Model ::: Dialogue Modules
+
+Figure FIGREF82 (see the Appendix) displays the entire dialogue flow. In a nutshell, the system receives a user input, analyzes it and extracts information, if provided. If some of the required information is missing, the system asks the student to provide it. When all the information is collected, it will be automatically validated and subsequently forwarded to a human tutor, who then can directly proceed with the assistance. In the following we will describe the central components of the system.
+
+OMB+ Design: Figure FIGREF52 (see Section SECREF11 of the Appendix) illustrates the internal structure and design of the OMB+ platform. It has topics and sub-topics, as well as four examination modes. Each topic (Figure FIGREF52, tag 1) corresponds to a chapter level and always has sub-topics (Figure FIGREF52, tag 2), which correspond to a section level. Examination modes training and exercise are ambiguous, because they correspond to either a chapter (Figure FIGREF52, tag 3) or a section (Figure FIGREF52, tag 5) level, and it is important to differentiate between them, since they contain different types of content. The mode final examination (Figure FIGREF52, tag 4) always corresponds to a chapter level, whereas quiz (Figure FIGREF52, tag 5) can belong only to a section level. According to the design of the OMB+ platform, there are several ways of how a possible dialogue flow can proceed.
+
+Preprocessing: In a natural language dialogue, a user may respond in many different ways, thus, the extraction of any data from user-generated text is a challenging task due to a number of misspellings or confusable spellings (e.g., Exercise 1.a, Exercise 1 (a)). Therefore, to enable a reliable extraction of entities, we preprocessed and normalized (e.g., misspellings, synonyms) every user input before it was sent to the Natural Language Understanding (NLU) module. The preprocessing includes following steps:
+
+lowercasing and stemming of all words in the input;
+
+removal of German stop words and punctuation;
+
+all mentions of $x$ in mathematical formulas were removed to avoid confusion with roman number 10 (“$X$”);
+
+in a combination of the type: word “Chapter/Exercise” + digit written as a word (i.e “first”, “second”), word was replaced with a digit (“in first Chapter” $\rightarrow $ “in Chapter 1”), roman numbers were replaced with digits as well (“Chapter IV” $\rightarrow $ “Chapter 4”).
+
+detected ambiguities were normalized (e.g., “Trainingsaufgabe” $\rightarrow $ “Training”);
+
+recognized misspellings resp. typos were corrected (e.g., “Difeernzialrechnung” $\rightarrow $ “Differentialrechnung')'
+
+permalinks were parsed and analyzed. From each permalink it is possible to extract topic, examination mode and question number;
+
+Natural Language Understanding (NLU): We implemented an NLU unit utilizing handcrafted rules, Regular Expressions (RegEx) and Elasticsearch (ES) API. The NLU module contains following functionalities:
+
+Intent classification: As we mentioned above, student questions can be grouped into three main categories: Organizational questions, contextual questions and mathematical questions. To classify the input message by its category or so-called intent, we utilized key-word information predefined by handcrafted rules. We assumed that particular words are explicit and associated with a corresponding intent. If no intent could be classified, then it is assumed that the NLU unit was not capable of understanding and the intent is interpreted as unknown. In this case, the system requests the user to provide an intent manually (by picking one from the mentioned three options). The questions from organizational and theoretical categories are directly delivered to a human tutor, while mathematical questions are processed by the automated system for further analysis.
+
+Entity Extraction: Next, the system attempts to retrieve the entities from a user message on the topic (and sub-topic), examination mode and level, and question number. This part is implemented using Elasticsearch (ES) and RegEx. To enable the use of ES, we indexed the OMB+ site to an internal database. Besides indexing the topics and titles, we also provided information on possible synonyms or writing styles. We additionally filed OMB+ permalinks, which direct to the site pages. To query the resulting database, we utilized the internal Elasticsearch multi match function and set the minimum should match parameter to $20\%$. This parameter defines the number of terms that must match for a document to be considered relevant. Besides that, we adopted fuzziness with the maximum edit distance set to 2 characters. The fuzzy query uses similarity based on Levenshtein edit distance BIBREF3. Finally, the system generates a ranked list of possible matching entries found in the database within the predefined relevance threshold (we set it to $\theta $=$1.5$). We pick the most probable entry as the correct one and extract the corresponding entity from the user input.
+
+To summarize, the NLU module receives the user input as a preprocessed text and checks it across all predefined RegEx statements and for a match in the Elasticsearch database. Every time the entity is extracted, it is entered in the Information Dictionary (ID). The ID has the following six slots to be filled in: topic, sub-topic, examination level, examination mode, question number, and exact problem formulation.
+
+Dialogue Manager consists of the Dialogue State Tracker (DST), that maintains a representation of the current dialog state, and of the Policy Learner (PL) that defines the next system action. In our model, the system's next action is defined by the state of the previously obtained information stored in the Information Dictionary. For instance, if the system recognizes that the student works on the final examination, it also understands (defined by the logic in the predefined rules) that there is no need to ask for sub-topic because the final examination always corresponds to a chapter level (due to the design of OMB+ platform). If the system identifies that the user has difficulties in solving a quiz, it has to ask for the corresponding topic and sub-topic if not yet provided by a user (because the quiz always refers to a section level). To determine all of the potential dialogue flows, we implemented Mutually Exclusive Rules (MER), which indicate that two events $e_{1}$ and $e_{2}$ are mutually exclusive or disjoint if they cannot both occur at the same time (thus, the intersection of these events is empty: $P(A \cap B) = 0$). Additionally, we defined transition and mapping rules. The formal explanation of rules can be found in Section SECREF12 of the Appendix. Following the rules, we generated 56 state transitions, which define next system actions. Being on a new dialogue state, the system compares the extracted (i.e., updated) information in the ID with the valid dialogue states (see Section SECREF12 of the Appendix for the explanation of the validness) and picks the mapped action as the next system's action.
+
+The abovementioned rules are intended to support the current design of the OMB+ learning platform. However, additional MERs could be added to generate new transitions. Exemplifying this, we conducted experiments with the former design of the platform, where all the topics, except for the first one, had only sub-topics, whereas the first topic had both sub-topics and sub-sub-topics. We could effortlessly generate the missing transitions with our approach. The number of possible transitions, in this case, increased from 56 to 117.
+
+Meta Policy: Since the system is intended to operate in a real-world scenario, we had to implement additional policies that control the dialogue flow and validate the system's accuracy. Below we describe these policies:
+
+Completeness of the Information Dictionary: In this step, the system validates the completeness of the ID, which is defined by the number of obligatory slots filled in the information dictionary. There are 6 distinct cases when the ID is considered to be complete (see Section SECREF13 of the Appendix). For instance, if a user works on a final examination, the system does not has to request a sub-topic or examination level. Thus, the ID has to be filled only with data for a topic, examination mode, and question number, whereas, if the user works on a quiz, the system has to gather information about the topic, sub-topic, examination mode, and the question number. Once the ID is complete, it is provided to the verification step. Otherwise, the system proceeds according to the next action. The system extracts the information in each dialogue step, and thus if the user provides updated information on any subject later in the dialogue, the corresponding slot will be updated in the ID.
+
+Verification Step: Once the system has obtained all the necessary information (i.e., ID is complete), it proceeds to the final verification. In that step, the collected data is shown to the student in the session. The student is asked to verify the correctness of the collected data and if some entries are wrong, to correct them. The ID is, where necessary, updated with the user-provided data. This procedure repeats until the user confirms the correctness of the assembled data.
+
+Fallback Policy: In some cases, the system fails to derive information from a student query, even if the student provides it. It is due to the Elasticsearch functionality and previously unseen RegEx patterns. In these cases, the system re-asks a user and attempts to retrieve information from a follow-up query. The maximum number of re-ask attempts is set to three times ($r=3$). If the system is unable to extract information after three times, the user input is considered as the ground truth and saved to the appropriate slot in ID. An exception to this rule applies where the user has to specify the intent manually. In this case, after three unclassified attempts, a session is directly handed over to a human tutor.
+
+Human Request: In each dialogue state, a user can switch to a human tutor. For this, a user can enter the human key-word. Hence, every user message is additionally analyzed for the presence of this key-word.
+
+Response Generation: In this module, the semantic representation of the system's next action is transformed into natural language. Hence, each possible action is mapped to precisely one utterance, which is stored in the templates. Some of the predefined responses are fixed (i.e., “Welches Kapitel bearbeitest du gerade?”), others have placeholders for system values. In the latter case, the utterance can be formulated dependent on the actual ID. The dialogue showcases can be found in Section SECREF14 of the Appendix.
+
+Evaluation
+
+In order to get the feedback on the quality, functionality, and usefulness of the introduced model, we evaluated it in two ways: first, with an automated method using 130 manually annotated dialogues, to prove the robustness of the system, and second – with human tutors from OMB+ – to investigate the user experience. We describe the details as well as the most common errors below.
+
+Evaluation ::: Automated Evaluation
+
+To conduct an automated evaluation, we manually created a dataset with 130 dialog scenarios. We took real first user questions and predefined possible user responses, as well as gold system answers. These scenarios cover most frequent dialogues that we previously saw in human-to-human dialogue data. We tested our system by implementing a self-chatting evaluation bot. The evaluation cycle could be described as follows:
+
+The system receives the first question from a predefined dialogue via an API request, preprocesses and analyzes it in order to extract entities.
+
+Then it estimates the applicable next action, and responds according to it.
+
+This response is then compared to the system's gold answer: If the predicted answer is correct, then the system receives the next predefined user input from the dialog and responds again, as defined above. This procedure continues until the dialog terminates (i.e., ID is complete). Otherwise, the system fails, reporting the unsuccessful case number.
+
+Our final system successfully passed this evaluation for all 130 cases.
+
+Evaluation ::: Human Evaluation and Error Analysis
+
+To evaluate our system on irregular examples, we conducted experiments with human tutors from the OMB+ platform. The tutors are experienced regarding rare or complex questions, ambiguous answers, misspellings and other infrequent but still very relevant problems, which occur during a dialogue. In the following, we investigate some common errors and make additional observations.
+
+Misspellings and confusable spellings occur quite often in the user-generated text, and since we attempt to let the conversation remain very natural from the user side and thus, cannot require formal writing, we have to deal with various writing issues. One of the most frequent problems is misspellings. German words are generally long and can be complicated, and since users type quickly, this often leads to the wrong order of characters within words. To tackle this challenge, we used fuzzy match within ES. However, the maximum allowed edit distance in Elasticsearch is set to 2 characters. This means, that all the misspellings beyond this threshold could not be accurately recognized by ES (e.g., Differentialrechnung vs Differnezialrechnung). Another characteristic example would be the writing of the section or question number. The equivalent information can be written in several distinct ways, which has to be considered in our RegEx unit (e.g., Exercise 5 a, Exercise V a, Exercise 5 (a)). A similar problem occurs with confusable spelling (i.e.: Differentialrechnung vs Differentialgleichung). We analyzed the cases mentioned above and added some of the most common issues to the ES database or handled them with RegEx during the preprocessing step.
+
+Elasticsearch Threshold: In some cases, the system failed to extract information, although the user provided it. In other cases, ES extracts information that was not mentioned in a user query at all. That occurs due to the relevancy scoring algorithm of Elasticsearch, where a document's score is a combination of textual similarity and other metadata based scores. Our analysis revealed that ES mostly fails to extract the information if the sentence (i.e., user message) is quite short (e.g., 5 words). To overcome this difficulty, we combined the current input $u_{t}$ with the dialog history. This step eliminated the problem and improved the retrieval quality. To solve the case where Elasticsearch extracts incorrect information (or information that was not mentioned in a query) is more challenging. We discovered that the problem comes from short words or sub-words (e.g., suffixes, prefixes), which ES considers to be credible enough. The Elasticsearch documentation suggests getting rid of stop words to eliminate this behavior. However, this did not improve the search in our case. Also, fine-tuning of ES parameters such as the relevance threshold, prefix length and minimum should match parameter did not bring significant improvements. To cope with this problem, we implemented a verification step, where a user is given a chance to correct the erroneously retrieved information.
+
+The overall feedback from the tutors included reduced repetitive activities as well as reduced waiting times for students until their questions were processed. Also, tutors reported that the rate of cancelled sessions (switching to a human tutor) is rather low.
+
+Structured Dialogue Acquisition
+
+As we already mentioned, our system attempts to support the human tutor by assisting students, but it also collects structured and labeled training data in the background. In a trial run of the rule-based system, we were able to accumulate a toy-dataset with training dialogues. The assembled dialogues have the following format:
+
+Plain dialogues with unique dialogue indexes;
+
+Plain Information Dictionary information (e.g., extracted entities) collected for the whole dialogue;
+
+Pairs of questions (i.e., user requests) and responses (i.e., bot responses) with the unique dialogue- and turn-indexes;
+
+Triples in the form of (User Request, Next Action, Response). Information on the next system's action could be employed to train a Dialogue Manager unit with (deep-) machine learning algorithms;
+
+For each state in the dialogue, we saved the entities that the system was able to extract from the provided user query, along with their position in the utterance. This information could be used to train a custom, domain specific Named Entity Recognition model.
+
+Re-implementation of units with BERT
+
+As we mentioned before, there are many cases, especially in the industry, where the labeled and structured data is not directly available. Collecting and labeling such data is often a tedious and time-consuming task. Thus, algorithms that enable training of the systems with less or even a minimal amount of data are highly required. Such algorithms can transfer the knowledge obtained during the training on existing data to the unseen domain. They are, therefore, one of the potential solutions for industrial problems.
+
+Once we assembled a dataset of structured data via our rule-based system, we re-implemented two out of three central dialogue components in our conversational assistant with deep learning methods. Since the available data was collected in a trial-run and thus the obtained dataset was rather small to train a machine learning model from scratch, we utilized the Transfer Learning approach, and fine-tuned the existing pre-trained model (i.e., BERT) for our target domain and data.
+
+For the experiments, we defined two tasks:
+
+First, we studied the Named Entity Recognition problem in a custom domain setting. We defined a sequence labeling task and employed the BERT model BIBREF4. We applied the model to our dataset and fine-tuned it for six (6) domain-specific (i.e., e-learning) entities and one (1) “unknown” label.
+
+Second, we investigated the effectiveness of BERT for the dialogue manager core. For that experiment, we defined a classification task and applied the model to predict the system's Next Action for every given user utterance in a conversation. We then computed the macro F-score for 13 possible actions and an average dialogue accuracy.
+
+Finally, we verified that the applied model performed well on both tasks: We achieved the performance of $0.93$ macro F1 points for Named Entity Recognition (NER) and $0.75$ macro F1 points for the Next Action Prediction (NAP) task. We, therefore, conclude that both NER and NAP components could be employed to substitute or extend the existing rule-based modules.
+
+Data & Descriptive Statistics: The dataset that we collected during the trial-run consists of 300 structured dialogues with the average length of a dialogue being six (6) utterances. Communication with students was performed in the German language. Detailed general statistics can be found in Table TABREF41.
+
+Named Entity Recognition: We defined a sequence labeling task to extract custom entities from user input. We assumed seven (7) possible entities (see Table TABREF43) to be recognized by the model: topic, subtopic, examination mode and level, question number, intent, as well as the entity other for remaining words in the utterance. Since the data obtained from the rule-based system already contains information on the entities extracted from each user query (i.e., by means of Elasticsearch), we could use it to train a domain-specific NER unit. However, since the user-input was informal, the same information could be provided in different writing styles. That means that a single entity could have different surface forms (e.g., synonyms, writing styles) (although entities that we extracted from the rule-based system were all converted to a universal standard, e.g., official chapter names). To consider all of the variable entity forms while post-labeling the original dataset, we defined generic entity names (e.g., chapter, question nr.) and mapped variations of entities from the user input (e.g., Chapter = [Elementary Calculus, Chapter $I$, ...]) to them.
+
+Next Action Prediction: We defined a classification problem to predict the system's next action according to the given user input. We assumed 13 custom actions (see Table TABREF42) that we considered being our labels. In the conversational dataset, each input was automatically labeled by the rule-based system with the corresponding next action and the dialogue-id. Thus, no additional post-labeling was required. We investigated two settings:
+
+Default Setting: Using only a user input and the corresponding label (i.e., next action) without additional context. By default, we run all of our experiments in this setting.
+
+Extended Setting: Using a user input, a corresponding next action, and a previous system action as a source of additional context. For this setting, we run an experiment with the best performing model from the default setting.
+
+The overall dataset consists of 300 labeled dialogues, where 200 (with 1161 utterances) of them were employed for training, and 100 for evaluation and test sets (50 dialogues with about 300 utterances for each set respectively).
+
+Model Settings: For the NER task we conducted experiments with German and multilingual BERT implementations. Since in the German language the capitalization of words plays a significant role, we run our tests on the capitalized input, while keeping the original punctuation. Hence, we employed the available base model for both multilingual and German BERT implementations in the cased version. We set the learning rate for both models to $1e-4$ and the maximum length of the tokenized input was set to 128 tokens. We run the experiments multiple times with different seeds for a maximum of 50 epochs with the training batch size set to 32. We utilized AdamW as the optimizer and employed early stopping, if the performance did not change significantly after 5 epochs.
+
+For the NAP task we conducted experiments with German and multilingual BERT implementations as well. Here, we investigated the performance of both capitalized and lowercased input, as well as plain and preprocessed data. For the multilingual BERT, we employed the base model in both cased and uncased variations. For the German BERT, we utilized the base model in the cased variation only. For both models, we set the learning rate to $4e-5$, and the maximum length of the tokenized input was set to 128 tokens. We run the experiments multiple times with different seeds for a maximum of 300 epochs with the training batch size set to 32. We utilized AdamW as the optimizer and employed early stopping, if the performance did not change significantly after 15 epochs.
+
+Evaluation and Discussion: For the evaluation, we computed word-level macro F1 score for the NER task and utterance-level macro F1 score for the NAP task. The word-level F1 is estimated as the average of the F1 scores per class, each computed from all words in the evaluation and test sets. The results for the NER task are depicted in Table TABREF49. For utterance-level F1, a single label (i.e., next action) is obtained for the whole utterance. The results for the NAP task are presented in Table TABREF48. We additionally computed average dialogue accuracy for the best performing NAP models. This score denotes how well the predicted next actions match the gold next actions and thus form the dialogue flow within each conversation. The average dialogue accuracy was computed for 50 dialogues in the evaluation and test sets respectively. The results are displayed in Table TABREF50.
+
+The obtained results for the NER task revealed that German BERT performed significantly better than the multilingual BERT model. The performance of the custom NER unit is at $0.93$ macro F1 points for all possible named entities (see Table TABREF49). In contrast, for the NAP task, the multilingual BERT model obtained better performance than the German BERT model. Here, the best performing system in the default setting achieved a macro F1 of $0.677$ points for 14 possible labels, whereas the model in the extended setting performed better – its highest macro F1 score is $0.752$ for the same amount of labels (see Table TABREF48). Considering the dialogue accuracy, the extended system trained with multilingual BERT achieved better results than the default one with $0.801$ accuracy points compared to $0.724$ accuracy points for the test set (see Table TABREF50). The overall observation for the NAP is that the capitalized setting improved the performance of the model, whereas the inclusion of punctuation has not positively influenced the results.
+
+Error Analysis:
+
+After the evaluation step, we analyzed the cases, where the model failed to predict the correct action or labeled the named entity span erroneously. Below we describe the most common errors for both tasks.
+
+Next Action Prediction: One of the most frequent errors in the default model was the mismatch between two consecutive actions – namely, the action Question Number and Subtopic. That is due to the order of these actions in the conversational flow: Occurrence of both actions in the dialogue is not strict and substantially depends on the previous system action. However, the analysis of the extended model revealed that the introduction of additional context in the form of the previous action improved the performance of the system in this particular case by about $60\%$.
+
+Named Entity Recognition: The failing cases include mismatches between the tags “chapter” and “other”, and the tags “question number” and “other”. This type of error arose due to the imperfectly labeled span of a multi-word named entity. In such cases, the first or last word in the named entity was excluded from the span and erroneously labeled with the tag “other”.
+
+Related Work
+
+Individual components of a particular dialogue system could be implemented using a different kind of approach, starting with entirely rule- and template-based methods, and going towards hybrid approaches (using learnable components along with handcrafted units) and end-to-end trainable machine learning methods.
+
+Rule-based Approaches: Though many of the latest research approaches handle NLU and NLG units by using statistical NLP models BIBREF5, BIBREF6, BIBREF7, most of the industrially deployed dialogue systems still use manual features or handcrafted rules for the state and action prediction, intent classification, and slot filling tasks BIBREF8, BIBREF9. The rule-based approach ensures robustness and stable performance that is crucial for industrial systems that interact with a large number of users simultaneously. However, it is highly expensive and time-consuming to deploy a real dialogue system built in this manner. The major disadvantage is that the usage of handcrafted systems is restricted to a specific domain, and possible domain adaptation requires extensive manual engineering.
+
+End-to-End Learning Approaches: Due to the recent advance of end-to-end neural generative models BIBREF10, many efforts have been made to build an end-to-end trainable architecture for dialogue systems. Rather than using the traditional pipeline, an end-to-end model is conceived as a single module BIBREF8. Despite having better adaptability compared to any rule-based system and being easy to train, end-to-end approaches remain unattainable for commercial conversational agents operating on real-world data. A well and carefully constructed task-oriented dialogue system in a known domain using handcrafted rules and predefined responses, still outperforms the end-to-end systems due to its robustness BIBREF11, BIBREF12.
+
+Hybrid Approaches: Though end-to-end learning is an attractive solution for dialogue systems, current techniques are data-intensive and require large amounts of dialogues to learn simple actions. To overcome this difficulty, BIBREF13 (BIBREF13) introduce Hybrid Code Networks (HCNs), which is an ensemble of retrieval and trainable units. The authors report, that compared to existing end-to-end methods, their approach considerably reduces the amount of data required for training BIBREF13. Hybrid models appear to replace the established rule- and template-based approaches which are currently utilized in an industrial setting.
+
+Conclusions
+
+In this work, we implemented a dialogue system for Intelligent Process Automation purposes that simultaneously solves two problems: First, it reduces repetitive and time-consuming activities and, therefore, allows workers of the e-learning platform to focus on solely mathematical and hence more cognitively demanding questions. Second, by interacting with users, it augments the resources with structured and labeled training data for further possible implementation of learnable dialogue components. The realization of such a system was connected with many challenges. Among others were missing structured data, ambiguous or erroneous user-generated text and the necessity to deal with already existing corporate tools and their design. The introduced model allowed us to accumulate structured and to some extent labeled data without any special efforts from the human (i.e., tutors) side (e.g., manual annotation of existing dialogues, change of the conversational structure). Once we collected structured dialogues, we were able to re-train specific components of the system with deep learning methods and achieved reasonable performance for all proposed tasks.
+
+We believe the obtained results are rather good, considering a relatively small amount of data we utilized to fine-tune the pre-trained model. We, therefore, conclude that both Next Action Prediction and Named Entity Recognition components could be employed to substitute or extend the existing rule-based modules. Rule-based units are restricted in their capabilities and could be hardly adaptable to novel patterns, whereas the trainable units generalize better, which we believe could reduce the number of erroneous predictions in case of unexpected dialogue behavior. Furthermore, to increase the overall robustness, both rule-based and trainable components could be used synchronously as a hybrid model: in case when one system fails, the dialogue proceeds on the prediction obtained from the other model.
+
+Future Work
+
+The core of the rule-based model is a dialogue manager that determines the current state of the conversation and the possible next action. Rule-based systems are generally considered to be hardly adaptable to new domains; however, our dialogue manager proved to be flexible to slight modifications in a workflow. One of the possible directions of future work would be the investigation of the general adaptability of the dialogue manager core to other scenarios and domains (e.g., different course). Further investigation could be towards the multi-language modality for the re-implemented units. Since the OMB+ platform also supports English and Chinese, it would be interesting to examine whether the simple translation from target language (i.e., English, Chinese) to source language (i.e., German) would be sufficient to employ already-assembled dataset and pre-trained units.
+
+Future Work ::: Acknowledgments.
+
+We gratefully acknowledge the OMB+ team for the collaboration and especially thank Ruedi Seiler and Michael Heimann for their helpful feedback and technical support. We are indebted to the tutors for the evaluation of the system, as well as to the anonymous reviewers for their valuable comments.
+
+OMB+ Design
+
+Figure FIGREF52 presents an example of the OMB+ Online Learning Platform.
+
+Mutually Exclusive Rules
+
+Assume a list of all theoretically possible dialogue states: $S$ = [topic, sub-topic, training, exercise, chapter level, section level, quiz, final examination, question number] and for each element $s_{n}$ in $S$ is true that:
+
+This would give us all general (resp. possible) dialogue states without reference to the design of the OMB+ platform. However, to make the dialogue states fully suitable for the OMB+, from the general states, we take only those, which are valid. To define the validness of the state, we specify the following five Mutually Exclusive Rules (MER):
+
+Rule ($R_{1}$) in Table TABREF54 denotes admissible configurations for topic and means that we are either given a topic ($T$) or not ($\lnot T$).
+
+Rule ($R_{2}$) in Table TABREF55 denotes that either no information on the examination mode is given, or examination mode is Training ($TR$) or Exercise ($E$) or Quiz ($Q$) or Final Examination ($FE$), but not more than one mode at the same time.
+
+Rule ($R_{3}$) in Table TABREF56 indicates that either no level information is provided, or the level corresponds to chapter level ($CL$) or to section level ($SL$), but not to both at the same time.
+
+Rule ($R_{4}$) in Table TABREF57 means that Training ($TR$) and Exercise ($E$) examination modes can either belong to chapter level ($CL$) or to section level ($SL$), but not to both at the same time.
+
+Rule ($R_{5}$) in Table TABREF58 symbolizes that we could be either given only a topic ($T$) or the combination of topic and sub-topic ($ST$) at the same time, or only sub-topic, or no information on this point at all.
+
+We then define a valid dialogue state, as a dialogue state that meets all requirements of the abovementioned rules:
+
+After we get the valid states for our dialogues, we want to make a mapping from each valid dialogue state to the next possible systems action. For that, we first define five transition rules :
+
+means that no topic ($T$) is found in the ID (i.e., could not be extracted from user input).
+
+indicates that no examination mode ($EM$) is found in the ID.
+
+denotes that the extracted examination mode ($EM$) is either Training ($TR$) or Exercise ($E$).
+
+means that no sub-topic ($ST$) is provided by a user, but ID either already contains the combination of topic ($T$), training ($TR$) and section level ($SL$), or the combination of topic, exercise ($E$) and section level, or the combination of topic and quiz ($Q$).
+
+indicates that no question number ($QNR$) was provided by a student (or could not be successfully extracted).
+
+Finally, we assumed the list of possible next actions for the system:
+
+Following the transition rules, we mapped each valid dialogue state to the possible next action $a_{m}$ in $A$:
+
+in the case where we do not have any topic provided, the next action is to ask for the topic ($T$).
+
+if no examination mode is provided by a user (or it could not be successfully extracted from the user query), the next action is defined as ask for examination mode ($EM$).
+
+in case where we know the examination mode $EM$ $\in $ [Training, Exercise], we have to ask about the level (i.e., training at chapter level or training at section level), thus the next action is ask for level ($L$).
+
+if no sub-topic is provided, but the examination mode $EM$ $\in $ [Training, Exercise] at section level, the next action is defined as ask for sub-topic ($ST$).
+
+if no question number is provided by a user, then the next action is ask for question number ($QNR$).
+
+Completeness of ID: Example Cases
+
+Below are examples of two final cases (out of six), where ID is considered to be complete:
+
+Interaction Showcases
+
+Below are five sample dialogues with variable flows.

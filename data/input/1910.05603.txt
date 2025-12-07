@@ -1,0 +1,59 @@
+Introduction
+
+Informal speech is different from formal speech, especially in Vietnamese due to many conjunctive words in this language. Building an ASR model to handle such kind of speech is particularly difficult due to the lack of training data and also cost for data collection. There are two components of an ASR system that contribute the most to the accuracy of it, an acoustic model and a language model. While collecting data for acoustic model is time-consuming and costly, language model data is much easier to collect.
+
+The language model training for the Automatic Speech Recognition (ASR) system usually based on corpus crawled on formal text, so that some conjunctive words which often used in conversation will be missed out, leading to the system is getting biased to writing-style speech.
+
+In this paper, we present our attempt to mitigate the problems using a large scale data set and a language model combination technique that only require a small amount of conversation data but can still handle very well conversation speech.
+
+System Description
+
+In this section, we describe our ASR system, which consists of 2 main components, an acoustic model which models the correlation between phonemes and speech signal; and a language model which guides the search algorithm throughout inference process.
+
+System Description ::: Acoustic Model
+
+We adopt a DNN-based acoustic model BIBREF0 with 11 hidden layers and the alignment used to train the model is derived from a HMM-GMM model trained with SAT criterion. In a conventional Gaussian Mixture Model - Hidden Markov Model (GMM-HMM) acoustic model, the state emission log-likelihood of the observation feature vector $o_t$ for certain tied state $s_j$ of HMMs at time $t$ is computed as
+
+where M is the number of Gaussian mixtures in the GMM for state $j$ and $\pi _{jm}$ is the mixing weight. As the outputs from DNNs represent the state posteriors $p(s_j|\mathbf {o}_t)$, a DNN-HMM hybrid system uses pseudo log-likelihood as the state emissions that is computed as
+
+where the state priors log $p(s_j )$ can be estimated using the state alignments on the training speech data.
+
+System Description ::: Language Model
+
+Our language model training pipeline is described in Figure FIGREF6. First, we collect and clean large amount of text data from various sources including news, manual labeled conversation video. Then, the collected data is categorized into domains. This is an important step as the ASR performance is highly depends on the speech domain. After that, the text is fed into a data cleaning pipeline to clean bad tone marks, normalizing numbers and dates.
+
+For each domain text data, we train an n-gram language modelBIBREF1 that is optimized for that domain. As the results, we have more than 10 language models. These language models are combined based on perplexity calculated on a small text of a domain that we want to optimize for.
+
+In our system, the language model is used in 2 pass-decoding. In the first pass, the language model is combined with acoustic and lexicon model to form a full decoding graph. In this stage, the language model is typically small in size by utilizing pruning method. In the second stage, we use a un-pruned language model to rescore decoded lattices.
+
+Corpus Description ::: Speech data
+
+Our speech corpus consists of approximately 3000 hours of speech data including various domains and speaking styles. The data is augmented with noise and room impulse respond to increase the quantity and prevent over-fitting.
+
+Corpus Description ::: Text data
+
+To train n-gram language models that are robust to various domains and, we collect corpus from many resources, mainly is come from newspaper site (like dantri, vnexpress,..), law document and some crawled repository. In total, more than 50GB of text split to separate subjects was used to train n-gram language models. Table TABREF10 shows the statistic of the collected data.
+
+Experiments
+
+There are two different testing sets from VLSP 2018 and VLSP 2019. In general, the data of this year is more complex than the last year one, so there is a big gap in results between two of them. The experiments are conducted using the Kaldi speech recognition toolkitBIBREF2.
+
+Experiments ::: Evaluation data
+
+Testing data VLSP 2018: This dataset contains relatively 5 hours of short audio voices with 796 samples.
+
+Testing data VLSP 2019: The testing set in 2019 is quite harder compare with the set in 2018. There are more than 17 hours with 16,214 short audio samples. The set is difficult because audio contains more noise and having more informal speaking style.
+
+Experiments ::: Single system evaluation
+
+Table TABREF15 shows the results on the VLSP 2019 test set with two language models. Various language model weights were also used to find the optimal value for the test set. As we can see, the conversation language model with the weight of 8 yielded the best single system of 15.47% WER.
+
+Experiments ::: System combination
+
+To further improve the performance, we adopt system combination on the decoding lattice level. By combining systems, we can take advantage of the strength of each model that is optimized for different domains. The results for 2 test sets is showed on Table TABREF17 and TABREF18.
+
+As we can see, for both test sets, system combination significantly reduce the WER. The best result for vlsp2018 of 4.85% WER is obtained by the combination weights 0.6:0.4 where 0.6 is given to the general language model and 0.4 is given to the conversation one. On the vlsp2019 set, the ratio is change slightly by 0.7:0.3 to deliver the best result of 15.09%.
+
+Conclusion
+
+In this paper, we presented our ASR system participated in VLSP 2019 challenge that incorporates a language model combination technique to handle conversation speech with small amount of text data required. The method demonstrated that it can help to reduce WER by 3% on the VLSP 2019 challenge.

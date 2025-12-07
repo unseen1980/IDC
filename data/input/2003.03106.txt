@@ -1,0 +1,177 @@
+Introduction
+
+During the first two decades of the 21st century, the sharing and processing of vast amounts of data has become pervasive. This expansion of data sharing and processing capabilities is both a blessing and a curse. Data helps build better information systems for the digital era and enables further research for advanced data management that benefits the society in general. But the use of this very data containing sensitive information conflicts with private data protection, both from an ethical and a legal perspective.
+
+There are several application domains on which this situation is particularly acute. This is the case of the medical domain BIBREF0. There are plenty of potential applications for advanced medical data management that can only be researched and developed using real data; yet, the use of medical data is severely limited –when not entirely prohibited– due to data privacy protection policies.
+
+One way of circumventing this problem is to anonymise the data by removing, replacing or obfuscating the personal information mentioned, as exemplified in Table TABREF1. This task can be done by hand, having people read and anonymise the documents one by one. Despite being a reliable and simple solution, this approach is tedious, expensive, time consuming and difficult to scale to the potentially thousands or millions of documents that need to be anonymised.
+
+For this reason, numerous of systems and approaches have been developed during the last decades to attempt to automate the anonymisation of sensitive content, starting with the automatic detection and classification of sensitive information. Some of these systems rely on rules, patterns and dictionaries, while others use more advanced techniques related to machine learning and, more recently, deep learning.
+
+Given that this paper is concerned with text documents (e.g. medical records), the involved techniques are related to Natural Language Processing (NLP). When using NLP approaches, it is common to pose the problem of document anonymisation as a sequence labelling problem, i.e. classifying each token within a sequence as being sensitive information or not. Further, depending on the objective of the anonymisation task, it is also important to determine the type of sensitive information (names of individuals, addresses, age, sex, etc.).
+
+The anonymisation systems based on NLP techniques perform reasonably well, but are far from perfect. Depending on the difficulty posed by each dataset or the amount of available data for training machine learning models, the performance achieved by these methods is not enough to fully rely on them in certain situations BIBREF0. However, in the last two years, the NLP community has reached an important milestone thanks to the appearance of the so-called Transformers neural network architectures BIBREF1. In this paper, we conduct several experiments in sensitive information detection and classification on Spanish clinical text using BERT (from `Bidirectional Encoder Representations from Transformers') BIBREF2 as the base for a sequence labelling approach. The experiments are carried out on two datasets: the MEDDOCAN: Medical Document Anonymization shared task dataset BIBREF3, and NUBes BIBREF4, a corpus of real medical reports in Spanish. In these experiments, we compare the performance of BERT with other machine-learning-based systems, some of which use language-specific features. Our aim is to evaluate how good a BERT-based model performs without language nor domain specialisation apart from the training data labelled for the task at hand.
+
+The rest of the paper is structured as follows: the next section describes related work about data anonymisation in general and clinical data anonymisation in particular; it also provides a more detailed explanation and background about the Transformers architecture and BERT. Section SECREF3 describes the data involved in the experiments and the systems evaluated in this paper, including the BERT-based system; finally, it details the experimental design. Section SECREF4 introduces the results for each set of experiments. Finally, Section SECREF5 contains the conclusions and future lines of work.
+
+Related Work
+
+The state of the art in the field of Natural Language Processing (NLP) has reached an important milestone in the last couple of years thanks to deep-learning architectures, increasing in several points the performance of new models for almost any text processing task.
+
+The major change started with the Transformers model proposed by vaswani2017attention. It substituted the widely used recurrent and convolutional neural network architectures by another approach based solely on self-attention, obtaining an impressive performance gain. The original proposal was focused on an encoder-decoder architecture for machine translation, but soon the use of Transformers was made more general BIBREF1. There are several other popular models that use Transformers, such as Open AI's GPT and GPT2 BIBREF5, RoBERTa BIBREF6 and the most recent XLNet BIBREF7; still, BERT BIBREF2 is one of the most widespread Transformer-based models.
+
+BERT trains its unsupervised language model using a Masked Language Model and Next Sentence Prediction. A common problem in NLP is the lack of enough training data. BERT can be pre-trained to learn general or specific language models using very large amounts of unlabelled text (e.g. web content, Wikipedia, etc.), and this knowledge can be transferred to a different downstream task in a process that receives the name fine-tuning.
+
+devlin2018bert have used fine-tuning to achieve state-of-the-art results on a wide variety of challenging natural language tasks, such as text classification, Question Answering (QA) and Named Entity Recognition and Classification (NERC). BERT has also been used successfully by other community practitioners for a wide range of NLP-related tasks BIBREF8, BIBREF9.
+
+Regarding the task of data anonymisation in particular, anonymisation systems may follow different approaches and pursue different objectives (Cormode and Srivastava, 2009). The first objective of these systems is to detect and classify the sensitive information contained in the documents to be anonymised. In order to achieve that, they use rule-based approaches, Machine Learning (ML) approaches, or a combination of both.
+
+Although most of these efforts are for English texts –see, among others, the i2b2 de-identification challenges BIBREF10, BIBREF11, dernon2016deep, or khin2018deep–, other languages are also attracting growing interest. Some examples are mamede2016automated for Portuguese and tveit2004anonymization for Norwegian. With respect to the anonymisation of text written in Spanish, recent studies include medina2018building, hassan2018anonimizacion and garcia2018automating. Most notably, in 2019 the first community challenge about anonymisation of medical documents in Spanish, MEDDOCAN BIBREF3, was held as part of the IberLEF initiative. The winners of the challenge –the Neither-Language-nor-Domain-Experts (NLNDE) BIBREF12– achieved F1-scores as high as 0.975 in the task of sensitive information detection and categorisation by using recurrent neural networks with Conditional Random Field (CRF) output layers.
+
+At the same challenge, mao2019hadoken occupied the 8th position among 18 participants using BERT. According to the description of the system, the authors used BERT-Base Multilingual Cased and an output CRF layer. However, their system is $\sim $3 F1-score points below our implementation without the CRF layer.
+
+Materials and Methods
+
+The aim of this paper is to evaluate BERT's multilingual model and compare it to other established machine-learning algorithms in a specific task: sensitive data detection and classification in Spanish clinical free text. This section describes the data involved in the experiments and the systems evaluated. Finally, we introduce the experimental setup.
+
+Materials and Methods ::: Data
+
+Two datasets are exploited in this article. Both datasets consist of plain text containing clinical narrative written in Spanish, and their respective manual annotations of sensitive information in BRAT BIBREF13 standoff format. In order to feed the data to the different algorithms presented in Section SECREF7, these datasets were transformed to comply with the commonly used BIO sequence representation scheme BIBREF14.
+
+Materials and Methods ::: Data ::: NUBes-PHI
+
+NUBes BIBREF4 is a corpus of around 7,000 real medical reports written in Spanish and annotated with negation and uncertainty information. Before being published, sensitive information had to be manually annotated and replaced for the corpus to be safely shared. In this article, we work with the NUBes version prior to its anonymisation, that is, with the manual annotations of sensitive information. It follows that the version we work with is not publicly available and, due to contractual restrictions, we cannot reveal the provenance of the data. In order to avoid confusion between the two corpus versions, we henceforth refer to the version relevant in this paper as NUBes-PHI (from `NUBes with Personal Health Information').
+
+NUBes-PHI consists of 32,055 sentences annotated for 11 different sensitive information categories. Overall, it contains 7,818 annotations. The corpus has been randomly split into train (72%), development (8%) and test (20%) sets to conduct the experiments described in this paper. The size of each split and the distribution of the annotations can be consulted in Tables and , respectively.
+
+The majority of sensitive information in NUBes-PHI are temporal expressions (`Date' and `Time'), followed by healthcare facility mentions (`Hospital'), and the age of the patient. Mentions of people are not that frequent, with physician names (`Doctor') occurring much more often than patient names (`Patient'). The least frequent sensitive information types, which account for $\sim $10% of the remaining annotations, consist of the patient's sex, job, and kinship, and locations other than healthcare facilities (`Location'). Finally, the tag `Other' includes, for instance, mentions to institutions unrelated to healthcare and whether the patient is right- or left-handed. It occurs just 36 times.
+
+Materials and Methods ::: Data ::: The MEDDOCAN corpus
+
+The organisers of the MEDDOCAN shared task BIBREF3 curated a synthetic corpus of clinical cases enriched with sensitive information by health documentalists. In this regard, the MEDDOCAN evaluation scenario could be said to be somewhat far from the real use case the technology developed for the shared task is supposed to be applied in. However, at the moment it also provides the only public means for a rigorous comparison between systems for sensitive health information detection in Spanish texts.
+
+The size of the MEDDOCAN corpus is shown in Table . Compared to NUBes-PHI (Table ), this corpus contains more sensitive information annotations, both in absolute and relative terms.
+
+The sensitive annotation categories considered in MEDDOCAN differ in part from those in NUBes-PHI. Most notably, it contains finer-grained labels for location-related mentions –namely, `Address', `Territory', and `Country'–, and other sensitive information categories that we did not encounter in NUBes-PHI (e.g., identifiers, phone numbers, e-mail addresses, etc.). In total, the MEDDOCAN corpus has 21 sensitive information categories. We refer the reader to the organisers' article BIBREF3 for more detailed information about this corpus.
+
+Materials and Methods ::: Systems
+
+Apart from experimenting with a pre-trained BERT model, we have run experiments with other systems and baselines, to compare them and obtain a better perspective about BERT's performance in these datasets.
+
+Materials and Methods ::: Systems ::: Baseline
+
+As the simplest baseline, a sensitive data recogniser and classifier has been developed that consists of regular-expressions and dictionary look-ups. For each category to detect a specific method has been implemented. For instance, the Date, Age, Time and Doctor detectors are based on regular-expressions; Hospital, Sex, Kinship, Location, Patient and Job are looked up in dictionaries. The dictionaries are hand-crafted from the training data available, except for the Patient's case, for which the possible candidates considered are the 100 most common female and male names in Spain according to the Instituto Nacional de Estadística (INE; Spanish Statistical Office).
+
+Materials and Methods ::: Systems ::: CRF
+
+Conditional Random Fields (CRF) BIBREF15 have been extensively used for tasks of sequential nature. In this paper, we propose as one of the competitive baselines a CRF classifier trained with sklearn-crfsuite for Python 3.5 and the following configuration: algorithm = lbfgs; maximum iterations = 100; c1 = c2 = 0.1; all transitions = true; optimise = false. The features extracted from each token are as follows:
+
+[noitemsep]
+
+prefixes and suffixes of 2 and 3 characters;
+
+the length of the token in characters and the length of the sentence in tokens;
+
+whether the token is all-letters, a number, or a sequence of punctuation marks;
+
+whether the token contains the character `@';
+
+whether the token is the start or end of the sentence;
+
+the token's casing and the ratio of uppercase characters, digits, and punctuation marks to its length;
+
+and, the lemma, part-of-speech tag, and named-entity tag given by ixa-pipes BIBREF16 upon analysing the sentence the token belongs to.
+
+Noticeably, none of the features used to train the CRF classifier is domain-dependent. However, the latter group of features is language dependent.
+
+Materials and Methods ::: Systems ::: spaCy
+
+spaCy is a widely used NLP library that implements state-of-the-art text processing pipelines, including a sequence-labelling pipeline similar to the one described by strubell2017fast. spaCy offers several pre-trained models in Spanish, which perform basic NLP tasks such as Named Entity Recognition (NER). In this paper, we have trained a new NER model to detect NUBes-PHI labels. For this purpose, the new model uses all the labels of the training corpus coded with its context at sentence level. The network optimisation parameters and dropout values are the ones recommended in the documentation for small datasets. Finally, the model is trained using batches of size 64. No more features are included, so the classifier is language-dependent but not domain-dependent.
+
+Materials and Methods ::: Systems ::: BERT
+
+As introduced earlier, BERT has shown an outstanding performance in NERC-like tasks, improving the start-of-the-art results for almost every dataset and language. We take the same approach here, by using the model BERT-Base Multilingual Cased with a Fully Connected (FC) layer on top to perform a fine-tuning of the whole model for an anonymisation task in Spanish clinical data. Our implementation is built on PyTorch and the PyTorch-Transformers library BIBREF1. The training phase consists in the following steps (roughly depicted in Figure ):
+
+Pre-processing: since we are relying on a pre-trained BERT model, we must match the same configuration by using a specific tokenisation and vocabulary. BERT also needs that the inputs contains special tokens to signal the beginning and the end of each sequence.
+
+Fine-tuning: the pre-processed sequence is fed into the model. BERT outputs the contextual embeddings that encode each of the inputted tokens. This embedding representation for each token is fed into the FC linear layer after a dropout layer (with a 0.1 dropout probability), which in turn outputs the logits for each possible class. The cross-entropy loss function is calculated comparing the logits and the gold labels, and the error is back-propagated to adjust the model parameters.
+
+We have trained the model using an AdamW optimiser BIBREF17 with the learning rate set to 3e-5, as recommended by devlin2018bert, and with a gradient clipping of 1.0. We also applied a learning-rate scheduler that warms up the learning rate from zero to its maximum value as the training progresses, which is also a common practice. For each experiment set proposed below, the training was run with an early-stopping patience of 15 epochs. Then, the model that performed best against the development set was used to produce the reported results.
+
+The experiments were run on a 64-core server with operating system Ubuntu 16.04, 250GB of RAM memory, and 4 GeForce RTX 2080 GPUs with 11GB of memory. The maximum sequence length was set at 500 and the batch size at 12. In this setting, each epoch –a full pass through all the training data– required about 10 minutes to complete.
+
+Materials and Methods ::: Experimental design
+
+We have conducted experiments with BERT in the two datasets of Spanish clinical narrative presented in Section SECREF3 The first experiment set uses NUBes-PHI, a corpus of real medical reports manually annotated with sensitive information. Because this corpus is not publicly available, and in order to compare the BERT-based model to other related published systems, the second set of experiments uses the MEDDOCAN 2019 shared task competition dataset. The following sections provide greater detail about the two experimental setups.
+
+Materials and Methods ::: Experimental design ::: Experiment A: NUBes-PHI
+
+In this experiment set, we evaluate all the systems presented in Section SECREF7, namely, the rule-based baseline, the CRF classifier, the spaCy entity tagger, and BERT. The evaluation comprises three scenarios of increasing difficulty:
+
+[noitemsep]
+
+- Evaluates the performance of the systems at predicting whether each token is sensitive or non-sensitive; that is, the measurements only take into account whether a sensitive token has been recognised or not, regardless of the BIO label and the category assigned. This scenario shows how good a system would be at obfuscating sensitive data (e.g., by replacing sensitive tokens with asterisks).
+
+- We measure the performance of the systems at predicting the sensitive information type of each token –i.e., the 11 categories presented in Section SECREF5 or `out'. Detecting entity types correctly is important if a system is going to be used to replace sensitive data by fake data of the same type (e.g., random people names).
+
+- This is the strictest evaluation, as it takes into account both the BIO label and the category assigned to each individual token. Being able to discern between two contiguous sensitive entities of the same type is relevant not only because it is helpful when producing fake replacements, but because it also yields more accurate statistics of the sensitive information present in a given document collection.
+
+The systems are evaluated in terms of micro-average precision, recall and F1-score in all the scenarios.
+
+In addition to the scenarios proposed, a subject worth being studied is the need of labelled data. Manually labelled data is an scarce and expensive resource, which for some application domains or languages is difficult to come by. In order to obtain an estimation of the dependency of each system on the available amount of training data, we have retrained all the compared models using decreasing amounts of data –from 100% of the available training instances to just 1%. The same data subsets have been used to train all the systems. Due to the knowledge transferred from the pre-trained BERT model, the BERT-based model is expected to be more robust to data scarcity than those that start their training from scratch.
+
+Materials and Methods ::: Experimental design ::: Experiment B: MEDDOCAN
+
+In this experiment set, our BERT implementation is compared to several systems that participated in the MEDDOCAN challenge: a CRF classifier BIBREF18, a spaCy entity recogniser BIBREF18, and NLNDE BIBREF12, the winner of the shared task and current state of the art for sensitive information detection and classification in Spanish clinical text. Specifically, we include the results of a domain-independent NLNDE model (S2), and the results of a model enriched with domain-specific embeddings (S3). Finally, we include the results obtained by mao2019hadoken with a CRF output layer on top of BERT embeddings. MEDDOCAN consists of two scenarios:
+
+[noitemsep]
+
+- This evaluation measures how good a system is at detecting sensitive text spans, regardless of the category assigned to them.
+
+- In this scenario, systems are required to match exactly not only the boundaries of each sensitive span, but also the category assigned.
+
+The systems are evaluated in terms of micro-averaged precision, recall and F-1 score. Note that, in contrast to the evaluation in Experiment A, MEDDOCAN measurements are entity-based instead of tokenwise. An exhaustive explanation of the MEDDOCAN evaluation procedure is available online, as well as the official evaluation script, which we used to obtain the reported results.
+
+Results
+
+This section describes the results obtained in the two sets of experiments: NUBes-PHI and MEDDOCAN.
+
+Results ::: Experiment A: NUBes-PHI
+
+Table shows the results of the conducted experiments in NUBes-PHI for all the compared systems. The included baseline serves to give a quick insight about how challenging the data is. With simple regular expressions and gazetteers a precision of 0.853 is obtained. On the other hand, the recall, which directly depends on the coverage provided by the rules and resources, drops to 0.469. Hence, this task is unlikely to be solved without the generalisation capabilities provided by machine-learning and deep-learning models.
+
+Regarding the detection scenario –that is, the scenario concerned with a binary classification to determine whether each individual token conveys sensitive information or not–, it can be observed that BERT outperforms its competitors. A fact worth highlighting is that, according to these results, BERT achieves a precision lower than the rest of the systems (i.e., it makes more false positive predictions); in exchange, it obtains a remarkably higher recall. Noticeably, it reaches a recall of 0.979, improving by more than 4 points the second-best system, spaCy.
+
+The table also shows the results for the relaxed metric that only takes into account the entity type detected, regardless of the BIO label (i.e., ignoring whether the token is at the beginning or in the middle of a sensitive sequence of tokens). The conclusions are very similar to those extracted previously, with BERT gaining 2.1 points of F1-score over the CRF based approach. The confusion matrices of the predictions made by CRF, spaCy, and BERT in this scenario are shown in Table . As can bee seen, BERT has less difficulty in predicting correctly less frequent categories, such as `Location', `Job', and `Patient'. One of the most common mistakes according to the confusion matrices is classifying hospital names as `Location' instead of the more accurate `Hospital'; this is hardly a harmful error, given that a hospital is actually a location. Last, the category `Other' is completely leaked by all the compared systems, most likely due to its almost total lack of support in both training and evaluation datasets.
+
+To finish with this experiment set, Table also shows the strict classification precision, recall and F1-score for the compared systems. Despite the fact that, in general, the systems obtain high values, BERT outperforms them again. BERT's F1-score is 1.9 points higher than the next most competitive result in the comparison. More remarkably, the recall obtained by BERT is about 5 points above.
+
+Upon manual inspection of the errors committed by the BERT-based model, we discovered that it has a slight tendency towards producing ill-formed BIO sequences (e.g, starting a sensitive span with `Inside' instead of `Begin'; see Table ). We could expect that complementing the BERT-based model with a CRF layer on top would help enforce the emission of valid sequences, alleviating this kind of errors and further improving its results.
+
+Finally, Figure shows the impact of decreasing the amount of training data in the detection scenario. It shows the difference in precision, recall, and F1-score with respect to that obtained using 100% of the training data. A general downward trend can be observed, as one would expect: less training data leads to less accurate predictions. However, the BERT-based model is the most robust to training-data reduction, showing an steadily low performance loss. With 1% of the dataset (230 training instances), the BERT-based model only suffers a striking 7-point F1-score loss, in contrast to the 32 and 39 points lost by the CRF and spaCy models, respectively. This steep performance drop stems to a larger extent from recall decline, which is not that marked in the case of BERT. Overall, these results indicate that the transfer-learning achieved through the BERT multilingual pre-trained model not only helps obtain better results, but also lowers the need of manually labelled data for this application domain.
+
+Results ::: Experiment B: MEDDOCAN
+
+The results of the two MEDDOCAN scenarios –detection and classification– are shown in Table . These results follow the same pattern as in the previous experiments, with the CRF classifier being the most precise of all, and BERT outperforming both the CRF and spaCy classifiers thanks to its greater recall. We also show the results of mao2019hadoken who, despite of having used a BERT-based system, achieve lower scores than our models. The reason why it should be so remain unclear.
+
+With regard to the winner of the MEDDOCAN shared task, the BERT-based model has not improved the scores obtained by neither the domain-dependent (S3) nor the domain-independent (S2) NLNDE model. However, attending to the obtained results, BERT remains only 0.3 F1-score points behind, and would have achieved the second position among all the MEDDOCAN shared task competitors. Taking into account that only 3% of the gold labels remain incorrectly annotated, the task can be considered almost solved, and it is not clear if the differences among the systems are actually significant, or whether they stem from minor variations in initialisation or a long-tail of minor labelling inconsistencies.
+
+Conclusions and Future Work
+
+In this work we have briefly introduced the problems related to data privacy protection in clinical domain. We have also described some of the groundbreaking advances on the Natural Language Processing field due to the appearance of Transformers-based deep-learning architectures and transfer learning from very large general-domain multilingual corpora, focusing our attention in one of its most representative examples, Google's BERT model.
+
+In order to assess the performance of BERT for Spanish clinical data anonymisation, we have conducted several experiments with a BERT-based sequence labelling approach using the pre-trained multilingual BERT model shared by Google as the starting point for the model training. We have compared this BERT-based sequence labelling against other methods and systems. One of the experiments uses the MEDDOCAN 2019 shared task dataset, while the other uses a novel Spanish clinical reports dataset called NUBes-PHI.
+
+The results of the experiments show that, in NUBes-PHI, the BERT-based model outperforms the other systems without requiring any adaptation or domain-specific feature engineering, just by being trained on the provided labelled data. Interestingly, the BERT-based model obtains a remarkably higher recall than the other systems. High recall is a desirable outcome because, when anonymising sensible documents, the accidental leak of sensible data is likely to be more dangerous than the unintended over-obfuscation of non-sensitive text.
+
+Further, we have conducted an additional experiment on this dataset by progressively reducing the training data for all the compared systems. The BERT-based model shows the highest robustness to training-data scarcity, loosing only 7 points of F1-score when trained on 230 instances instead of 21,371. These observation are in line with the results obtained by the NLP community using BERT for other tasks.
+
+The experiments with the MEDDOCAN 2019 shared task dataset follow the same pattern. In this case, the BERT-based model falls 0.3 F1-score points behind the shared task winning system, but it would have achieved the second position in the competition with no further refinement.
+
+Since we have used a pre-trained multilingual BERT model, the same approach is likely to work for other languages just by providing some labelled training data. Further, this is the simplest fine-tuning that can be performed based on BERT. More sophisticated fine-tuning layers could help improve the results. For example, it could be expected that a CRF layer helped enforce better BIO tagging sequence predictions. Precisely, mao2019hadoken participated in the MEDDOCAN competition using a BERT+CRF architecture, but their reported scores are about 3 points lower than our implementation. From the description of their work, it is unclear what the source of this score difference could be.
+
+Further, at the time of writing this paper, new multilingual pre-trained models and Transformer architectures have become available. It would not come as a surprise that these new resources and systems –e.g., XLM-RoBERTa BIBREF19 or BETO BIBREF20, a BERT model fully pre-trained on Spanish texts– further advanced the state of the art in this task.
+
+Acknowledgements
+
+This work has been supported by Vicomtech and partially funded by the project DeepReading (RTI2018-096846-B-C21, MCIU/AEI/FEDER,UE).

@@ -1,0 +1,69 @@
+Introduction
+
+The recently introduced BERT model BIBREF0 exhibits strong performance on several language understanding benchmarks. To what extent does it capture syntax-sensitive structures?
+
+Recent work examines the extent to which RNN-based models capture syntax-sensitive phenomena that are traditionally taken as evidence for the existence in hierarchical structure. In particular, in BIBREF1 we assess the ability of LSTMs to learn subject-verb agreement patterns in English, and evaluate on naturally occurring wikipedia sentences. BIBREF2 also consider subject-verb agreement, but in a “colorless green ideas” setting in which content words in naturally occurring sentences are replaced with random words with the same part-of-speech and inflection, thus ensuring a focus on syntax rather than on selectional-preferences based cues. BIBREF3 consider a wider range of syntactic phenomena (subject-verb agreement, reflexive anaphora, negative polarity items) using manually constructed stimuli, allowing for greater coverage and control than in the naturally occurring setting.
+
+The BERT model is based on the “Transformer” architecture BIBREF4 , which—in contrast to RNNs—relies purely on attention mechanisms, and does not have an explicit notion of word order beyond marking each word with its absolute-position embedding. This reliance on attention may lead one to expect decreased performance on syntax-sensitive tasks compared to RNN (LSTM) models that do model word order directly, and explicitly track states across the sentence. Indeed, BIBREF5 finds that transformer-based models perform worse than LSTM models on the BIBREF1 agreement prediction dataset. In contrast, BIBREF6 find that self-attention performs on par with LSTM for syntax sensitive dependencies in the context of machine-translation, and performance on syntactic tasks is correlated with the number of attention heads in multi-head attention.
+
+I adapt the evaluation protocol and stimuli of BIBREF1 , BIBREF2 and BIBREF3 to the bidirectional setting required by BERT, and evaluate the pre-trained BERT models (both the Large and the Base models). Surprisingly (at least to me), the out-of-the-box models (without any task-specific fine-tuning) perform very well on all the syntactic tasks.
+
+Methodology
+
+I use the stimuli provided by BIBREF1 , BIBREF2 , BIBREF3 , but change the experimental protocol to adapt it to the bidirectional nature of the BERT model. This requires discarding some of the stimuli, as described below. Thus, the numbers are not strictly comparable to those reported in previous work.
+
+Previous setups
+
+All three previous work use uni-directional language-model-like models.
+
+BIBREF1 start with existing sentences from wikipedia that contain a present-tense verb. They feed each sentence word by word into an LSTM, stop right before the focus verb, and ask the model to predict a binary plural/singular decision (supervised setup) or compare the probability assigned by a pre-trained language model (LM) to the plural vs singular forms of the verb (LM setup). The evaluation is then performed on sentences with “agreement attractors” in which at there is at least one noun between the verb and its subject, and all of the nouns between the verb and subject are of the opposite number from the subject.
+
+BIBREF2 also start with existing sentences. However, in order to control for the possibillity of the model learning to rely on “semantic” selectional-preferences cues rather than syntactic ones, they replace each content word with random words from the same part-of-speech and inflection. This results in “coloreless green ideas” nonce sentences. The evaluation is then performed similarly to the LM setup of BIBREF1 : the sentence is fed into a pre-traiend LSTM LM up to the focus verb, and the model is considered correct if the probability assigned to the correct inflection of the original verb form given the prefix is larger than that assigned to the incorrect inflection.
+
+BIBREF3 focus on manually constructed and controlled stimuli, that also emphasizes linguistic structure over selectional preferences. They construct minimal pairs of grammatical and ungrammatical sentences, feed each one in its entirety into a pre-trained LSTM-LM, and compare the perplexity assigned by the model to the grammatical and ungrammatical sentences. The model is “correct” if it assigns the grammatical sentence a higher probability than to the ungrammatical one. Since the minimal pairs for most phenomena differ only in a single word (the focus verb), this scoring is very similar to the one used in the two previous works. However, it does consider the continuation of the sentence after the focus verb, and also allows for assessing phenomena that require change into two or more words (like negative polarity items).
+
+Adaptation to the BERT model
+
+In contrast to these works, the BERT model is bi-directional: it is trained to predict the identity of masked words based on both the prefix and suffix surrounding these words. I adapt the uni-directional setup by feeding into BERT the complete sentence, while masking out the single focus verb. I then ask BERT for its word predictions for the masked position, and compare the score assigned to the original correct verb to the score assigned to the incorrect one.
+
+For example, for the sentence:
+
+a 2002 systemic review of herbal products found that several herbs , including peppermint and caraway , have anti-dyspeptic effects for non-ulcer dyspepsia with “ encouraging safety profiles ” . (from BIBREF1 )
+
+I feed into BERT:
+
+[CLS] a 2002 systemic review of herbal products found that several herbs , including peppermint and caraway , [MASK] anti-dyspeptic effects for non-ulcer dyspepsia with “ encouraging safety profiles ” . and look for the score assigned to the words have and has at the masked position.
+
+Similarly, for the pair
+
+the game that the guard hates is bad .
+
+the game that the guard hates are bad .
+
+(from BIBREF3 ), I feed into BERT:
+
+[CLS] the game that the guard hates [MASK] bad .
+
+and compare the scores predicted for is and are.
+
+This differs from BIBREF1 and BIBREF2 by considering the entire sentence (excluding the verb) and not just its prefix leading to the verb, and differs from BIBREF3 by conditioning the focus verb on bidirectional context.
+
+I use the PyTorch implementation of BERT, with the pre-trained models supplied by Google. I experiment with the bert-large-uncased and bert-base-uncased models.
+
+The bi-directional setup precludes using using the NPI stimuli of BIBREF3 , in which the minimal pair differs in two words position, which I discard from the evaluation. I also discard the agreement cases involving the verbs is or are in BIBREF1 and in BIBREF2 , because some of them are copular construction, in which strong agreement hints can be found also on the object following the verb. This is not an issue in the manually constructed BIBREF3 stimuli due to the patterns they chose.
+
+Finally, I discard stimuli in which the focus verb or its plural/singular inflection does not appear as a single word in the BERT word-piece-based vocabulary (and hence cannot be predicted by the model). This include discarding BIBREF3 stimuli involving the words swims or admires, resulting in 23,368 discarded pairs (out of 152,300). I similarly discard 680 sentences from BIBREF1 where the focus verb or its inflection were one of 108 out-of-vocabulary tokens, and 28 sentence-pairs (8 tokens) from BIBREF2 .
+
+The BERT results are not directly comparable to the numbers reported in previous work. Beyond the differences due to bidirectionality and the discarded stimuli, the BERT models are also trained on a different and larger corpus (covering both wikipedia and books).
+
+Code is available at https://github.com/yoavg/bert-syntax.
+
+Results
+
+Tables 1 , 2 and 3 show the results. All cases exhibit high scores—in the vast majority of the cases substantially higher than reported in previous work. As discussed above, the results are not directly comparable to previous work: the BERT models are trained on different (and larger) data, are allowed to access the suffix of the sentence in addition to its prefix, and are evaluated on somewhat different data due to discarding OOV items. Still, taken together, the high performance numbers indicate that the purely attention-based BERT models are likely capable of capturing the same kind of syntactic regularities that LSTM-based models are capable of capturing, at least as well as the LSTM models and probably better.
+
+Another noticeable and interesting trend is that larger is not necessarily better: the BERT-Base model outperforms the BERT-Large model on many of the syntactic conditions.
+
+Discussion
+
+The BERT models perform remarkably well on all the syntactic test cases. I expected the attention-based mechanism to fail on these (compared to the LSTM-based models), and am surprised by these results. The BIBREF2 and BIBREF3 conditions rule out the possibility of overly relying on selectional preference cues or memorizing the wikipedia training data, and suggest real syntactic generalization is taking place. Exploring the extent to which deep purely-attention-based architectures such as BERT are capable of capturing hierarchy-sensitive and syntactic dependencies—as well as the mechanisms by which this is achieved—is a fascinating area for future research.

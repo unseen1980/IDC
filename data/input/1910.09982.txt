@@ -1,0 +1,203 @@
+Introduction
+
+Propaganda aims at influencing people's mindset with the purpose of advancing a specific agenda. In the Internet era, thanks to the mechanism of sharing in social networks, propaganda campaigns have the potential of reaching very large audiences BIBREF0, BIBREF1, BIBREF2.
+
+Propagandist news articles use specific techniques to convey their message, such as whataboutism, red Herring, and name calling, among many others (cf. Section SECREF3). Whereas proving intent is not easy, we can analyse the language of a claim/article and look for the use of specific propaganda techniques. Going at this fine-grained level can yield more reliable systems and it also makes it possible to explain to the user why an article was judged as propagandist by an automatic system.
+
+With this in mind, we organised the shared task on fine-grained propaganda detection at the NLP4IF@EMNLP-IJCNLP 2019 workshop. The task is based on a corpus of news articles annotated with an inventory of 18 propagandist techniques at the fragment level. We hope that the corpus would raise interest outside of the community of researchers studying propaganda. For example, the techniques related to fallacies and the ones relying on emotions might provide a novel setting for researchers interested in Argumentation and Sentiment Analysis.
+
+Related Work
+
+Propaganda has been tackled mostly at the article level. BIBREF3 created a corpus of news articles labelled as propaganda, trusted, hoax, or satire. BIBREF4 experimented with a binarized version of that corpus: propaganda vs. the other three categories. BIBREF5 annotated a large binary corpus of propagandist vs. non-propagandist articles and proposed a feature-based system for discriminating between them. In all these cases, the labels were obtained using distant supervision, assuming that all articles from a given news outlet share the label of that outlet, which inevitably introduces noise BIBREF6.
+
+A related field is that of computational argumentation which, among others, deals with some logical fallacies related to propaganda. BIBREF7 presented a corpus of Web forum discussions with instances of ad hominem fallacy. BIBREF8, BIBREF9 introduced Argotario, a game to educate people to recognize and create fallacies, a by-product of which is a corpus with $1.3k$ arguments annotated with five fallacies such as ad hominem, red herring and irrelevant authority, which directly relate to propaganda.
+
+Unlike BIBREF8, BIBREF9, BIBREF7, our corpus uses 18 techniques annotated on the same set of news articles. Moreover, our annotations aim at identifying the minimal fragments related to a technique instead of flagging entire arguments.
+
+The most relevant related work is our own, which is published in parallel to this paper at EMNLP-IJCNLP 2019 BIBREF10 and describes a corpus that is a subset of the one used for this shared task.
+
+Propaganda Techniques
+
+Propaganda uses psychological and rhetorical techniques to achieve its objective. Such techniques include the use of logical fallacies and appeal to emotions. For the shared task, we use 18 techniques that can be found in news articles and can be judged intrinsically, without the need to retrieve supporting information from external resources. We refer the reader to BIBREF10 for more details on the propaganda techniques; below we report the list of techniques:
+
+Propaganda Techniques ::: 1. Loaded language.
+
+Using words/phrases with strong emotional implications (positive or negative) to influence an audience BIBREF11.
+
+Propaganda Techniques ::: 2. Name calling or labeling.
+
+Labeling the object of the propaganda as something the target audience fears, hates, finds undesirable or otherwise loves or praises BIBREF12.
+
+Propaganda Techniques ::: 3. Repetition.
+
+Repeating the same message over and over again, so that the audience will eventually accept it BIBREF13, BIBREF12.
+
+Propaganda Techniques ::: 4. Exaggeration or minimization.
+
+Either representing something in an excessive manner: making things larger, better, worse, or making something seem less important or smaller than it actually is BIBREF14, e.g., saying that an insult was just a joke.
+
+Propaganda Techniques ::: 5. Doubt.
+
+Questioning the credibility of someone or something.
+
+Propaganda Techniques ::: 6. Appeal to fear/prejudice.
+
+Seeking to build support for an idea by instilling anxiety and/or panic in the population towards an alternative, possibly based on preconceived judgments.
+
+Propaganda Techniques ::: 7. Flag-waving.
+
+Playing on strong national feeling (or with respect to a group, e.g., race, gender, political preference) to justify or promote an action or idea BIBREF15.
+
+Propaganda Techniques ::: 8. Causal oversimplification.
+
+Assuming one cause when there are multiple causes behind an issue. We include scapegoating as well: the transfer of the blame to one person or group of people without investigating the complexities of an issue.
+
+Propaganda Techniques ::: 9. Slogans.
+
+A brief and striking phrase that may include labeling and stereotyping. Slogans tend to act as emotional appeals BIBREF16.
+
+Propaganda Techniques ::: 10. Appeal to authority.
+
+Stating that a claim is true simply because a valid authority/expert on the issue supports it, without any other supporting evidence BIBREF17. We include the special case where the reference is not an authority/expert, although it is referred to as testimonial in the literature BIBREF14.
+
+Propaganda Techniques ::: 11. Black-and-white fallacy, dictatorship.
+
+Presenting two alternative options as the only possibilities, when in fact more possibilities exist BIBREF13. As an extreme case, telling the audience exactly what actions to take, eliminating any other possible choice (dictatorship).
+
+Propaganda Techniques ::: 12. Thought-terminating cliché.
+
+Words or phrases that discourage critical thought and meaningful discussion about a given topic. They are typically short and generic sentences that offer seemingly simple answers to complex questions or that distract attention away from other lines of thought BIBREF18.
+
+Propaganda Techniques ::: 13. Whataboutism.
+
+Discredit an opponent's position by charging them with hypocrisy without directly disproving their argument BIBREF19.
+
+Propaganda Techniques ::: 14. Reductio ad Hitlerum.
+
+Persuading an audience to disapprove an action or idea by suggesting that the idea is popular with groups hated in contempt by the target audience. It can refer to any person or concept with a negative connotation BIBREF20.
+
+Propaganda Techniques ::: 15. Red herring.
+
+Introducing irrelevant material to the issue being discussed, so that everyone's attention is diverted away from the points made BIBREF11. Those subjected to a red herring argument are led away from the issue that had been the focus of the discussion and urged to follow an observation or claim that may be associated with the original claim, but is not highly relevant to the issue in dispute BIBREF20.
+
+Propaganda Techniques ::: 16. Bandwagon.
+
+Attempting to persuade the target audience to join in and take the course of action because “everyone else is taking the same action” BIBREF15.
+
+Propaganda Techniques ::: 17. Obfuscation, intentional vagueness, confusion.
+
+Using deliberately unclear words, to let the audience have its own interpretation BIBREF21, BIBREF11. For instance, when an unclear phrase with multiple possible meanings is used within the argument and, therefore, it does not really support the conclusion.
+
+Propaganda Techniques ::: 18. Straw man.
+
+When an opponent's proposition is substituted with a similar one which is then refuted in place of the original BIBREF22.
+
+Tasks
+
+The shared task features two subtasks:
+
+Tasks ::: Fragment-Level Classification task (FLC).
+
+Given a news article, detect all spans of the text in which a propaganda technique is used. In addition, for each span the propaganda technique applied must be identified.
+
+Tasks ::: Sentence-Level Classification task (SLC).
+
+A sentence is considered propagandist if it contains at least one propagandist fragment. We then define a binary classification task in which, given a sentence, the correct label, either propaganda or non-propaganda, is to be predicted.
+
+Data
+
+The input for both tasks consists of news articles in free-text format, collected from 36 propagandist and 12 non-propagandist news outlets and then annotated by professional annotators. More details about the data collection and the annotation, as well as statistics about the corpus can be found in BIBREF10, where an earlier version of the corpus is described, which includes 450 news articles. We further annotated 47 additional articles for the purpose of the shared task using the same protocol and the same annotators.
+
+The training, the development, and the test partitions of the corpus used for the shared task consist of 350, 61, and 86 articles and of 16,965, 2,235, and 3,526 sentences, respectively. Figure FIGREF15 shows an annotated example, which contains several propaganda techniques. For example, the fragment babies on line 1 is an instance of both Name_Calling and Labeling. Note that the fragment not looking as though Trump killed his grandma on line 4 is an instance of Exaggeration_or_Minimisation and it overlaps with the fragment killed his grandma, which is an instance of Loaded_Language.
+
+Table TABREF23 reports the total number of instances per technique and the percentage with respect to the total number of annotations, for the training and for the development sets.
+
+Setup
+
+The shared task had two phases: In the development phase, the participants were provided labeled training and development datasets; in the testing phase, testing input was further provided.
+
+The participants tried to achieve the best performance on the development set. A live leaderboard kept track of the submissions.
+
+The test set was released and the participants had few days to make final predictions.
+
+In phase 2, no immediate feedback on the submissions was provided. The winner was determined based on the performance on the test set.
+
+Evaluation ::: FLC task.
+
+FLC is a composition of two subtasks: the identification of the propagandist text fragments and the identification of the techniques used (18-way classification task). While F$_1$ measure is appropriate for a multi-class classification task, we modified it to account for partial matching between the spans; see BIBREF10 for more details. We further computed an F$_1$ value for each propaganda technique (not shown below for the sake of saving space, but available on the leaderboard).
+
+Evaluation ::: SLC task.
+
+SLC is a binary classification task with imbalanced data. Therefore, the official evaluation measure for the task is the standard F$_1$ measure. We further report Precision and Recall.
+
+Baselines
+
+The baseline system for the SLC task is a very simple logistic regression classifier with default parameters, where we represent the input instances with a single feature: the length of the sentence. The performance of this baseline on the SLC task is shown in Tables TABREF33 and TABREF34.
+
+The baseline for the FLC task generates spans and selects one of the 18 techniques randomly. The inefficacy of such a simple random baseline is illustrated in Tables TABREF36 and TABREF41.
+
+Participants and Approaches
+
+A total of 90 teams registered for the shared task, and 39 of them submitted predictions for a total of 3,065 submissions. For the FLC task, 21 teams made a total of 527 submissions, and for the SLC task, 35 teams made a total of 2,538 submissions.
+
+Below, we give an overview of the approaches as described in the participants' papers. Tables TABREF28 and TABREF29 offer a high-level summary.
+
+Participants and Approaches ::: Teams Participating in the Fragment-Level Classification Only
+
+Team newspeak BIBREF23 achieved the best results on the test set for the FLC task using 20-way word-level classification based on BERT BIBREF24: a word could belong to one of the 18 propaganda techniques, to none of them, or to an auxiliary (token-derived) class. The team fed one sentence at a time in order to reduce the workload. In addition to experimenting with an out-of-the-box BERT, they also tried unsupervised fine-tuning both on the 1M news dataset and on Wikipedia. Their best model was based on the uncased base model of BERT, with 12 Transformer layers BIBREF25, and 110 million parameters. Moreover, oversampling of the least represented classes proved to be crucial for the final performance. Finally, careful analysis has shown that the model pays special attention to adjectives and adverbs.
+
+Team Stalin BIBREF26 focused on data augmentation to address the relatively small size of the data for fine-tuning contextual embedding representations based on ELMo BIBREF27, BERT, and Grover BIBREF28. The balancing of the embedding space was carried out by means of synthetic minority class over-sampling. Then, the learned representations were fed into an LSTM.
+
+Participants and Approaches ::: Teams Participating in the Sentence-Level Classification Only
+
+Team CAUnLP BIBREF29 used two context-aware representations based on BERT. In the first representation, the target sentence is followed by the title of the article. In the second representation, the previous sentence is also added. They performed subsampling in order to deal with class imbalance, and experimented with BERT$_{BASE}$ and BERT$_{LARGE}$
+
+Team LIACC BIBREF30 used hand-crafted features and pre-trained ELMo embeddings. They also observed a boost in performance when balancing the dataset by dropping some negative examples.
+
+Team JUSTDeep BIBREF31 used a combination of models and features, including word embeddings based on GloVe BIBREF32 concatenated with vectors representing affection and lexical features. These were combined in an ensemble of supervised models: bi-LSTM, XGBoost, and variations of BERT.
+
+Team YMJA BIBREF33 also based their approach on fine-tuned BERT. Inspired by kaggle competitions on sentiment analysis, they created an ensemble of models via cross-validation.
+
+Team jinfen BIBREF34 used a logistic regression model fed with a manifold of representations, including TF.IDF and BERT vectors, as well as vocabularies and readability measures.
+
+Team Tha3aroon BIBREF35 implemented an ensemble of three classifiers: two based on BERT and one based on a universal sentence encoder BIBREF36.
+
+Team NSIT BIBREF37 explored three of the most popular transfer learning models: various versions of ELMo, BERT, and RoBERTa BIBREF38.
+
+Team Mindcoders BIBREF39 combined BERT, Bi-LSTM and Capsule networks BIBREF40 into a single deep neural network and pre-trained the resulting network on corpora used for related tasks, e.g., emotion classification.
+
+Finally, team ltuorp BIBREF41 used an attention transformer using BERT trained on Wikipedia and BookCorpus.
+
+Participants and Approaches ::: Teams Participating in Both Tasks
+
+Team MIC-CIS BIBREF42 participated in both tasks. For the sentence-level classification, they used a voting ensemble including logistic regression, convolutional neural networks, and BERT, in all cases using FastText embeddings BIBREF43 and pre-trained BERT models. Beside these representations, multiple features of readability, sentiment and emotions were considered. For the fragment-level task, they used a multi-task neural sequence tagger, based on LSTM-CRF BIBREF44, in conjunction with linguistic features. Finally, they applied sentence- and fragment-level models jointly.
+
+Team CUNLP BIBREF45 considered two approaches for the sentence-level task. The first approach was based on fine-tuning BERT. The second approach complemented the fine-tuned BERT approach by feeding its decision into a logistic regressor, together with features from the Linguistic Inquiry and Word Count (LIWC) lexicon and punctuation-derived features. Similarly to BIBREF42, for the fragment-level problem they used a Bi-LSTM-CRF architecture, combining both character- and word-level embeddings.
+
+Team ProperGander BIBREF46 also used BERT, but they paid special attention to the imbalance of the data, as well as to the differences between training and testing. They showed that augmenting the training data by oversampling yielded improvements when testing on data that is temporally far from the training (by increasing recall). In order to deal with the imbalance, they performed cost-sensitive classification, i.e., the errors on the smaller positive class were more costly. For the fragment-level classification, inspired by named entity recognition, they used a model based on BERT using Continuous Random Field stacked on top of an LSTM.
+
+Evaluation Results
+
+The results on the test set for the SLC task are shown in Table TABREF33, while Table TABREF34 presents the results on the development set at the end of phase 1 (cf. Section SECREF6). The general decrease of the F$_1$ values between the development and the test set could indicate that systems tend to overfit on the development set. Indeed, the winning team ltuorp chose the parameters of their system both on the development set and on a subset of the training set in order to improve the robustness of their system.
+
+Tables TABREF36 and TABREF41 report the results on the test and on the development sets for the FLC task. For this task, the results tend to be more stable across the two sets. Indeed, team newspeak managed to almost keep the same difference in performance with respect to team Antiganda. Note that team MIC-CIS managed to reach the third position despite never having submitted a run on the development set.
+
+Conclusion and Further Work
+
+We have described the NLP4IF@EMNLP-IJCNLP 2019 shared task on fine-grained propaganda identification. We received 25 and 12 submissions on the test set for the sentence-level classification and the fragment-level classification tasks, respectively. Overall, the sentence-level task was easier and most submitted systems managed to outperform the baseline. The fragment-level task proved to be much more challenging, with lower absolute scores, but most teams still managed to outperform the baseline.
+
+We plan to make the schema and the dataset publicly available to be used beyond NLP4IF. We hope that the corpus would raise interest outside of the community of researchers studying propaganda: the techniques related to fallacies and the ones relying on emotions might provide a novel setting for researchers interested in Argumentation and Sentiment Analysis.
+
+As a kind of advertisement, Task 11 at SemEval 2020 is a follow up of this shared task. It features two complimentary tasks:
+
+Given a free-text article, identify the propagandist text spans.
+
+Given a text span already flagged as propagandist and its context, identify the specific propaganda technique it contains.
+
+This setting would allow participants to focus their efforts on binary sequence labeling for Task 1 and on multi-class classification for Task 2.
+
+Acknowledgments
+
+This research is part of the Propaganda Analysis Project, which is framed within the Tanbih project. The Tanbih project aims to limit the effect of “fake news”, propaganda, and media bias by making users aware of what they are reading, thus promoting media literacy and critical thinking, which is arguably the best way to address disinformation and “fake news.” The project is developed in collaboration between the Qatar Computing Research Institute (QCRI), HBKU and the MIT Computer Science and Artificial Intelligence Laboratory (CSAIL).
+
+The corpus for the task was annotated by A Data Pro, a company that performs high-quality manual annotations.

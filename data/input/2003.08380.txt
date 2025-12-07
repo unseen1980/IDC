@@ -1,0 +1,55 @@
+Introduction
+
+Other than encoder-only pretrained transformer architectures BIBREF2, BIBREF3, BIBREF4, encoder–decoder style pretrained transformers BIBREF0, BIBREF5 have been proven to be effective in text generation tasks as well as comprehension tasks. This paper describes our submission to the commonsense reasoning task leaderboard of the AI2 WinoGrande Challenge BIBREF1, which uses the text-to-text transfer transformer (T5); our approach currently represents the state of the art.
+
+In T5 BIBREF0, NLP tasks are formulated as text-to-text problems, where the inputs are cast into natural language templates that contain the task descriptors. Concretely, Raffel et al. provide the following example for MNLI BIBREF6, where the goal is to predict whether a premise implies (“entailment”) or contradicts (“contradiction”) a hypothesis, or neither (“neutral”). Thus, a training example becomes:
+
+“mnli premise: I hate pigeons. hypothesis: My feelings towards pigeons are filled with animosity.”
+
+with “entailment” as the corresponding ground truth target output. In other words, a token representing each class is directly used as the prediction target.
+
+Approach
+
+The natural language template approach enables various options to formulate the WinoGrande commonsense reasoning task as a text-to-text problem with T5. Here we adopt a formulation similar to the MNLI template. Consider a concrete example:
+
+He never comes to my home, but I always go to his house because the _ is smaller.
+
+Option1: home; Option2: house
+
+In this case, the correct replacement for _ is Option1. We decompose the above problem into two source–target training examples, where _ is replaced with each option and annotated with the correct answer as the target token, as shown in Table TABREF2. In addition, we reformulate each example into a commonsense reasoning “template” with two statements: hypothesis (from _ to the end of the original problem statement) and premise (the remaining part of the original problem statement). Note that the bold and colored fonts are for clarity only; those tokens are not marked in any way in the model input.
+
+At inference (test) time, we also decompose the problem into two inputs, where each input is formulated in exactly the same manner as in Table TABREF2, with either one of the answer options. We then feed each into T5 to predict a target token. In this scenario, there are four possible outcomes:
+
+one produces “entailment” and the other “contradiction”,
+
+one produces “entailment” or “contradiction” and the other some other token,
+
+both produce some other tokens, and
+
+both produce the same token, either “entailment” or “contradiction”.
+
+Ideally, T5 would produce contrastive tokens for each input pair, as in case (1), which allows us to unambiguously select the final answer. However, the model might produce the same tokens for each input, or even tokens not in the predefined set, as in cases (2) to (4). To deal with these cases, we apply a softmax over the logits of the pair of predefined target tokens, similar to Nogueira et al. BIBREF7. From this, we can compute the probabilities of the predefined target tokens (in the case of Table TABREF2, “entailment” and “contradiction”). Then, we compare the probabilities across both input instances, and in cases (2) to (4), we select the instance that has a higher probability as the correct answer.
+
+This general problem setup allows us to choose the target tokens, which may have an impact on the prediction accuracy BIBREF7. In addition to selecting “entailment” vs. “contradiction” as the target, we also tried the contrastive pair “true” vs. ”false”.
+
+In our experiment, we fine-tune T5-3B on Google Colab's TPU v2 with a batch size of 16, a learning rate of $2 \cdot 10^{-4}$, and save model checkpoints every 5000 steps. It takes 130k steps to converge for the XL data size (see below). At inference time, we use greedy decoding and select for evaluation the model checkpoint that achieves the highest score on the development set. We did not experiment with T5-11B due to limited computational resources.
+
+Results
+
+Experimental results on the WinoGrande development set are reported in Table TABREF7 for different training data sizes. Note that we fine-tune the model for each training data size separately. A under the “logit” column indicates that we used the softmax over the target tokens as described above. Without this technique, given the original two-choice question, if T5 outputs the same tokens for the two processed inputs, we simply assign Option1 as the answer. The table also reports “zero-shot” performance, i.e., performing inference on the development set without any model fine tuning. Condition #2 represents our submission to the official leaderboard, which achieves 0.7673 AUC on the held-out test set.
+
+From these results, we see that the logit trick clearly improves performance, which is consistent with the observations of Nogueira et al. BIBREF7. In fact, applying this technique in the zero-shot setting yields performance that is clearly better than random. Another interesting finding is that the choice of target token appears to have an impact on performance, which is also consistent with the above work. Since using true/false as the target token (conditions #3 and #4) did not improve performance much over conditions with entailment/contradiction, we did not run all data size conditions given our limited computational resources.
+
+Looking at the current WinoGrande leaderboard, it appears that the previous state of the art is based on RoBERTa BIBREF2, which can be characterized as an encoder-only transformer architecture. Since T5-3B is larger than RoBERTa, it cannot be ruled out that model size alone explains the performance gain. However, when coupled with the observations of Nogueira et al. BIBREF7, T5's “generative capability”, i.e., its ability to generate fluent text, honed through pretraining, seems to play an important role. The fact that the choice of target tokens affects prediction accuracy is consistent with this observation. How and why is the subject of ongoing work.
+
+Implications
+
+Collectively, the success of large pretrained neural models, both encoder-only BERT-like architectures as well as encoder–decoder architectures like T5, raise interesting questions for the pursuit of commonsense reasoning. Researchers have discovered that previous models perform well on benchmark datasets because they pick up on incidental biases in the dataset that have nothing to do with the task; in contrast, the WinoGrande dataset has devoted considerable effort to reducing such biases, which may allow models to (inadvertently) “cheat” (for example, using simple statistical associations). While it is certainly true that datasets over-estimate the commonsense reasoning capabilities of modern models BIBREF1, there are alternative and complementary explanations as well:
+
+It has been a fundamental assumption of the research community that commonsense reasoning is difficult because it comprises tacit rather than explicit knowledge BIBREF8. That is, commonsense knowledge—like water is wet and that a tuba is usually too big to fit in a backpack—is not written down anywhere (unlike, say, factual knowledge, which can be modeled in a knowledge graph). As a result—the reasoning goes—data-driven techniques (even neural models) will be of limited use due to the paucity of relevant corpora.
+
+Yet, previous encoder-only architectures like RoBERTa that exploit a language modeling objective (that is, relying only on explicit textual knowledge) can clearly make headway in a commonsense reasoning task, and we can further improve upon these approaches with a sequence-to-sequence model. This leaves us with two possible explanations: despite careful controls, the WinoGrande challenge still contains incidental biases that these more sophisticated models can exploit, or that we are genuinely making at least some progress in commonsense reasoning. The latter, in particular, challenges the notion that commonsense knowledge is (mostly) tacit. Perhaps it is the case that in a humongous corpus of natural language text, someone really has written about trying to stuff a tuba in a backpack?
+
+Acknowledgments
+
+This research was supported in part by the Canada First Research Excellence Fund and the Natural Sciences and Engineering Research Council (NSERC) of Canada. We would like to thank Google Colab for providing support in terms of computational resources.

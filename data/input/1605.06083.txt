@@ -1,0 +1,79 @@
+Introduction
+
+The Flickr30K dataset BIBREF0 is a collection of over 30,000 images with 5 crowdsourced descriptions each. It is commonly used to train and evaluate neural network models that generate image descriptions (e.g. BIBREF2 ). An untested assumption behind the dataset is that the descriptions are based on the images, and nothing else. Here are the authors (about the Flickr8K dataset, a subset of Flickr30K):
+
+“By asking people to describe the people, objects, scenes and activities that are shown in a picture without giving them any further information about the context in which the picture was taken, we were able to obtain conceptual descriptions that focus only on the information that can be obtained from the image alone.” BIBREF1
+
+What this assumption overlooks is the amount of interpretation or recontextualization carried out by the annotators. Let us take a concrete example. Figure FIGREF1 shows an image from the Flickr30K dataset.
+
+This image comes with the five descriptions below. All but the first one contain information that cannot come from the image alone. Relevant parts are highlighted in bold:
+
+We need to understand that the descriptions in the Flickr30K dataset are subjective descriptions of events. This can be a good thing: the descriptions tell us what are the salient parts of each image to the average human annotator. So the two humans in Figure FIGREF1 are relevant, but the two soap dispensers are not. But subjectivity can also result in stereotypical descriptions, in this case suggesting that the male is more likely to be the manager, and the female is more likely to be the subordinate. rashtchian2010collecting do note that some descriptions are speculative in nature, which they say hurts the accuracy and the consistency of the descriptions. But the problem is not with the lack of consistency here. Quite the contrary: the problem is that stereotypes may be pervasive enough for the data to be consistently biased. And so language models trained on this data may propagate harmful stereotypes, such as the idea that women are less suited for leadership positions.
+
+This paper aims to give an overview of linguistic bias and unwarranted inferences resulting from stereotypes and prejudices. I will build on earlier work on linguistic bias in general BIBREF3 , providing examples from the Flickr30K data, and present a taxonomy of unwarranted inferences. Finally, I will discuss several methods to analyze the data in order to detect biases.
+
+Stereotype-driven descriptions
+
+Stereotypes are ideas about how other (groups of) people commonly behave and what they are likely to do. These ideas guide the way we talk about the world. I distinguish two kinds of verbal behavior that result from stereotypes: (i) linguistic bias, and (ii) unwarranted inferences. The former is discussed in more detail by beukeboom2014mechanisms, who defines linguistic bias as “a systematic asymmetry in word choice as a function of the social category to which the target belongs.” So this bias becomes visible through the distribution of terms used to describe entities in a particular category. Unwarranted inferences are the result of speculation about the image; here, the annotator goes beyond what can be glanced from the image and makes use of their knowledge and expectations about the world to provide an overly specific description. Such descriptions are directly identifiable as such, and in fact we have already seen four of them (descriptions 2–5) discussed earlier.
+
+Linguistic bias
+
+Generally speaking, people tend to use more concrete or specific language when they have to describe a person that does not meet their expectations. beukeboom2014mechanisms lists several linguistic `tools' that people use to mark individuals who deviate from the norm. I will mention two of them.
+
+[leftmargin=0cm]
+
+One well-studied example BIBREF4 , BIBREF5 is sexist language, where the sex of a person tends to be mentioned more frequently if their role or occupation is inconsistent with `traditional' gender roles (e.g. female surgeon, male nurse). Beukeboom also notes that adjectives are used to create “more narrow labels [or subtypes] for individuals who do not fit with general social category expectations” (p. 3). E.g. tough woman makes an exception to the `rule' that women aren't considered to be tough.
+
+can be used when prior beliefs about a particular social category are violated, e.g. The garbage man was not stupid. See also BIBREF6 .
+
+These examples are similar in that the speaker has to put in additional effort to mark the subject for being unusual. But they differ in what we can conclude about the speaker, especially in the context of the Flickr30K data. Negations are much more overtly displaying the annotator's prior beliefs. When one annotator writes that A little boy is eating pie without utensils (image 2659046789), this immediately reveals the annotator's normative beliefs about the world: pie should be eaten with utensils. But when another annotator talks about a girls basketball game (image 8245366095), this cannot be taken as an indication that the annotator is biased about the gender of basketball players; they might just be helpful by providing a detailed description. In section 3 I will discuss how to establish whether or not there is any bias in the data regarding the use of adjectives.
+
+Unwarranted inferences
+
+Unwarranted inferences are statements about the subject(s) of an image that go beyond what the visual data alone can tell us. They are based on additional assumptions about the world. After inspecting a subset of the Flickr30K data, I have grouped these inferences into six categories (image examples between parentheses):
+
+[leftmargin=0cm]
+
+We've seen an example of this in the introduction, where the `manager' was said to be talking about job performance and scolding [a worker] in a stern lecture (8063007).
+
+Many dark-skinned individuals are called African-American regardless of whether the picture has been taken in the USA or not (4280272). And people who look Asian are called Chinese (1434151732) or Japanese (4834664666).
+
+In image 4183120 (Figure FIGREF16 ), people sitting at a gym are said to be watching a game, even though there could be any sort of event going on. But since the location is so strongly associated with sports, crowdworkers readily make the assumption.
+
+Quite a few annotations focus on explaining the why of the situation. For example, in image 3963038375 a man is fastening his climbing harness in order to have some fun. And in an extreme case, one annotator writes about a picture of a dancing woman that the school is having a special event in order to show the american culture on how other cultures are dealt with in parties (3636329461). This is reminiscent of the Stereotypic Explanatory Bias BIBREF7 , which refers to “the tendency to provide relatively more explanations in descriptions of stereotype inconsistent, compared to consistent behavior” BIBREF6 . So in theory, odd or surprising situations should receive more explanations, since a description alone may not make enough sense in those cases, but it is beyond the scope of this paper to test whether or not the Flickr30K data suffers from the SEB.
+
+Older people with children around them are commonly seen as parents (5287405), small children as siblings (205842), men and women as lovers (4429660), groups of young people as friends (36979).
+
+Annotators will often guess the status or occupation of people in an image. Sometimes these guesses are relatively general (e.g. college-aged people being called students in image 36979), but other times these are very specific (e.g. a man in a workshop being called a graphics designer, 5867606).
+
+Detecting stereotype-driven descriptions
+
+In order to get an idea of the kinds of stereotype-driven descriptions that are in the Flickr30K dataset, I made a browser-based annotation tool that shows both the images and their associated descriptions. You can simply leaf through the images by clicking `Next' or `Random' until you find an interesting pattern.
+
+Ethnicity/race
+
+One interesting pattern is that the ethnicity/race of babies doesn't seem to be mentioned unless the baby is black or asian. In other words: white seems to be the default, and others seem to be marked. How can we tell whether or not the data is actually biased?
+
+We don't know whether or not an entity belongs to a particular social class (in this case: ethnic group) until it is marked as such. But we can approximate the proportion by looking at all the images where the annotators have used a marker (in this case: adjectives like black, white, asian), and for those images count how many descriptions (out of five) contain a marker. This gives us an upper bound that tells us how often ethnicity is indicated by the annotators. Note that this upper bound lies somewhere between 20% (one description) and 100% (5 descriptions). Figure TABREF22 presents count data for the ethnic marking of babies. It includes two false positives (talking about a white baby stroller rather than a white baby). In the Asian group there is an additional complication: sometimes the mother gets marked rather than the baby. E.g. An Asian woman holds a baby girl. I have counted these occurrences as well.
+
+The numbers in Table TABREF22 are striking: there seems to be a real, systematic difference in ethnicity marking between the groups. We can take one step further and look at all the 697 pictures with the word `baby' in it. If there turn out to be disproportionately many white babies, this strengthens the conclusion that the dataset is biased.
+
+I have manually categorized each of the baby images. There are 504 white, 66 asian, and 36 black babies. 73 images do not contain a baby, and 18 images do not fall into any of the other categories. While this does bring down the average number of times each category was marked, it also increases the contrast between white babies (who get marked in less than 1% of the images) and asian/black babies (who get marked much more often). A next step would be to see whether these observations also hold for other age groups, i.e. children and adults. INLINEFORM0
+
+Other methods
+
+It may be difficult to spot patterns by just looking at a collection of images. Another method is to tag all descriptions with part-of-speech information, so that it becomes possible to see e.g. which adjectives are most commonly used for particular nouns. One method readers may find particularly useful is to leverage the structure of Flickr30K Entities BIBREF8 . This dataset enriches Flickr30K by adding coreference annotations, i.e. which phrase in each description refers to the same entity in the corresponding image. I have used this data to create a coreference graph by linking all phrases that refer to the same entity. Following this, I applied Louvain clustering BIBREF9 to the coreference graph, resulting in clusters of expressions that refer to similar entities. Looking at those clusters helps to get a sense of the enormous variation in referring expressions. To get an idea of the richness of this data, here is a small sample of the phrases used to describe beards (cluster 268): a scruffy beard; a thick beard; large white beard; a bubble beard; red facial hair; a braided beard; a flaming red beard. In this case, `red facial hair' really stands out as a description; why not choose the simpler `beard' instead?
+
+Discussion
+
+In the previous section, I have outlined several methods to manually detect stereotypes, biases, and odd phrases. Because there are many ways in which a phrase can be biased, it is difficult to automatically detect bias from the data. So how should we deal with stereotype-driven descriptions?
+
+Conclusion
+
+This paper provided a taxonomy of stereotype-driven descriptions in the Flickr30K dataset. I have divided these descriptions into two classes: linguistic bias and unwarranted inferences. The former corresponds to the annotators' choice of words when confronted with an image that may or may not match their stereotypical expectancies. The latter corresponds to the tendency of annotators to go beyond what the physical data can tell us, and expand their descriptions based on their past experiences and knowledge of the world. Acknowledging these phenomena is important, because on the one hand it helps us think about what is learnable from the data, and on the other hand it serves as a warning: if we train and evaluate language models on this data, we are effectively teaching them to be biased.
+
+I have also looked at methods to detect stereotype-driven descriptions, but due to the richness of language it is difficult to find an automated measure. Depending on whether your goal is production or interpretation, it may either be useful to suppress or to emphasize biases in human language. Finally, I have discussed stereotyping behavior as the addition of a contextual layer on top of a more basic description. This raises the question what kind of descriptions we would like our models to produce.
+
+Acknowledgments
+
+Thanks to Piek Vossen and Antske Fokkens for discussion, and to Desmond Elliott and an anonymous reviewer for comments on an earlier version of this paper. This research was supported by the Netherlands Organization for Scientific Research (NWO) via the Spinoza-prize awarded to Piek Vossen (SPI 30-673, 2014-2019).
