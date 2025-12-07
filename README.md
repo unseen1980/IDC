@@ -36,8 +36,8 @@ IDC outperforms all baselines across 4 diverse datasets:
 |---------|--------|---------|---------------|-------------|
 | **SQuAD** | Wikipedia | **0.689** | Fixed (0.655) | +5.2% |
 | **NewsQA** | News | **0.933** | Coherence (0.867) | +7.6% |
-| **arXiv** | Academic | **0.533** | Coherence (0.467) | +14.1% |
-| **Fiori** | Technical | **0.400** | Fixed (0.200) | +100% |
+| **arXiv** | Academic | **0.667** | Fixed (0.400) | +67% |
+| **Fiori** | Technical | **0.533** | Fixed (0.333) | +60% |
 
 ## Installation
 
