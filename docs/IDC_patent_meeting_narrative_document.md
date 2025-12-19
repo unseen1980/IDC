@@ -1,9 +1,4 @@
 # Intent-Driven Dynamic Chunking (IDC)
-*A narrative, meeting-friendly document for patent drafting discussions — downloadable version*
-
-> **Purpose:** If you decide not to use a slide presentation, you can walk through this document in the meeting.  
-> It’s written for patent counsel: clear narrative + enough technical detail to support claim drafting.  
-> It also contains **all baseline methods** (fixed, sliding window, paragraph/structure, coherence-based, and query expansion).
 
 ---
 
