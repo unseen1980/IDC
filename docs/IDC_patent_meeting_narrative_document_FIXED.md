@@ -269,7 +269,7 @@ Where:
 - \(R(C_m)\): reward for intent alignment
 - \(|C_m|^2\): length penalty (discourage very long chunks)
 - β: boundary penalty (discourage too many chunks)
-- Typical tuning pattern: λ is small (e.g., 0.0005) and \(eta\) is moderate (e.g., 0.1), so we allow context when it helps but avoid over-splitting.
+- Typical tuning pattern: λ is small (e.g., 0.0005) and β is moderate (e.g., 0.1), so we allow context when it helps but avoid over-splitting.
 
 **Why include penalties at all?**  
 Without penalties, the optimizer could create too many tiny chunks (high relevance but expensive index) or one huge chunk (high coverage but noisy). The penalties give control over the trade-off.
@@ -320,8 +320,8 @@ These refinements improve readability without changing the core invention (inten
 
 ## 7. How parameters affect boundaries (easy explanation)
 
-- Increase \(\lambda\) → stronger penalty for long chunks → **more shorter** chunks
-- Increase \(eta\) → stronger penalty per boundary → **fewer larger** chunks
+- Increase λ → stronger penalty for long chunks → **more shorter** chunks
+- Increase β → stronger penalty per boundary → **fewer larger** chunks
 - Increase max length \(L\) → allow longer candidate chunks (more context) but larger DP search
 
 This is helpful for attorneys because it shows the method is **controllable and explainable**, not a black box.
