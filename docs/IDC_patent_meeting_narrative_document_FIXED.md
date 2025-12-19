@@ -1,10 +1,4 @@
 # Intent-Driven Dynamic Chunking (IDC)
-*A narrative, meeting-friendly document for patent drafting discussions*
-
-> **Audience:** Patent counsel / drafting attorneys (technical but not necessarily ML specialists)  
-> **Use:** If you don’t want to use slides, you can walk through this document section-by-section.  
-> **Core claim idea (plain language):** *Predict likely user questions for a document, then choose chunk boundaries that maximize how well each chunk answers one of those questions.*
-
 ---
 
 ## Table of contents
@@ -274,8 +268,8 @@ $$
 Where:
 - \(R(C_m)\): reward for intent alignment
 - \(|C_m|^2\): length penalty (discourage very long chunks)
-- \(eta\): boundary penalty (discourage too many chunks)
-- Typical tuning pattern: \(\lambda\) is small (e.g., 0.0005) and \(eta\) is moderate (e.g., 0.1), so we allow context when it helps but avoid over-splitting.
+- β: boundary penalty (discourage too many chunks)
+- Typical tuning pattern: λ is small (e.g., 0.0005) and \(eta\) is moderate (e.g., 0.1), so we allow context when it helps but avoid over-splitting.
 
 **Why include penalties at all?**  
 Without penalties, the optimizer could create too many tiny chunks (high relevance but expensive index) or one huge chunk (high coverage but noisy). The penalties give control over the trade-off.
@@ -465,7 +459,7 @@ IDC works with:
 **A:** DP gives a globally optimal segmentation under an explicit objective function. It is deterministic, tunable, efficient, and avoids risks of an LLM directly editing the document.
 
 ### Q5. What knobs exist to tune behavior?
-**A:** \(\lambda\) controls penalty for long chunks, \(eta\) controls penalty per boundary (number of chunks), and \(L\) limits maximum candidate chunk length for efficiency.
+**A:** λ controls penalty for long chunks, β controls penalty per boundary (number of chunks), and \(L\) limits maximum candidate chunk length for efficiency.
 
 ### Q6. Do you need a specific LLM or embedding model?
 **A:** No. Any intent generator and any embedding model supporting similarity scoring can be used. The invention is the intent-aligned segmentation + optimization.
