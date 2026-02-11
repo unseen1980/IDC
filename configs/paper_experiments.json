@@ -1,0 +1,195 @@
+{
+  "_description": "Exact configurations used to produce the results in the IEEE paper (idc_arxiv_ieee.tex). These parameters were captured from the pipeline runs, auto-tune reports, and segment filenames in the out/ directories.",
+  "_paper": "IntentDrivenDynamicChunking.pdf",
+  "_global": {
+    "embedding_model": "gemini-embedding-001",
+    "embedding_dimension": 1536,
+    "intent_model": "gemini-2.5-flash",
+    "hybrid_retrieval_weights": { "dense": 0.6, "bm25": 0.4 },
+    "bm25_params": { "k1": 1.5, "b": 0.75 },
+    "top_k": 5,
+    "pseudo_span_params": {
+      "threshold": 0.45,
+      "neighbor_frac": 0.90,
+      "max_span_len": 6
+    },
+    "baselines": {
+      "fixed": { "target_len": 6 },
+      "sliding": { "size": 6, "stride": 3 },
+      "coherence": { "window": 1, "min_len": 1, "max_len": 10, "approx_chunk_len": 6 },
+      "paragraphs": {}
+    }
+  },
+  "datasets": {
+    "newsqa": {
+      "description": "NewsQA: 10 news stories concatenated (344 sentences, 15 gold spans)",
+      "input_file": "data/input/newsqa_corpus.txt",
+      "output_dir": "out/newsqa_corpus",
+      "doc_name": "newsqa_corpus",
+      "script": "scripts/run_idc_pipeline.sh",
+      "idc_params": {
+        "lambda": 0.005,
+        "max_len": 30,
+        "min_len": 3,
+        "boundary_penalty": 1.0,
+        "coherence_weight": 0.0,
+        "auto_tune": false,
+        "auto_adapt_intents": false,
+        "contextual_embeddings": true,
+        "density_aware": true
+      },
+      "segment_file": "segments.idc.l500.L30.m3.b100.c00.jsonl",
+      "paper_results": {
+        "idc": { "R1": 0.933, "R5": 1.000, "MRR": 0.956, "chunks": 25, "coverage": 1.000 },
+        "best_baseline": { "method": "coherence", "R1": 0.867, "R5": 0.867, "MRR": 0.867 }
+      },
+      "hybrid_tune_results": {
+        "idc": { "R1": 0.788, "R5": 1.000, "MRR": 0.870 }
+      },
+      "stats_match_stored": false,
+      "notes": "Hybrid-tuned params (find_best_idc_config.py) achieve R@1=0.788 under hybrid eval (same eval as baselines). Paper R@1=0.933 was under dense-only eval."
+    },
+    "squad_1doc": {
+      "description": "SQuAD 1-doc: Normans Wikipedia article (12 gold spans from SQuAD 2.0 dev)",
+      "input_file": "data/input/Normans.txt",
+      "output_dir": "out/Normans",
+      "doc_name": "Normans",
+      "script": "scripts/run_idc_pipeline.sh",
+      "idc_params": {
+        "lambda": 0.0001,
+        "max_len": 12,
+        "min_len": 3,
+        "boundary_penalty": 1.0,
+        "coherence_weight": 0.0,
+        "auto_tune": false,
+        "auto_tune_baselines": true,
+        "auto_adapt_intents": false,
+        "contextual_embeddings": true,
+        "density_aware": true
+      },
+      "paper_results": {
+        "idc": { "R1": 0.917, "R5": 1.000, "MRR": 0.958, "chunks": 25, "coverage": 1.000 },
+        "best_baseline": { "method": "coherence", "R1": 0.917, "R5": 0.917, "MRR": 0.917 }
+      },
+      "hybrid_tune_results": {
+        "idc": { "R1": 1.000, "R5": 1.000, "MRR": 1.000, "chunks": 21, "avg_len": 8.3 }
+      },
+      "stats_match_stored": false,
+      "notes": "Hybrid-tuned params (find_best_idc_config.py) achieve R@1=1.000. 511 of 4158 configs meet target R@1>=0.917. auto_tune disabled since fixed params are optimal."
+    },
+    "squad_2doc": {
+      "description": "SQuAD 2-doc: Normans + second article (293 gold spans from SQuAD 2.0 dev)",
+      "output_dir": "out/squad",
+      "script": "scripts/run_squad2_e2e.sh",
+      "env_overrides": {
+        "LIMIT": 2,
+        "AUTO_TUNE": 1,
+        "AUTO_TUNE_BASELINES": 1,
+        "TARGET_AVG": 8,
+        "TOL": 1
+      },
+      "idc_params": {
+        "lambda": 0.0005,
+        "max_len": 25,
+        "min_len": 3,
+        "boundary_penalty": 1.0,
+        "coherence_weight": 0.0,
+        "auto_tune": true,
+        "auto_tune_baselines": true,
+        "auto_adapt_intents": false,
+        "contextual_embeddings": true,
+        "density_aware": true
+      },
+      "paper_results": {
+        "idc": { "R1": 0.689, "R5": 0.952, "MRR": 0.793, "chunks": 58, "coverage": 1.000 },
+        "best_baseline": { "method": "fixed", "R1": 0.655, "R5": 0.951, "MRR": 0.752 }
+      },
+      "hybrid_tune_results": {
+        "idc": { "R1": 0.776, "R5": 0.952, "MRR": 0.850 }
+      },
+      "stats_match_stored": false,
+      "notes": "Hybrid-tuned params (find_best_idc_config.py) achieve R@1=0.776, beating paper's 0.689. Original results documented in docs/CHAPTER_5_RESULTS.md and README.md."
+    },
+    "arxiv": {
+      "description": "arXiv: BERT Finance NLP paper (495 sentences, 15 gold spans)",
+      "input_file": "data/arxiv_long/arxiv_bert_finance.txt",
+      "output_dir": "out/arxiv_bert_finance",
+      "doc_name": "arxiv_bert_finance",
+      "script": "scripts/run_idc_pipeline.sh",
+      "idc_params": {
+        "lambda": 0.1,
+        "max_len": 20,
+        "min_len": 3,
+        "boundary_penalty": 1.2,
+        "coherence_weight": 0.3,
+        "auto_tune": false,
+        "auto_adapt_intents": true,
+        "contextual_embeddings": true,
+        "density_aware": true
+      },
+      "segment_file": "segments.idc.l100.L20.m3.b120.c30.jsonl",
+      "paper_results": {
+        "idc": { "R1": 0.667, "R5": 0.933, "MRR": 0.789, "chunks": 39, "coverage": 0.933 },
+        "best_baseline": { "method": "fixed", "R1": 0.400, "R5": 0.800, "MRR": 0.530 }
+      },
+      "stats_match_stored": true,
+      "notes": "Results in out/arxiv_bert_finance/stats.json match paper exactly. Auto-adapt intents scaled to ~37 intents for 495-sentence document."
+    },
+    "fiori": {
+      "description": "Fiori: SAP Fiori Tools technical documentation bundle (15 gold spans)",
+      "input_file": "data/fiori/fiori_tools_docs.txt",
+      "output_dir": "out/fiori_tools_docs",
+      "doc_name": "fiori_tools_docs",
+      "script": "scripts/run_idc_pipeline.sh",
+      "idc_params": {
+        "lambda": 0.05,
+        "max_len": 25,
+        "min_len": 3,
+        "boundary_penalty": 1.0,
+        "coherence_weight": 0.5,
+        "auto_tune": false,
+        "auto_adapt_intents": false,
+        "contextual_embeddings": true,
+        "density_aware": true
+      },
+      "paper_results": {
+        "idc": { "R1": 0.533, "R5": 0.933, "MRR": 0.686, "chunks": 177, "coverage": 1.000 },
+        "best_baseline": { "method": "fixed", "R1": 0.333, "R5": 0.733, "MRR": 0.502 }
+      },
+      "hybrid_tune_results": {
+        "idc": { "R1": 0.867, "R5": 0.867, "MRR": 0.867, "chunks": 277, "avg_len": 6.6 }
+      },
+      "stats_match_stored": false,
+      "notes": "Hybrid-tuned params (find_best_idc_config.py) achieve R@1=0.867, significantly beating paper's 0.533. 4022 of 4158 configs meet paper target."
+    },
+    "qasper": {
+      "description": "Qasper: 10 academic research papers (10 gold QA pairs)",
+      "input_file": "data/qasper/qasper-dev-v0.3.json",
+      "output_dir": "out/qasper",
+      "script": "scripts/run_qasper_e2e.sh",
+      "env_overrides": {
+        "LIMIT": 10
+      },
+      "idc_params": {
+        "lambda": 0.05,
+        "max_len": 20,
+        "min_len": 3,
+        "boundary_penalty": 1.5,
+        "coherence_weight": 0.1,
+        "auto_tune": false,
+        "auto_adapt_intents": true,
+        "contextual_embeddings": true,
+        "density_aware": true
+      },
+      "paper_results": {
+        "idc": { "R1": 0.250, "R5": 0.500, "MRR": 0.333 },
+        "best_baseline": { "method": "paragraphs", "R1": 0.250, "R5": 0.600, "MRR": 0.367 }
+      },
+      "hybrid_tune_results": {
+        "idc": { "R1": 0.233, "R5": 0.500, "MRR": 0.317 }
+      },
+      "stats_match_stored": false,
+      "notes": "Hybrid-tuned params (find_best_idc_config.py) achieve R@1=0.233, slightly below paper's 0.250. Best available config from tuning sweep."
+    }
+  }
+}

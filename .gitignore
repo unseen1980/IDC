@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.*
 
 # macOS
 .DS_Store
@@ -15,16 +16,14 @@ venv/
 *.swp
 *.swo
 
-# Outputs
+# Generated outputs (reproducible from data/ + src/)
 /out/
-*.npy
-*.jsonl
 
 # Temporary files
 *.tmp
-*.log
 
-# Claude/AI tools
+# AI tool local state
+.claude/
 .claude-flow
 .serena/
 .memory/

@@ -1,0 +1,10 @@
+newsqa_00001
+newsqa_00002
+newsqa_00003
+newsqa_00004
+newsqa_00005
+newsqa_00006
+newsqa_00007
+newsqa_00008
+newsqa_00009
+newsqa_00010

@@ -503,14 +503,27 @@ Notes
 
 ---
 
-## Appendix: IDC DP Scoring (Informal)
+## Appendix: IDC DP Scoring (Paper Equations 1-3)
 
-For chunk [l..r]:
-- `intent_score = 0.7 * max(sims) + 0.3 * mean(top3(sims))`
-- `completeness_bonus ≈ +0.1` for 3–6 sentences; mild penalties otherwise
-- `coherence_bonus ≈ +0.05 * coherence(l..r)`
-- `boundary_bonus ≈ +0.10/+0.15` if start/end align with paragraph boundaries
-- `length_penalty ≈ adaptive_lambda * f(len)`; `boundary_penalty` per boundary
-- `structural_cost` from priors (discourages cuts in awkward spots)
+The published paper defines the IDC objective as follows:
 
-DP maximizes cumulative score while honoring `min_len ≤ chunk_len ≤ max_len`.
+**Eq. 1 — Chunk Relevance:**
+```
+R(C) = max_{q ∈ Q} cos(e(C), e(q))
+```
+Simple max cosine similarity between the chunk embedding and all intent embeddings.
+
+**Eq. 2 — Segmentation Utility:**
+```
+U(S) = Σ_m R(C_m) - λ Σ_m |C_m|² - β(k - 1)
+```
+Where λ = 0.0005 (tuned), β is the boundary penalty, k is the number of chunks, and |C_m| is chunk length.
+
+**Eq. 3 — Constraints:**
+```
+min_len ≤ |C_m| ≤ max_len   (L = 10–15 sentences)
+```
+
+DP maximizes U(S) while honoring `min_len ≤ |C_m| ≤ max_len`.
+
+**Implementation note:** The code in `src/idc_core.py` extends the paper formula with additional terms (coherence weight, structural cost) controlled by CLI parameters. The paper equations above represent the core published formulation.
