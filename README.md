@@ -7,7 +7,7 @@
 
 > **Reproducibility Repository** -- This repository contains all code, datasets, configurations, and documentation needed to reproduce the results presented in the IDC paper.
 
-**Paper**: [Intent-Driven Dynamic Chunking (PDF)](docs/idc_arxiv_ieee.pdf)
+**Paper**: [Intent-Driven Dynamic Chunking (PDF)]([docs/idc_arxiv_ieee.pdf](https://arxiv.org/abs/2602.14784))
 
 ---
 
