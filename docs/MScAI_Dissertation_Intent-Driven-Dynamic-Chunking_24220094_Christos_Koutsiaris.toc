@@ -1,0 +1,95 @@
+\contentsline {chapter}{\numberline {1}Introduction}{6}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Motivation and industrial relevance}{6}{section.1.1}%
+\contentsline {subsection}{\numberline {1.1.1}Fixed-length chunking}{6}{subsection.1.1.1}%
+\contentsline {subsection}{\numberline {1.1.2}Coherence-based chunking}{7}{subsection.1.1.2}%
+\contentsline {subsection}{\numberline {1.1.3}Ignoring user intent}{7}{subsection.1.1.3}%
+\contentsline {subsection}{\numberline {1.1.4}Real-world example (SAP documentation)}{8}{subsection.1.1.4}%
+\contentsline {subsection}{\numberline {1.1.5}Matching chunks to user intent}{8}{subsection.1.1.5}%
+\contentsline {section}{\numberline {1.2}Problem statement}{9}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Limitations of fixed-length chunking}{9}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Limitations of coherence-based segmentation}{9}{subsection.1.2.2}%
+\contentsline {subsection}{\numberline {1.2.3}Limitations of query expansion (e.g., doc2query)}{10}{subsection.1.2.3}%
+\contentsline {subsection}{\numberline {1.2.4}The gap: lack of intent-aware chunking}{11}{subsection.1.2.4}%
+\contentsline {subsection}{\numberline {1.2.5}Problem definition}{11}{subsection.1.2.5}%
+\contentsline {section}{\numberline {1.3}Research objectives and hypotheses}{12}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Research questions}{12}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Hypotheses}{13}{subsection.1.3.2}%
+\contentsline {section}{\numberline {1.4}Thesis contributions}{13}{section.1.4}%
+\contentsline {chapter}{\numberline {2}Background and related work}{15}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Document chunking in retrieval systems}{15}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Fixed-length and coherence-based segmentation}{15}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}Transformer-era advances}{16}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}Intent- or query-guided segmentation}{17}{subsection.2.2.2}%
+\contentsline {section}{\numberline {2.3}Query-aware document expansion (but not segmentation)}{18}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Query segmentation and user intent modeling}{19}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Remaining gaps and research direction}{20}{section.2.5}%
+\contentsline {chapter}{\numberline {3}Methodology}{22}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Conceptual overview and design goals}{22}{section.3.1}%
+\contentsline {section}{\numberline {3.2}How IDC works: step-by-step overview}{24}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Intent simulation layer (predicted query generation)}{26}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Objective function for segmentation}{27}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Boundary optimization algorithm}{29}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Design rationale: why dynamic programming over end-to-end LLM segmentation}{31}{subsection.3.5.1}%
+\contentsline {section}{\numberline {3.6}System architecture and implementation}{32}{section.3.6}%
+\contentsline {section}{\numberline {3.7}Complexity analysis and efficiency}{35}{section.3.7}%
+\contentsline {chapter}{\numberline {4}Experimental setup}{38}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Evaluation datasets}{38}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Tasks and evaluation measures}{38}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Baseline chunking methods}{39}{section.4.3}%
+\contentsline {section}{\numberline {4.4}IDC implementation and configuration updates}{40}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Auto-Adaptive intent generation}{40}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Automatic hyperparameter tuning}{41}{subsection.4.4.2}%
+\contentsline {subsection}{\numberline {4.4.3}Embeddings and hybrid retrieval pipeline}{41}{subsection.4.4.3}%
+\contentsline {subsection}{\numberline {4.4.4}Preprocessing and pipeline consistency}{42}{subsection.4.4.4}%
+\contentsline {section}{\numberline {4.5}Evaluation results and analysis}{43}{section.4.5}%
+\contentsline {chapter}{\numberline {5}Results}{45}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Retrieval performance vs.\ baselines}{45}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Cross-dataset summary}{46}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Detailed per-method performance}{47}{subsection.5.1.2}%
+\contentsline {subsection}{\numberline {5.1.3}Chunking characteristics analysis}{50}{subsection.5.1.3}%
+\contentsline {section}{\numberline {5.2}End-to-End RAG accuracy \& hallucination rate}{53}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Retrieval metrics as proxies for QA success}{54}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Projected impact on RAG accuracy}{54}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Future work: end-to-end evaluation}{55}{subsection.5.2.3}%
+\contentsline {section}{\numberline {5.3}Ablation studies}{56}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Impact of auto-tuning (SQuAD 2-docs)}{56}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Auto-adaptive intent generation for long documents}{58}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Intent generation strategy ablation}{59}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}Component-wise ablation of IDC}{60}{subsection.5.3.4}%
+\contentsline {section}{\numberline {5.4}Latency \& cost analysis}{61}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Offline chunking time}{62}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Online retrieval latency}{62}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}API cost analysis}{63}{subsection.5.4.3}%
+\contentsline {section}{\numberline {5.5}Error analysis \& qualitative examples}{65}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Failure mode analysis}{65}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Success case analysis}{67}{subsection.5.5.2}%
+\contentsline {chapter}{\numberline {6}Discussion}{73}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Interpretation of gains}{73}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Comparison to adaptive online chunking}{74}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Deployment implications}{75}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Limitations}{77}{section.6.4}%
+\contentsline {chapter}{\numberline {7}Conclusion \& future work}{80}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Summary of contributions}{80}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Future work}{81}{section.7.2}%
+\contentsline {chapter}{\numberline {A}Full algorithm pseudocode}{86}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Dynamic programming segmentation algorithm}{86}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Coherence computation}{88}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Post-processing refinement}{89}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Multi-pass segmentation}{91}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Information density scoring}{92}{section.A.5}%
+\contentsline {section}{\numberline {A.6}Complexity analysis}{94}{section.A.6}%
+\contentsline {chapter}{\numberline {B}Extra tables and figures}{95}{appendix.B}%
+\contentsline {section}{\numberline {B.1}Detailed failure analysis tables}{95}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Success pattern analysis}{95}{section.B.2}%
+\contentsline {section}{\numberline {B.3}Detailed performance tables}{95}{section.B.3}%
+\contentsline {section}{\numberline {B.4}Processing time and cost tables}{97}{section.B.4}%
+\contentsline {section}{\numberline {B.5}Qualitative comparison tables}{97}{section.B.5}%
+\contentsline {chapter}{\numberline {C}Ethics \& data privacy statement}{98}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Research ethics declaration}{98}{section.C.1}%
+\contentsline {subsection}{\numberline {C.1.1}Data sources and usage}{98}{subsection.C.1.1}%
+\contentsline {subsection}{\numberline {C.1.2}Use of language models and APIs}{98}{subsection.C.1.2}%
+\contentsline {subsection}{\numberline {C.1.3}Reproducibility and transparency}{99}{subsection.C.1.3}%
+\contentsline {subsection}{\numberline {C.1.4}Potential societal impact}{99}{subsection.C.1.4}%
+\contentsline {subsection}{\numberline {C.1.5}Compliance and responsible use}{100}{subsection.C.1.5}%
+\contentsline {subsection}{\numberline {C.1.6}Statement of limitations}{100}{subsection.C.1.6}%
+\contentsline {subsection}{\numberline {C.1.7}Author's commitment}{100}{subsection.C.1.7}%
